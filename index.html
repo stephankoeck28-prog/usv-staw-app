@@ -72,7 +72,7 @@
     .card { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 16px; margin-bottom: 16px; box-shadow: 0 3px 10px rgba(0,0,0,0.04); }
     .card h3 { margin: 0 0 12px; font-size: 18px; display: flex; align-items: center; gap: 6px; }
 
-    /* Next Match Card with Attendance Color */
+    /* Next Match Card */
     .next-match-card { padding: 16px; border-radius: 16px; margin-bottom: 20px; color: white; }
     .next-match-card.coming { background: linear-gradient(135deg, var(--attendance-coming), #1e6b3d); }
     .next-match-card.maybe { background: linear-gradient(135deg, var(--attendance-maybe), #c47f2a); }
@@ -105,7 +105,6 @@
     .btn.small { padding: 6px 10px; font-size: 12px; }
     .btn.approve { background: var(--approval-green); color: white; }
     .btn.reject { background: var(--approval-red); color: white; }
-    .btn.request { background: var(--notification-border); color: #856404; }
 
     /* Player List */
     .player-list { max-height: 300px; overflow-y: auto; border: 1px solid var(--line); border-radius: 14px; padding: 8px; margin-bottom: 20px; background: white; }
@@ -117,7 +116,6 @@
     .match:hover { background: #f5f9f6; }
     .match.expanded { background: #f0f7f2; border-left: 4px solid var(--green); }
     .match.past { background: var(--match-past); opacity: 0.7; }
-    .match.past:hover { background: #d0d0d0; }
     .datebox { width: 80px; padding: 12px 8px; text-align: center; border-right: 1px solid #edf1ee; }
     .datebox .day { font-size: 24px; font-weight: 300; line-height: 1; }
     .datebox .mon { font-size: 11px; font-weight: 600; color: #58635d; margin-top: 4px; }
@@ -128,11 +126,8 @@
     .badge { padding: 4px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
     .team1 { background: var(--yellow); color: #214b2f; }
     .team2 { background: #52bf74; color: white; }
-    .status.home { color: #2d9c4b; font-weight: 600; }
-    .status.away { color: #d8712b; font-weight: 600; }
 
     /* Attendance */
-    .attendance-stats { display: flex; gap: 16px; font-size: 13px; margin: 10px 0; }
     .attendance-buttons { display: flex; gap: 8px; margin: 10px 0; }
     .attendance-buttons .btn { flex: 1; }
 
@@ -145,17 +140,6 @@
     .attendance-item.maybe .count { color: var(--attendance-maybe); }
     .attendance-item.missing .count { color: var(--attendance-missing); }
     .attendance-item.open .count { color: var(--attendance-open); }
-
-    /* Detailed Attendance for Trainer */
-    .detailed-attendance { margin: 15px 0; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
-    .detailed-header { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; background: #e0e0e0; font-weight: 600; font-size: 12px; padding: 8px; }
-    .detailed-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; padding: 8px; border-top: 1px solid var(--line); align-items: center; }
-    .detailed-row:nth-child(even) { background: #f9f9f9; }
-    .detailed-status { text-align: center; font-weight: 600; }
-    .status-coming { color: var(--attendance-coming); }
-    .status-maybe { color: var(--attendance-maybe); }
-    .status-missing { color: var(--attendance-missing); }
-    .status-open { color: var(--attendance-open); }
 
     /* Training */
     .training-player { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #e0eae1; }
@@ -173,71 +157,9 @@
     .history-excused { background: #fff2dd; border-left: 4px solid var(--attendance-maybe); }
     .history-missing { background: #ffe6e3; border-left: 4px solid var(--attendance-missing); }
 
-    /* Test Stars */
-    .star { color: #f3c623; font-size: 18px; }
-    .star-empty { color: #ddd; font-size: 18px; }
-
     /* Stat Boxes */
     .stat { background: var(--soft); border: 1px solid #edf3ee; border-radius: 16px; padding: 12px; text-align: center; }
     .stat strong { display: block; font-size: 20px; }
-
-    /* Ranking */
-    .ranking-badge { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; margin-left: 8px; font-weight: 800; font-size: 14px; }
-    .ranking-1 { background: var(--gold); color: #000; }
-    .ranking-2 { background: var(--silver); color: #000; }
-    .ranking-3 { background: var(--bronze); color: #fff; }
-    .ranking-other { background: #e0e0e0; color: #333; }
-
-    /* Season Stats */
-    .season-stats { background: #e8f0fe; border-radius: 16px; padding: 16px; margin: 20px 0; }
-    .season-stats h4 { color: var(--blue); margin: 0 0 12px 0; border-bottom: 1px solid var(--blue); padding-bottom: 8px; }
-    .season-stat-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(94,143,232,0.2); }
-    .season-stat-item:last-child { border-bottom: none; }
-    .season-stat-item.current { background: rgba(94,143,232,0.1); border-radius: 8px; padding: 8px; margin-bottom: 8px; font-weight: 600; }
-
-    /* Current Season Stats */
-    .current-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0; }
-    .stat-card { background: white; border: 1px solid var(--line); border-radius: 16px; padding: 16px; text-align: center; }
-    .stat-card .value { font-size: 32px; font-weight: 800; color: var(--green); }
-    .stat-card .label { font-size: 12px; color: var(--muted); margin-top: 4px; }
-    .stat-card .ranking { display: flex; align-items: center; justify-content: center; margin-top: 8px; font-size: 14px; }
-
-    /* Month Separator */
-    .month { background: #ddd; color: #535353; font-weight: 800; letter-spacing: .14em; padding: 10px 16px; margin-top: 10px; }
-
-    /* Photo Upload */
-    .photo-upload { display: flex; flex-direction: column; align-items: center; margin-bottom: 15px; }
-    .photo-preview { width: 120px; height: 120px; border-radius: 60px; background: #f0f7f2; border: 2px dashed var(--green); display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 10px; }
-    .photo-preview img { width: 100%; height: 100%; object-fit: cover; }
-    .photo-preview span { color: var(--muted); font-size: 12px; text-align: center; }
-
-    /* Parent Photo */
-    .parent-photo { width: 120px; height: 120px; border-radius: 60px; margin: 0 auto 16px; overflow: hidden; }
-    .parent-photo img { width: 100%; height: 100%; object-fit: cover; }
-
-    /* Trainer Kind Section - MIT ABSTIMMUNG (wie Eltern) */
-    .trainer-kind-section { border-radius: 20px; padding: 16px; margin: 16px 0; background: var(--trainer-kind-bg); border: 2px solid var(--trainer-kind-border); }
-    .trainer-kind-section .section-title { color: var(--trainer-kind-border); font-size: 16px; font-weight: 600; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--trainer-kind-border); }
-
-    /* Coach Kind Section */
-    .coach-kind-section { border-radius: 20px; padding: 16px; margin: 16px 0; background: var(--coach-bg); border: 2px solid var(--coach-border); }
-    .coach-kind-section .section-title { color: #856404; font-size: 16px; font-weight: 600; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--coach-border); }
-
-    /* Statistics Section */
-    .statistics-section { border-radius: 20px; padding: 16px; margin: 16px 0; background: var(--statistics-bg); border: 2px solid var(--statistics-border); }
-    .statistics-section .section-title { color: #555; font-size: 16px; font-weight: 600; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--statistics-border); }
-    .statistics-table { width: 100%; border-collapse: collapse; }
-    .statistics-table th { text-align: left; padding: 8px; background: #e0e0e0; font-size: 12px; }
-    .statistics-table td { padding: 8px; border-bottom: 1px solid #ddd; }
-    .statistics-table tr:last-child td { border-bottom: none; }
-    .statistics-table .zero { color: var(--muted); font-style: italic; }
-
-    /* Notifications */
-    .notification-badge { background: var(--notification-bg); border: 1px solid var(--notification-border); border-radius: 20px; padding: 4px 10px; font-size: 12px; font-weight: 600; margin-left: 8px; }
-    .notification-item { background: var(--notification-bg); border-left: 4px solid var(--notification-border); padding: 12px; border-radius: 8px; margin: 8px 0; }
-    .approval-message { padding: 10px; border-radius: 8px; margin: 10px 0; text-align: center; font-weight: 600; }
-    .approval-message.approved { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-    .approval-message.rejected { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
 
     /* Login */
     .login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 18px; }
@@ -245,62 +167,29 @@
 
     /* Navigation */
     .nav { position: fixed; left: 0; right: 0; bottom: 0; background: white; border-top: 1px solid var(--line); display: flex; justify-content: center; z-index: 25; }
-    .nav-inner { width: 100%; max-width: 720px; display: grid; grid-template-columns: repeat(10, 1fr); }
-    .nav button { background: none; border: none; padding: 12px 4px; color: #617067; font-size: 20px; cursor: pointer; transition: 0.2s; }
-    .nav button.active { color: var(--green); transform: translateY(-2px); }
-    .nav .trainer-kind-nav, .nav .coach-kind-nav { margin-left: 20px; }
-
-    /* Logo Upload in Config */
-    .logo-upload { display: flex; flex-direction: column; align-items: center; margin: 20px 0; padding: 20px; background: #f5f9f6; border-radius: 12px; }
-    .logo-preview { width: 100px; height: 100px; border-radius: 18px; background: white; border: 2px dashed var(--green); display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 10px; }
-    .logo-preview img { width: 100%; height: 100%; object-fit: contain; padding: 5px; }
-    .logo-preview span { color: var(--muted); font-size: 12px; text-align: center; }
-
-    /* Gegner-Liste für U8 und kleiner */
-    .opponents-list { margin: 12px 0; padding: 12px; background: #f5f9f6; border-radius: 12px; }
-    .opponents-list h4 { margin: 0 0 8px 0; font-size: 14px; color: var(--muted); }
-    .opponents-items { display: flex; flex-wrap: wrap; gap: 8px; }
-    .opponent-tag { background: var(--blue); color: white; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-
-    /* Match Report Styles */
-    .match-report-item { background: white; border: 1px solid var(--line); border-radius: 16px; padding: 16px; margin-bottom: 16px; }
-    .match-report-item.completed { background: var(--report-completed); border-color: var(--report-completed-border); }
-    .match-report-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-    .match-report-title { font-weight: 600; font-size: 16px; }
-    .match-report-actions { display: flex; gap: 8px; }
-    .match-report-result { font-size: 18px; font-weight: 800; color: var(--green); margin: 8px 0; }
-
-    /* Milestone Card */
-    .milestone-card { background: var(--milestone-bg); border: 2px solid var(--milestone-border); border-radius: 16px; padding: 16px; margin-bottom: 16px; }
-    .milestone-year { font-size: 20px; font-weight: 800; color: #e65100; margin-bottom: 12px; border-bottom: 1px solid var(--milestone-border); padding-bottom: 8px; }
-    .milestone-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-    .milestone-stat { text-align: center; background: white; border-radius: 12px; padding: 12px; }
-    .milestone-stat .value { font-size: 28px; font-weight: 800; color: var(--green); }
-    .milestone-stat .label { font-size: 12px; color: var(--muted); }
+    .nav-inner { width: 100%; max-width: 720px; display: grid; grid-template-columns: repeat(8, 1fr); }
+    .nav button { background: none; border: none; padding: 12px 4px; color: #617067; font-size: 20px; cursor: pointer; }
+    .nav button.active { color: var(--green); }
 
     /* Utils */
     .small { font-size: 12px; color: var(--muted); }
-    .hidden { display: none !important; }
     .mt-2 { margin-top: 8px; }
-    .mt-3 { margin-top: 12px; }
-    .mt-4 { margin-top: 16px; }
-    .mb-2 { margin-bottom: 8px; }
   </style>
 </head>
 <body>
 <div class="app" id="app"></div>
 
-<!-- Firebase Scripts -->
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
 <script>
-// ==================== FIREBASE INIT ====================
+// ==================== FIREBASE ====================
 const firebaseConfig = {
   apiKey: "AIzaSyAemNwKkerXt-hvtikIIACR4oBTb72VjL_U",
   authDomain: "usv-staw-app.firebaseapp.com",
   projectId: "usv-staw-app",
-  storageBucket: "usv-staw-app.appspot.com"
+  storageBucket: "usv-staw-app.appspot.com",
   messagingSenderId: "983106867178",
   appId: "1:983106867178:web:90234121a5833e7e396c93"
 };
@@ -323,47 +212,24 @@ const seed = {
     { id: "u2", username: "coach", password: "4321", role: "coach", name: "Co-Trainer", childId: null }
   ],
   players: [
-    { id: "p1", name: "Fabian Mustermann", team: "U8", birthday: "2017-04-12", position: "Stürmer", jersey: 7, parentName: "Eltern Fabian", since: "2023", nextTeam: "U9", note: "Sehr aufmerksam", games: 12, goals: 8, assists: 4, trainingCount: 14, speed: 7.8, dribbling: 8.2, passing: 7.1, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: { 2025: { goals: 12, assists: 8, trainings: 24, percentage: 95 }, 2024: { goals: 5, assists: 3, trainings: 18, percentage: 82 }, 2023: { goals: 2, assists: 1, trainings: 12, percentage: 75 } } },
-    { id: "p2", name: "Oliver A.", team: "U8", birthday: "2017-06-08", position: "Verteidiger", jersey: 4, parentName: "Eltern Oliver", since: "2024", nextTeam: "U9", note: "Gute Mitarbeit", games: 11, goals: 12, assists: 2, trainingCount: 12, speed: 6.4, dribbling: 6.8, passing: 6.9, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {} },
-    { id: "p3", name: "Oliver B.", team: "U9", birthday: "2016-01-03", position: "Mittelfeld", jersey: 10, parentName: "Eltern Oliver B.", since: "2023", nextTeam: "U10", note: "Gute Übersicht", games: 10, goals: 5, assists: 5, trainingCount: 15, speed: 7.0, dribbling: 7.0, passing: 7.5, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {} },
-    { id: "p4", name: "Lukas", team: "U8", birthday: "2017-10-14", position: "Verteidiger", jersey: 5, parentName: "Eltern Lukas", since: "2024", nextTeam: "U9", note: "Konstant", games: 9, goals: 3, assists: 1, trainingCount: 10, speed: 6.6, dribbling: 6.0, passing: 6.6, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {} },
-    { id: "p5", name: "Luca", team: "U8", birthday: "2017-04-16", position: "Flügel", jersey: 11, parentName: "Eltern Luca", since: "2023", nextTeam: "U9", note: "Viel Tempo", games: 12, goals: 4, assists: 3, trainingCount: 13, speed: 8.0, dribbling: 7.1, passing: 6.3, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {} },
-    { id: "p6", name: "Angelo", team: "U9", birthday: "2016-09-22", position: "Mittelfeld", jersey: 8, parentName: "Eltern Angelo", since: "2022", nextTeam: "U10", note: "Stark im Passspiel", games: 13, goals: 7, assists: 6, trainingCount: 16, speed: 7.1, dribbling: 7.5, passing: 8.4, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {} },
-    { id: "p7", name: "Alexander", team: "U9", birthday: "2016-07-11", position: "Verteidiger", jersey: 3, parentName: "Eltern Alexander", since: "2022", nextTeam: "U10", note: "Sehr zuverlässig", games: 14, goals: 1, assists: 1, trainingCount: 15, speed: 6.4, dribbling: 6.2, passing: 7.2, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {} },
-    { id: "p8", name: "Teo A.", team: "U8", birthday: "2017-02-05", position: "Stürmer", jersey: 9, parentName: "Eltern Teo A.", since: "2024", nextTeam: "U9", note: "Torgefährlich", games: 10, goals: 6, assists: 3, trainingCount: 12, speed: 7.3, dribbling: 7.2, passing: 6.5, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {} },
-    { id: "p9", name: "Teo B.", team: "U9", birthday: "2016-12-28", position: "Mittelfeld", jersey: 6, parentName: "Eltern Teo B.", since: "2024", nextTeam: "U10", note: "Mutig am Ball", games: 9, goals: 2, assists: 2, trainingCount: 11, speed: 6.9, dribbling: 7.0, passing: 6.8, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {} },
-    { id: "p10", name: "Wolfi", team: "U8", birthday: "2017-03-07", position: "Verteidiger", jersey: 2, parentName: "Eltern Wolfi", since: "2025", nextTeam: "U9", note: "Lernwillig", games: 8, goals: 0, assists: 0, trainingCount: 8, speed: 5.9, dribbling: 5.5, passing: 5.8, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {} },
-    { id: "p11", name: "Loric", team: "U9", birthday: "2016-11-02", position: "Flügel", jersey: 12, parentName: "Eltern Loric", since: "2024", nextTeam: "U10", note: "Soll mehr Mut haben", games: 8, goals: 1, assists: 1, trainingCount: 9, speed: 6.7, dribbling: 6.5, passing: 6.2, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {} },
-    { id: "p12", name: "Anna", team: "U9", birthday: "2016-04-14", position: "Mittelfeld", jersey: 14, parentName: "Eltern Anna", since: "2022", nextTeam: "U10", note: "Sehr aufmerksam", games: 14, goals: 4, assists: 7, trainingCount: 17, speed: 7.2, dribbling: 7.7, passing: 7.6, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {} },
-    { id: "p13", name: "Max", team: "U8", birthday: "2017-08-01", position: "Mittelfeld", jersey: 13, parentName: "Eltern Max", since: "2023", nextTeam: "U9", note: "Stark im Dribbling", games: 13, goals: 7, assists: 4, trainingCount: 15, speed: 7.7, dribbling: 8.5, passing: 7.0, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {} },
-    { id: "p14", name: "Fredi", team: "U8", birthday: "2017-05-26", position: "Tor", jersey: 15, parentName: "Eltern Fredi", since: "2024", nextTeam: "U9", note: "Gute Reflexe", games: 9, goals: 0, assists: 0, trainingCount: 10, speed: 5.5, dribbling: 5.2, passing: 5.9, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {} },
-    { id: "p15", name: "Urs", team: "U9", birthday: "2016-06-17", position: "Tor", jersey: 1, parentName: "Eltern Urs", since: "2023", nextTeam: "U10", note: "Ruhig im Tor", games: 11, goals: 0, assists: 0, trainingCount: 12, speed: 5.6, dribbling: 5.4, passing: 6.0, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {} },
-    { id: "p16", name: "Mario", team: "U8", birthday: "2017-01-19", position: "Flügel", jersey: 16, parentName: "Eltern Mario", since: "2025", nextTeam: "U9", note: "Wenig Einsatzzeit", games: 7, goals: 1, assists: 1, trainingCount: 7, speed: 6.0, dribbling: 5.8, passing: 5.6, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {} },
-    { id: "p17", name: "David", team: "U9", birthday: "2016-03-30", position: "Verteidiger", jersey: 17, parentName: "Eltern David", since: "2025", nextTeam: "U10", note: "Braucht mehr Spielminuten", games: 7, goals: 0, assists: 0, trainingCount: 7, speed: 6.1, dribbling: 5.5, passing: 5.9, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {} }
+    { id: "p1", name: "Fabian Mustermann", team: "U8", birthday: "2017-04-12", position: "Stürmer", jersey: 7, parentName: "Eltern Fabian", since: "2023", nextTeam: "U9", note: "Sehr aufmerksam", games: 12, goals: 8, assists: 4, trainingCount: 14, speed: 7.8, dribbling: 8.2, passing: 7.1, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {} },
+    { id: "p2", name: "Oliver A.", team: "U8", birthday: "2017-06-08", position: "Verteidiger", jersey: 4, parentName: "Eltern Oliver", since: "2024", nextTeam: "U9", note: "Gute Mitarbeit", games: 11, goals: 12, assists: 2, trainingCount: 12, speed: 6.4, dribbling: 6.8, passing: 6.9, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {} }
   ],
   matches: [
-    { id: "m1", team: "U8", date: "2026-03-07", time: "14:00", title: "Kick-Off Trophy Klosterneuburg", kind: "CUP", location: "Auswärts", meeting: "13:15 Klosterneuburg", opponents: ["SV Klosterneuburg", "SC Tulln", "ASK Stockerau"], attendance: { p1: "coming", p2: "open", p4: "open", p5: "coming", p8: "coming", p10: "open", p13: "coming", p14: "coming", p16: "missing" }, attendanceRequests: [], result: "4:4", report: { goals: { p1: 2, p5: 1, p13: 1 }, assists: { p1: 1, p3: 1, p8: 1, p13: 1 } } },
-    { id: "m2", team: "U9", date: "2026-03-11", time: "17:00", title: "U9 STAW", kind: "TESTSPIEL", location: "Heim", meeting: "16:20 St. Andrä", opponents: [], attendance: { p3: "open", p6: "coming", p7: "coming", p9: "open", p11: "open", p12: "coming", p15: "coming", p17: "missing" }, attendanceRequests: [], result: "3:2", report: { goals: { p6: 1, p12: 2 }, assists: { p3: 1, p6: 1, p9: 1 } } },
-    { id: "m3", team: "U8", date: "2026-03-14", time: "10:30", title: "U8 Tulln", kind: "TESTSPIEL", location: "Heim", meeting: "09:45 Sportplatz St. Andrä", opponents: ["SV Tulln", "USV Langenrohr"], attendance: { p1: "coming", p2: "open", p4: "open", p5: "coming", p8: "coming", p10: "open", p13: "coming", p14: "coming", p16: "missing" }, attendanceRequests: [], result: "", report: null },
-    { id: "m4", team: "U8", date: "2026-03-28", time: "11:20", title: "Purkersdorf A", kind: "MEISTERSCHAFT", location: "Auswärts", meeting: "10:30 Purkersdorf", opponents: ["SC Purkersdorf", "ASK Eichgraben", "SV Gablitz", "USV Pressbaum"], attendance: { p1: "coming", p2: "coming", p4: "open", p5: "coming", p8: "coming", p10: "open", p13: "coming", p14: "coming", p16: "missing" }, attendanceRequests: [], result: "", report: null },
-    { id: "m5", team: "U9", date: "2026-03-14", time: "10:30", title: "U9 Tulln", kind: "TESTSPIEL", location: "Heim", meeting: "09:45 Sportplatz St. Andrä", opponents: [], attendance: { p3: "coming", p6: "coming", p7: "coming", p9: "open", p11: "open", p12: "coming", p15: "coming", p17: "missing" }, attendanceRequests: [], result: "", report: null },
-    { id: "m6", team: "U8", date: "2026-03-28", time: "15:00", title: "U8 Testspiel 2", kind: "TESTSPIEL", location: "Heim", meeting: "14:15 Sportplatz St. Andrä", opponents: [], attendance: { p1: "open", p2: "open", p4: "open", p5: "open", p8: "open", p10: "open", p13: "open", p14: "open", p16: "open" }, attendanceRequests: [], result: "", report: null }
+    { id: "m1", team: "U8", date: "2026-03-07", time: "14:00", title: "Kick-Off Trophy", kind: "CUP", location: "Auswärts", meeting: "13:15", opponents: [], attendance: { p1: "coming", p2: "open" }, attendanceRequests: [], result: "", report: null },
+    { id: "m2", team: "U8", date: "2026-03-14", time: "10:30", title: "U8 Tulln", kind: "TESTSPIEL", location: "Heim", meeting: "09:45", opponents: [], attendance: { p1: "coming", p2: "open" }, attendanceRequests: [], result: "", report: null }
   ],
   trainings: [
-    { id: "t1", date: "2026-02-28", attendance: { p1: "present", p2: "present", p3: "excused", p4: "present", p5: "missing", p6: "present", p7: "present", p8: "present", p9: "excused", p10: "missing" } },
-    { id: "t2", date: "2026-03-01", attendance: { p1: "present", p2: "present", p3: "present", p4: "excused", p5: "present", p6: "present", p7: "present", p8: "present", p9: "present", p10: "missing" } }
+    { id: "t1", date: "2026-02-28", attendance: { p1: "present", p2: "present" } }
   ],
-  testConfig: [
-    { id: "t1", name: "20m Sprint", unit: "sek", target: 5.0, better: "lower" },
-    { id: "t2", name: "Ausdauer", unit: "min", target: 12, better: "higher" }
-  ],
+  testConfig: [],
   currentTeam: "U8",
   selectedPlayerId: "p1",
   expandedMatch: null,
   selectedReportMatchId: null
 };
 
-// Eltern-Accounts generieren
+// Eltern-Accounts
 seed.players.forEach(p => {
   const username = p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
   seed.users.push({
@@ -382,30 +248,20 @@ let session = JSON.parse(sessionStorage.getItem("usv-staw-session") || "null");
 let adminView = "dashboard";
 let coachView = "dashboard";
 let parentView = "kind";
-let trainerKindView = "kind";
-let coachKindView = "kind";
 
-// ==================== HELPER FUNKTIONEN ====================
-function findPlayer(id) { return state.players.find(p => p.id === id); }
-function findUserForPlayer(playerId) { return state.users.find(u => u.playerId === playerId); }
-
-function visibleTeams() {
-  const teams = [state.teams.main];
-  if (state.teams.showSecond) teams.push(state.teams.second);
-  return teams;
-}
+// ==================== HILFSFUNKTIONEN ====================
+function findPlayer(id) { return state.players?.find(p => p.id === id); }
+function findUserForPlayer(playerId) { return state.users?.find(u => u.playerId === playerId); }
 
 function playersForCurrentTeam() {
-  if (state.currentTeam === "ALLE") return state.players.filter(p => visibleTeams().includes(p.team));
+  if (!state.players) return [];
+  if (state.currentTeam === "ALLE") return state.players;
   return state.players.filter(p => p.team === state.currentTeam);
 }
 
-function playersForTeam(teamName) {
-  return state.players.filter(p => p.team === teamName);
-}
-
 function matchesForCurrentTeam() {
-  let matches = state.matches.filter(m => visibleTeams().includes(m.team));
+  if (!state.matches) return [];
+  let matches = state.matches;
   if (state.currentTeam !== "ALLE") {
     matches = matches.filter(m => m.team === state.currentTeam);
   }
@@ -413,64 +269,13 @@ function matchesForCurrentTeam() {
 }
 
 function getTeamNumber(teamName) {
-  const match = teamName.match(/^U(\d+)$/i);
+  const match = teamName?.match(/^U(\d+)$/i);
   return match ? parseInt(match[1]) : null;
 }
 
 function getEligiblePlayersForMatch(match) {
-  const matchTeamNumber = getTeamNumber(match.team);
-  if (matchTeamNumber <= 8) {
-    return state.players.filter(p => p.team === match.team);
-  } else {
-    return state.players.filter(p => {
-      const playerTeamNumber = getTeamNumber(p.team);
-      return playerTeamNumber !== null && playerTeamNumber <= matchTeamNumber;
-    });
-  }
-}
-
-function getVisibleMatchesForParent(playerId) {
-  const player = findPlayer(playerId);
-  if (!player) return [];
-  const playerTeamNumber = getTeamNumber(player.team);
-  if (playerTeamNumber === null) return [];
-  return state.matches.filter(m => {
-    const matchTeamNumber = getTeamNumber(m.team);
-    return matchTeamNumber !== null && matchTeamNumber >= playerTeamNumber;
-  }).sort((a,b) => a.date.localeCompare(b.date));
-}
-
-function getUpcomingMatchesForParent(playerId, limit = null) {
-  const player = findPlayer(playerId);
-  if (!player) return [];
-  const now = new Date();
-  const today = now.toISOString().split('T')[0];
-  const visibleMatches = getVisibleMatchesForParent(playerId);
-  let upcoming = visibleMatches.filter(m => {
-    if (m.date > today) return true;
-    if (m.date === today) {
-      const [hours, minutes] = m.time.split(':').map(Number);
-      const matchEndTime = new Date();
-      matchEndTime.setHours(hours + 1, minutes, 0);
-      return now < matchEndTime;
-    }
-    return false;
-  });
-  if (limit) upcoming = upcoming.slice(0, limit);
-  return upcoming;
-}
-
-function isMatchPast(match) {
-  const now = new Date();
-  const today = now.toISOString().split('T')[0];
-  if (match.date < today) return true;
-  if (match.date === today) {
-    const [hours, minutes] = match.time.split(':').map(Number);
-    const matchEndTime = new Date();
-    matchEndTime.setHours(hours + 1, minutes, 0);
-    return now >= matchEndTime;
-  }
-  return false;
+  if (!state.players) return [];
+  return state.players.filter(p => p.team === match.team);
 }
 
 function formatDate(dateStr) {
@@ -481,20 +286,16 @@ function formatDate(dateStr) {
 
 function countAttendance(match) {
   const eligiblePlayers = getEligiblePlayersForMatch(match);
-  const coming = eligiblePlayers.filter(p => match.attendance[p.id] === "coming").length;
-  const maybe = eligiblePlayers.filter(p => match.attendance[p.id] === "maybe").length;
-  const missing = eligiblePlayers.filter(p => match.attendance[p.id] === "missing").length;
-  const open = eligiblePlayers.filter(p => !match.attendance[p.id] || match.attendance[p.id] === "open").length;
+  const coming = eligiblePlayers.filter(p => match.attendance?.[p.id] === "coming").length;
+  const maybe = eligiblePlayers.filter(p => match.attendance?.[p.id] === "maybe").length;
+  const missing = eligiblePlayers.filter(p => match.attendance?.[p.id] === "missing").length;
+  const open = eligiblePlayers.filter(p => !match.attendance?.[p.id] || match.attendance[p.id] === "open").length;
   return { coming, maybe, missing, open, total: eligiblePlayers.length };
 }
 
-function getAttendanceStatusClass(status) {
-  switch(status) {
-    case 'coming': return 'coming';
-    case 'maybe': return 'maybe';
-    case 'missing': return 'missing';
-    default: return 'open';
-  }
+function isMatchPast(match) {
+  const today = new Date().toISOString().split('T')[0];
+  return match.date < today;
 }
 
 function getGermanStatus(status) {
@@ -506,12 +307,21 @@ function getGermanStatus(status) {
   }
 }
 
+function getAttendanceStatusClass(status) {
+  switch(status) {
+    case 'coming': return 'coming';
+    case 'maybe': return 'maybe';
+    case 'missing': return 'missing';
+    default: return 'open';
+  }
+}
+
 function calculatePlayerPercentage(playerId) {
-  const trainings = state.trainings;
+  const trainings = state.trainings || [];
   if (trainings.length === 0) return 0;
   let points = 0;
   trainings.forEach(t => {
-    const status = t.attendance[playerId];
+    const status = t.attendance?.[playerId];
     if (status === "present") points += 100;
     else if (status === "excused") points += 25;
   });
@@ -519,71 +329,23 @@ function calculatePlayerPercentage(playerId) {
 }
 
 function getTrainingHistory(playerId) {
-  return state.trainings
-    .filter(t => t.attendance[playerId])
+  return (state.trainings || [])
+    .filter(t => t.attendance?.[playerId])
     .map(t => ({ date: t.date, status: t.attendance[playerId] }))
     .sort((a,b) => b.date.localeCompare(a.date));
 }
 
-function getUpcomingBirthdays(count = 3) {
-  const today = new Date();
-  const players = playersForCurrentTeam();
-  return players
-    .filter(p => p.birthday)
-    .map(p => {
-      const bd = new Date(p.birthday);
-      bd.setFullYear(today.getFullYear());
-      if (bd < today) bd.setFullYear(today.getFullYear() + 1);
-      return { player: p, nextBirthday: bd };
-    })
-    .sort((a, b) => a.nextBirthday - b.nextBirthday)
-    .slice(0, count);
-}
-
-function isYouthTeam(teamName) {
-  const match = teamName.match(/^U(\d+)$/i);
-  if (match) {
-    const number = parseInt(match[1]);
-    return number <= 8;
-  }
-  return false;
-}
-
-function calculateStars(value, testConfig) {
-  if (!value) return 0;
-  const target = testConfig.target;
-  if (testConfig.better === "lower") {
-    if (value <= target * 0.9) return 5;
-    if (value <= target * 0.95) return 4;
-    if (value <= target * 1.0) return 3;
-    if (value <= target * 1.1) return 2;
-    return 1;
-  } else {
-    if (value >= target * 1.1) return 5;
-    if (value >= target * 1.05) return 4;
-    if (value >= target * 1.0) return 3;
-    if (value >= target * 0.95) return 2;
-    return 1;
-  }
-}
-
-function getStarsHtml(stars) {
-  let html = '';
-  for (let i = 1; i <= 5; i++) {
-    if (i <= stars) html += '<span class="star">★</span>';
-    else html += '<span class="star-empty">☆</span>';
-  }
-  return html;
+function getUpcomingBirthdays() {
+  return [];
 }
 
 // ==================== FIREBASE FUNKTIONEN ====================
 async function save() {
   try {
     await db.collection("app").doc("state").set(state);
-    console.log("✅ Daten gespeichert");
+    console.log("✅ Gespeichert");
   } catch (error) {
-    console.error("❌ Fehler beim Speichern:", error);
-    alert("Fehler beim Speichern: " + error.message);
+    console.error("❌ Fehler:", error);
   }
 }
 
@@ -596,11 +358,11 @@ async function loadState() {
     } else {
       await db.collection("app").doc("state").set(seed);
       state = seed;
-      console.log("✅ Erste Datenbank angelegt");
+      console.log("✅ Neue Datenbank");
     }
     render();
   } catch (error) {
-    console.error("❌ Fehler beim Laden:", error);
+    console.error("❌ Lade-Fehler:", error);
     state = seed;
     render();
   }
@@ -610,7 +372,6 @@ function listenState() {
   db.collection("app").doc("state").onSnapshot((doc) => {
     if (doc.exists) {
       state = doc.data();
-      console.log("🔄 Live-Update");
       render();
     }
   });
@@ -623,12 +384,18 @@ function saveSession() {
 
 // ==================== LOGIN ====================
 function login() {
-  const username = document.getElementById("login-username").value.trim();
-  const password = document.getElementById("login-password").value.trim();
-  const user = state.users.find(u => u.username === username && u.password === password);
+  const username = document.getElementById("login-username")?.value.trim();
+  const password = document.getElementById("login-password")?.value.trim();
+  
+  if (!username || !password) {
+    alert("Bitte Benutzername und Passwort eingeben!");
+    return;
+  }
+  
+  const user = state.users?.find(u => u.username === username && u.password === password);
   
   if (!user) {
-    alert("❌ Benutzername oder Passwort falsch!");
+    alert("❌ Benutzername oder Passwort falsch!\n\nTrainer: trainer/trainer\nEltern: z.B. fabian-mustermann/1234");
     return;
   }
   
@@ -662,36 +429,25 @@ function logout() {
 // ==================== VIEW FUNKTIONEN ====================
 function setTeam(team) {
   state.currentTeam = team;
-  state.expandedMatch = null;
   save();
 }
 
 function toggleMatchExpand(matchId) {
-  if (state.expandedMatch === matchId) {
-    state.expandedMatch = null;
-  } else {
-    state.expandedMatch = matchId;
-  }
+  state.expandedMatch = state.expandedMatch === matchId ? null : matchId;
   save();
 }
 
 function updateMatchAttendance(matchId, status) {
   if (!session) return;
   
-  const canVote = session.role === "parent" || (session.role === "admin" && adminView === "trainerkind") || (session.role === "coach" && coachView === "coachkind");
-  if (!canVote) {
-    alert("Nur im Elternbereich kannst du abstimmen!");
-    return;
-  }
-  
   let playerId;
   if (session.role === "parent") playerId = session.playerId;
-  else if (session.role === "admin" && adminView === "trainerkind") playerId = session.childId;
-  else if (session.role === "coach" && coachView === "coachkind") playerId = session.childId;
   else return;
   
-  const match = state.matches.find(m => m.id === matchId);
+  const match = state.matches?.find(m => m.id === matchId);
   if (!match) return;
+  
+  if (!match.attendance) match.attendance = {};
   
   if (match.attendance[playerId] === status) {
     match.attendance[playerId] = "open";
@@ -704,20 +460,18 @@ function updateMatchAttendance(matchId, status) {
 
 function finishTraining() {
   const dateInput = document.getElementById("training-date");
-  const date = dateInput.value;
+  const date = dateInput?.value;
   if (!date) { alert("Bitte Datum auswählen"); return; }
   
-  const existingTraining = state.trainings.find(t => t.date === date);
-  if (existingTraining && !confirm(`Für den ${date} gibt es bereits ein Training. Überschreiben?`)) return;
-  
   const trainingAttendance = {};
-  state.players.forEach(p => {
+  state.players?.forEach(p => {
     const radios = document.getElementsByName(`tr-${p.id}`);
     let selected = null;
     radios.forEach(r => { if (r.checked) selected = r.value; });
     trainingAttendance[p.id] = selected || "missing";
   });
   
+  if (!state.trainings) state.trainings = [];
   state.trainings = state.trainings.filter(t => t.date !== date);
   state.trainings.push({ id: "t" + Date.now(), date, attendance: trainingAttendance });
   
@@ -750,18 +504,10 @@ function setParentView(view) {
   render();
 }
 
-function setTrainerKindView(view) {
-  trainerKindView = view;
-  render();
-}
-
-function setCoachKindView(view) {
-  coachKindView = view;
-  render();
-}
-
 // ==================== RENDER FUNKTIONEN ====================
 function renderHeader() {
+  if (!session) return '';
+  
   const roleLabels = { admin: "Haupttrainer", coach: "Co-Trainer", parent: "Eltern" };
   const roleName = session.role === "parent" ? 
     `${findPlayer(session.playerId)?.name || ""} (Eltern)` : 
@@ -771,14 +517,6 @@ function renderHeader() {
     `<img src="${state.clubLogo}" alt="Vereinslogo">` : 
     '<span>⚽</span>';
   
-  let notificationBadge = '';
-  if (session.role === "admin" && state.attendanceRequests) {
-    const pendingRequests = state.attendanceRequests.filter(r => r.status === 'pending').length;
-    if (pendingRequests > 0) {
-      notificationBadge = `<span class="notification-badge">${pendingRequests} neu</span>`;
-    }
-  }
-  
   return `
     <div class="header">
       <div class="brand">
@@ -786,13 +524,13 @@ function renderHeader() {
         <div>
           <small>USV St Andrä Wördern</small>
           <strong>Team App</strong>
-          <div class="role-badge">${roleName} ${notificationBadge}</div>
+          <div class="role-badge">${roleName}</div>
         </div>
       </div>
       ${session.role !== "parent" ? `
         <div class="tabs">
-          <button class="pill ${state.currentTeam === state.teams.main ? 'active' : 'alt'}" onclick="setTeam('${state.teams.main}')">${state.teams.main}</button>
-          ${state.teams.showSecond ? `<button class="pill ${state.currentTeam === state.teams.second ? 'active' : 'alt'}" onclick="setTeam('${state.teams.second}')">${state.teams.second}</button>` : ''}
+          <button class="pill ${state.currentTeam === state.teams?.main ? 'active' : 'alt'}" onclick="setTeam('${state.teams?.main}')">${state.teams?.main}</button>
+          ${state.teams?.showSecond ? `<button class="pill ${state.currentTeam === state.teams?.second ? 'active' : 'alt'}" onclick="setTeam('${state.teams?.second}')">${state.teams?.second}</button>` : ''}
           <button class="pill ${state.currentTeam === 'ALLE' ? 'active' : 'alt'}" onclick="setTeam('ALLE')">ALLE</button>
         </div>
       ` : ''}
@@ -811,19 +549,20 @@ function renderLogin() {
             ${state.clubLogo ? `<img src="${state.clubLogo}" alt="Vereinslogo">` : '<span>⚽</span>'}
           </div>
           <h2>USV St Andrä Wördern</h2>
-          <p style="color: var(--muted);">Trainer-App</p>
+          <p style="color: var(--muted);">Team App</p>
         </div>
         
         <label>Benutzername</label>
-        <input id="login-username" type="text" placeholder="z.B. fabian-mustermann" value="">
+        <input id="login-username" type="text" placeholder="z.B. trainer" value="trainer">
         
         <label>Passwort</label>
-        <input id="login-password" type="password" placeholder="Passwort" value="">
+        <input id="login-password" type="password" placeholder="Passwort" value="trainer">
         
         <button class="btn primary" style="width: 100%; padding: 14px; margin-top: 16px;" onclick="login()">Einloggen</button>
         
         <div style="margin-top: 24px; padding: 16px; background: #f5f9f6; border-radius: 12px; font-size: 13px; text-align: center;">
-          <strong>Erstlogin-Passwort: 1234 - bitte ändern!</strong>
+          <strong>Trainer:</strong> trainer/trainer<br>
+          <strong>Eltern:</strong> Benutzername = Spielername (z.B. fabian-mustermann) / 1234
         </div>
       </div>
     </div>
@@ -833,16 +572,6 @@ function renderLogin() {
 function renderDashboard() {
   const players = playersForCurrentTeam();
   const matches = matchesForCurrentTeam().filter(m => m.date >= new Date().toISOString().split('T')[0]).slice(0, 3);
-  const upcomingBirthdays = getUpcomingBirthdays(3);
-  
-  const topScorers = [...players].filter(p => p.goals > 0).sort((a,b) => b.goals - a.goals);
-  const top3Scorers = topScorers.slice(0, 3);
-  
-  const topAssists = [...players].filter(p => p.assists > 0).sort((a,b) => b.assists - a.assists);
-  const top3Assists = topAssists.slice(0, 3);
-  
-  const trainingStats = [...players].sort((a,b) => calculatePlayerPercentage(b.id) - calculatePlayerPercentage(a.id));
-  const top3Training = trainingStats.slice(0, 3);
   
   return `
     <div class="section">
@@ -865,153 +594,55 @@ function renderDashboard() {
       </div>
       
       <div class="card">
-        <h3>🎂 Nächste Geburtstage</h3>
-        ${upcomingBirthdays.map(b => {
-          const days = Math.ceil((b.nextBirthday - new Date()) / (1000 * 60 * 60 * 24));
-          return `
-            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--line);">
-              <span>${b.player.name}</span>
-              <span style="font-weight: 600;">${b.player.birthday} (in ${days} Tagen)</span>
-            </div>
-          `;
-        }).join('')}
-        ${upcomingBirthdays.length === 0 ? '<p class="small">Keine anstehenden Geburtstage</p>' : ''}
-      </div>
-      
-      <div class="card">
         <h3>⚽ Torschützen</h3>
-        <h4 style="margin: 10px 0 5px; font-size: 14px;">Top 3</h4>
-        ${top3Scorers.map(p => `
-          <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--line);">
+        ${players.filter(p => p.goals > 0).sort((a,b) => b.goals - a.goals).slice(0, 3).map(p => `
+          <div style="display: flex; justify-content: space-between; padding: 8px 0;">
             <span>${p.name}</span>
             <span style="font-weight: 600; color: var(--green);">${p.goals} Tore</span>
           </div>
         `).join('')}
-        ${topScorers.length === 0 ? '<p class="small">Keine Tore erzielt</p>' : ''}
-      </div>
-      
-      <div class="card">
-        <h3>🎯 Assists</h3>
-        <h4 style="margin: 10px 0 5px; font-size: 14px;">Top 3</h4>
-        ${top3Assists.map(p => `
-          <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--line);">
-            <span>${p.name}</span>
-            <span style="font-weight: 600; color: var(--blue);">${p.assists} Assists</span>
-          </div>
-        `).join('')}
-        ${topAssists.length === 0 ? '<p class="small">Keine Assists</p>' : ''}
-      </div>
-      
-      <div class="card">
-        <h3>🏋️ Trainingsbeteiligung</h3>
-        <h4 style="margin: 10px 0 5px; font-size: 14px;">Top 3</h4>
-        ${top3Training.map(p => {
-          const percent = calculatePlayerPercentage(p.id);
-          return `
-            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--line);">
-              <span>${p.name}</span>
-              <span style="font-weight: 600; color: var(--green);">${percent}%</span>
-            </div>
-          `;
-        }).join('')}
+        ${players.filter(p => p.goals > 0).length === 0 ? '<p class="small">Keine Tore</p>' : ''}
       </div>
     </div>
   `;
 }
 
 function renderCalendar() {
-  let matches;
-  let playerId;
-  
-  const isParentMode = session.role === "parent" || (session.role === "admin" && adminView === "trainerkind") || (session.role === "coach" && coachView === "coachkind");
-  
-  if (isParentMode) {
-    playerId = session.role === "parent" ? session.playerId : (session.role === "admin" ? session.childId : session.childId);
-    matches = getVisibleMatchesForParent(playerId);
-  } else {
-    matches = matchesForCurrentTeam();
-  }
-  
-  const byMonth = {};
-  matches.forEach(m => {
-    if (!byMonth[m.month]) byMonth[m.month] = [];
-    byMonth[m.month].push(m);
-  });
+  const matches = matchesForCurrentTeam();
   
   return `
     <div class="section">
-      ${Object.keys(byMonth).map(month => `
-        <div class="month">${month}</div>
-        ${byMonth[month].map(m => {
-          const d = formatDate(m.date);
-          const c = countAttendance(m);
-          const isExpanded = state.expandedMatch === m.id;
-          const myStatus = isParentMode && playerId ? m.attendance[playerId] : null;
-          const showOpponents = isYouthTeam(m.team) && m.opponents && m.opponents.length > 0;
-          const isPast = isMatchPast(m);
-          
-          const matchClass = isPast ? 'match past' : 'match';
-          
-          return `
-            <div class="${matchClass} ${isExpanded ? 'expanded' : ''}" onclick="toggleMatchExpand('${m.id}')">
-              <div class="datebox">
-                <div class="day">${d.day}</div>
-                <div class="mon">${d.mon}</div>
+      ${matches.map(m => {
+        const d = formatDate(m.date);
+        const c = countAttendance(m);
+        const isExpanded = state.expandedMatch === m.id;
+        const isPast = isMatchPast(m);
+        
+        return `
+          <div class="match ${isPast ? 'past' : ''} ${isExpanded ? 'expanded' : ''}" onclick="toggleMatchExpand('${m.id}')">
+            <div class="datebox">
+              <div class="day">${d.day}</div>
+              <div class="mon">${d.mon}</div>
+            </div>
+            <div class="info">
+              <div class="badges">
+                <span class="badge ${m.team === state.teams?.main ? 'team1' : 'team2'}">${m.team}</span>
               </div>
-              <div class="info">
-                <div class="badges">
-                  <span class="badge ${m.team === state.teams.main ? 'team1' : 'team2'}">${m.team}</span>
-                  ${isPast ? '<span class="badge" style="background: #888; color: white;">Abgeschlossen</span>' : ''}
-                </div>
-                <div class="name">${m.title}</div>
-                <div class="time">${m.time} · ${m.location}</div>
-                <div class="small mt-2">Treffpunkt: ${m.meeting}</div>
-                
-                ${showOpponents ? `
-                  <div class="opponents-list">
-                    <h4>Teilnehmende Teams:</h4>
-                    <div class="opponents-items">
-                      ${m.opponents.map(opp => `<span class="opponent-tag">${opp}</span>`).join('')}
-                    </div>
-                  </div>
-                ` : ''}
-                
-                <div class="attendance-overview" style="margin-top: 10px;">
-                  <div class="attendance-item coming">
-                    <div class="count">${c.coming}</div>
-                    <div class="label">Kommen</div>
-                  </div>
-                  <div class="attendance-item maybe">
-                    <div class="count">${c.maybe}</div>
-                    <div class="label">Vielleicht</div>
-                  </div>
-                  <div class="attendance-item missing">
-                    <div class="count">${c.missing}</div>
-                    <div class="label">Fehlen</div>
-                  </div>
-                  <div class="attendance-item open">
-                    <div class="count">${c.open}</div>
-                    <div class="label">Offen</div>
-                  </div>
-                </div>
-                <div class="small" style="text-align: center; margin-top: 4px;">Gesamt: ${c.total} Spieler</div>
-                
-                ${isParentMode && !isPast ? `
-                  <div class="attendance-buttons" onclick="event.stopPropagation()">
-                    <button class="btn ${myStatus === 'coming' ? 'yes' : 'secondary'}" onclick="updateMatchAttendance('${m.id}','coming')">✓ Kommen</button>
-                    <button class="btn ${myStatus === 'maybe' ? 'maybe' : 'secondary'}" onclick="updateMatchAttendance('${m.id}','maybe')">? Vielleicht</button>
-                    <button class="btn ${myStatus === 'missing' ? 'no' : 'secondary'}" onclick="updateMatchAttendance('${m.id}','missing')">✗ Nicht</button>
-                  </div>
-                ` : ''}
-                
-                ${m.result ? `<div style="margin-top: 8px; font-weight: 600;">Ergebnis: ${m.result}</div>` : ''}
+              <div class="name">${m.title}</div>
+              <div class="time">${m.time} · ${m.location}</div>
+              
+              <div class="attendance-overview">
+                <div class="attendance-item coming"><div class="count">${c.coming}</div><div class="label">Kommen</div></div>
+                <div class="attendance-item maybe"><div class="count">${c.maybe}</div><div class="label">Vielleicht</div></div>
+                <div class="attendance-item missing"><div class="count">${c.missing}</div><div class="label">Fehlen</div></div>
+                <div class="attendance-item open"><div class="count">${c.open}</div><div class="label">Offen</div></div>
               </div>
             </div>
-          `;
-        }).join('')}
-      `).join('')}
+          </div>
+        `;
+      }).join('')}
       
-      ${matches.length === 0 ? '<p class="small" style="text-align: center;">Keine Spiele vorhanden</p>' : ''}
+      ${matches.length === 0 ? '<p class="small" style="text-align: center;">Keine Spiele</p>' : ''}
     </div>
   `;
 }
@@ -1024,64 +655,45 @@ function renderTraining() {
     <div class="section">
       <div class="card">
         <h3>🏋️ Training erfassen</h3>
-        
         <label>Datum</label>
         <input id="training-date" type="date" value="${today}">
-        
-        <div style="margin: 16px 0; padding: 12px; background: #f0f7f2; border-radius: 12px;">
-          <div style="display: flex; gap: 12px; justify-content: space-around; font-size: 13px;">
-            <span style="color: #2e9b58;">✓ anwesend = 100%</span>
-            <span style="color: #f3a43b;">F entschuldigt = 25%</span>
-            <span style="color: #d45d4a;">X fehlt = 0%</span>
-          </div>
-        </div>
         
         ${players.map(p => `
           <div class="training-player">
             <span style="font-weight: 600;">${p.name}</span>
             <div class="training-options">
-              <input type="radio" name="tr-${p.id}" value="present" id="${p.id}-present">
+              <input type="radio" name="tr-${p.id}" value="present" id="${p.id}-present" checked>
               <label for="${p.id}-present">✓</label>
               <input type="radio" name="tr-${p.id}" value="excused" id="${p.id}-excused">
               <label for="${p.id}-excused">F</label>
-              <input type="radio" name="tr-${p.id}" value="missing" id="${p.id}-missing" checked>
+              <input type="radio" name="tr-${p.id}" value="missing" id="${p.id}-missing">
               <label for="${p.id}-missing">X</label>
             </div>
           </div>
         `).join('')}
         
-        <div style="display: flex; gap: 12px; margin-top: 24px;">
-          <button class="btn primary" style="flex: 2;" onclick="finishTraining()">Training speichern</button>
-          <button class="btn secondary" style="flex: 1;" onclick="setTodayForTraining()">Heute</button>
-        </div>
+        <button class="btn primary" style="width: 100%; margin-top: 16px;" onclick="finishTraining()">Training speichern</button>
       </div>
     </div>
   `;
 }
 
 function renderTrainingHistory() {
-  const trainings = [...state.trainings].sort((a,b) => b.date.localeCompare(a.date));
+  const trainings = [...(state.trainings || [])].sort((a,b) => b.date.localeCompare(a.date));
   
   return `
     <div class="section">
       <div class="card">
         <h3>📋 Trainingsübersicht</h3>
-        ${trainings.length > 0 ? trainings.map(t => {
-          const present = state.players.filter(p => t.attendance[p.id] === "present").map(p => p.name).join(', ');
-          const excused = state.players.filter(p => t.attendance[p.id] === "excused").map(p => p.name).join(', ');
-          const missing = state.players.filter(p => t.attendance[p.id] === "missing").map(p => p.name).join(', ');
-          
+        ${trainings.map(t => {
+          const present = state.players?.filter(p => t.attendance?.[p.id] === "present").map(p => p.name).join(', ');
           return `
-            <div style="margin-bottom: 16px; padding: 12px; background: #f5f9f6; border-radius: 12px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <div style="font-weight: 600;">📅 ${t.date}</div>
-              </div>
-              ${present ? `<div style="color: #2e9b58; margin: 4px 0;">✓ Anwesend: ${present}</div>` : ''}
-              ${excused ? `<div style="color: #f3a43b; margin: 4px 0;">F Entschuldigt: ${excused}</div>` : ''}
-              ${missing ? `<div style="color: #d45d4a; margin: 4px 0;">✗ Unentschuldigt: ${missing}</div>` : ''}
+            <div style="padding: 12px; background: #f5f9f6; border-radius: 12px; margin-bottom: 8px;">
+              <div style="font-weight: 600;">📅 ${t.date}</div>
+              ${present ? `<div style="color: #2e9b58;">✓ Anwesend: ${present}</div>` : ''}
             </div>
           `;
-        }).join('') : '<p class="small">Noch keine Trainings erfasst</p>'}
+        }).join('')}
       </div>
     </div>
   `;
@@ -1092,24 +704,13 @@ function renderPlayers() {
   const selectedPlayer = findPlayer(state.selectedPlayerId) || players[0];
   
   if (!selectedPlayer) {
-    return `
-      <div class="section">
-        <div class="card">
-          <h3>👥 Spieler</h3>
-          <p class="small">Keine Spieler vorhanden</p>
-        </div>
-      </div>
-    `;
+    return `<div class="section"><div class="card"><h3>Keine Spieler</h3></div></div>`;
   }
-  
-  const parentUser = findUserForPlayer(selectedPlayer.id);
-  const history = getTrainingHistory(selectedPlayer.id);
   
   return `
     <div class="section">
       <div class="card">
-        <h3>👥 Spieler verwalten</h3>
-        
+        <h3>👥 Spieler</h3>
         <div class="player-list">
           ${players.map(p => `
             <button class="${state.selectedPlayerId === p.id ? 'active' : ''}" onclick="setSelectedPlayer('${p.id}')">
@@ -1118,76 +719,85 @@ function renderPlayers() {
           `).join('')}
         </div>
         
-        <div>
-          <h4>${selectedPlayer.name}</h4>
-          
-          <div class="grid2">
-            <div>
-              <label>Geburtstag</label>
-              <input id="player-birthday" type="date" value="${selectedPlayer.birthday || ''}">
-            </div>
-            <div>
-              <label>Position</label>
-              <input id="player-position" value="${selectedPlayer.position || ''}">
-            </div>
-            <div>
-              <label>Trikotnummer</label>
-              <input id="player-jersey" type="number" value="${selectedPlayer.jersey || 0}">
-            </div>
-            <div>
-              <label>Eltern Login</label>
-              <input value="${parentUser ? parentUser.username : '-'}" disabled>
-            </div>
-          </div>
-          
-          <label>Trainer-Notiz</label>
-          <textarea id="player-note" rows="3">${selectedPlayer.note || ''}</textarea>
-          
-          <div class="grid3" style="margin-top: 16px;">
-            <div class="stat"><strong>${selectedPlayer.goals || 0}</strong><span class="small">Tore</span></div>
-            <div class="stat"><strong>${selectedPlayer.assists || 0}</strong><span class="small">Assists</span></div>
-            <div class="stat"><strong>${calculatePlayerPercentage(selectedPlayer.id)}%</strong><span class="small">Training</span></div>
-          </div>
-          
-          <div style="display: flex; gap: 12px; margin-top: 16px;">
-            <button class="btn primary" style="flex: 2;" onclick="savePlayerData()">💾 Speichern</button>
-          </div>
-          
-          ${history.length > 0 ? `
-            <div style="margin-top: 20px;">
-              <h5>📅 Training-History</h5>
-              ${history.map(h => {
-                const statusClass = h.status === 'present' ? 'history-present' : h.status === 'excused' ? 'history-excused' : 'history-missing';
-                const statusText = h.status === 'present' ? '✓ anwesend' : h.status === 'excused' ? 'F entschuldigt' : '✗ unentschuldigt';
-                return `
-                  <div class="history-item ${statusClass}">
-                    <span style="font-weight: 600;">${h.date}</span> - ${statusText}
-                  </div>
-                `;
-              }).join('')}
-            </div>
-          ` : ''}
+        <h4>${selectedPlayer.name}</h4>
+        <div class="grid2">
+          <div><label>Geburtstag</label><input value="${selectedPlayer.birthday || ''}"></div>
+          <div><label>Position</label><input value="${selectedPlayer.position || ''}"></div>
+        </div>
+        <div class="grid3">
+          <div class="stat"><strong>${selectedPlayer.goals || 0}</strong><span class="small">Tore</span></div>
+          <div class="stat"><strong>${selectedPlayer.assists || 0}</strong><span class="small">Assists</span></div>
+          <div class="stat"><strong>${calculatePlayerPercentage(selectedPlayer.id)}%</strong><span class="small">Training</span></div>
         </div>
       </div>
     </div>
   `;
 }
 
-function savePlayerData() {
-  const playerId = state.selectedPlayerId;
-  const player = findPlayer(playerId);
-  if (!player) return;
+function renderParentView() {
+  const player = findPlayer(session?.playerId);
+  if (!player) return `<div class="section">Fehler: Kein Spieler</div>`;
   
-  player.birthday = document.getElementById(`player-birthday`).value;
-  player.position = document.getElementById(`player-position`).value;
-  player.jersey = parseInt(document.getElementById(`player-jersey`).value) || 0;
-  player.note = document.getElementById(`player-note`).value;
+  const upcomingMatches = (state.matches || []).filter(m => m.date >= new Date().toISOString().split('T')[0]).slice(0, 3);
+  const percent = calculatePlayerPercentage(player.id);
   
-  save();
-  alert("✅ Spielerdaten gespeichert!");
+  return `
+    <div class="section">
+      <div class="tabs" style="margin-bottom: 16px;">
+        <button class="pill ${parentView === 'kind' ? 'active' : 'alt'}" onclick="setParentView('kind')">👤 Mein Kind</button>
+        <button class="pill ${parentView === 'calendar' ? 'active' : 'alt'}" onclick="setParentView('calendar')">📅 Spiele</button>
+        <button class="pill ${parentView === 'history' ? 'active' : 'alt'}" onclick="setParentView('history')">📋 Training</button>
+      </div>
+      
+      ${parentView === 'kind' ? `
+        <div class="card">
+          <h3>👤 ${player.name}</h3>
+          <div class="current-stats">
+            <div class="stat-card"><div class="value">${player.goals || 0}</div><div class="label">Tore</div></div>
+            <div class="stat-card"><div class="value">${player.assists || 0}</div><div class="label">Assists</div></div>
+          </div>
+          
+          <h4 style="margin: 20px 0 12px;">📅 Anstehende Spiele</h4>
+          ${upcomingMatches.map(match => {
+            const status = match.attendance?.[player.id] || 'open';
+            const statusClass = getAttendanceStatusClass(status);
+            const statusText = status === 'coming' ? '✓ Du kommst' : status === 'maybe' ? '? Vielleicht' : status === 'missing' ? '✗ Du fehlst' : '○ Offen';
+            
+            return `
+              <div class="next-match-card ${statusClass}" style="margin-bottom: 12px;">
+                <div class="small">${match.date}</div>
+                <div class="title">${match.title}</div>
+                <div class="small">${statusText}</div>
+                <div class="attendance-buttons" onclick="event.stopPropagation()">
+                  <button class="btn ${status === 'coming' ? 'yes' : 'secondary'}" onclick="updateMatchAttendance('${match.id}','coming')">✓</button>
+                  <button class="btn ${status === 'maybe' ? 'maybe' : 'secondary'}" onclick="updateMatchAttendance('${match.id}','maybe')">?</button>
+                  <button class="btn ${status === 'missing' ? 'no' : 'secondary'}" onclick="updateMatchAttendance('${match.id}','missing')">✗</button>
+                </div>
+              </div>
+            `;
+          }).join('')}
+          
+          <div class="stat"><strong>${percent}%</strong><br><span class="small">Training</span></div>
+        </div>
+      ` : parentView === 'calendar' ? renderCalendar() : renderTrainingHistory()}
+    </div>
+  `;
+}
+
+function renderCoachView() {
+  let content = '';
+  if (coachView === "dashboard") content = renderDashboard();
+  else if (coachView === "calendar") content = renderCalendar();
+  else if (coachView === "training") content = renderTraining();
+  else if (coachView === "traininghistory") content = renderTrainingHistory();
+  else content = renderDashboard();
+  
+  return `<div class="section">${content}</div>`;
 }
 
 function renderNav() {
+  if (!session) return '';
+  
   if (session.role === "parent") {
     return `
       <div class="nav">
@@ -1195,7 +805,6 @@ function renderNav() {
           <button class="${parentView === 'kind' ? 'active' : ''}" onclick="setParentView('kind')">👤</button>
           <button class="${parentView === 'calendar' ? 'active' : ''}" onclick="setParentView('calendar')">📅</button>
           <button class="${parentView === 'history' ? 'active' : ''}" onclick="setParentView('history')">📋</button>
-          <button class="${parentView === 'password' ? 'active' : ''}" onclick="setParentView('password')">🔑</button>
           <button onclick="logout()">🚪</button>
         </div>
       </div>
@@ -1208,7 +817,6 @@ function renderNav() {
           <button class="${coachView === 'calendar' ? 'active' : ''}" onclick="setCoachView('calendar')">📅</button>
           <button class="${coachView === 'training' ? 'active' : ''}" onclick="setCoachView('training')">🏋️</button>
           <button class="${coachView === 'traininghistory' ? 'active' : ''}" onclick="setCoachView('traininghistory')">📋</button>
-          <button class="${coachView === 'password' ? 'active' : ''}" onclick="setCoachView('password')">🔑</button>
           <button onclick="logout()">🚪</button>
         </div>
       </div>
@@ -1222,161 +830,11 @@ function renderNav() {
           <button class="${adminView === 'training' ? 'active' : ''}" onclick="setAdminView('training')">🏋️</button>
           <button class="${adminView === 'traininghistory' ? 'active' : ''}" onclick="setAdminView('traininghistory')">📋</button>
           <button class="${adminView === 'players' ? 'active' : ''}" onclick="setAdminView('players')">👥</button>
-          <button class="${adminView === 'config' ? 'active' : ''}" onclick="setAdminView('config')">⚙️</button>
-          <button class="${adminView === 'password' ? 'active' : ''}" onclick="setAdminView('password')">🔑</button>
           <button onclick="logout()">🚪</button>
         </div>
       </div>
     `;
   }
-}
-
-function renderConfig() {
-  return `
-    <div class="section">
-      <div class="card">
-        <h3>⚙️ Konfiguration</h3>
-        <p>Hier kommen die Einstellungen rein...</p>
-      </div>
-    </div>
-  `;
-}
-
-function renderParentView() {
-  const player = findPlayer(session.playerId);
-  if (!player) return `<div class="section">Fehler: Kein Spieler gefunden</div>`;
-  
-  const upcomingMatches = getUpcomingMatchesForParent(player.id);
-  const history = getTrainingHistory(player.id);
-  const percent = calculatePlayerPercentage(player.id);
-  
-  return `
-    <div class="section">
-      <div class="tabs" style="margin-bottom: 16px;">
-        <button class="pill ${parentView === 'kind' ? 'active' : 'alt'}" onclick="setParentView('kind')">👤 Mein Kind</button>
-        <button class="pill ${parentView === 'calendar' ? 'active' : 'alt'}" onclick="setParentView('calendar')">📅 Spiele</button>
-        <button class="pill ${parentView === 'history' ? 'active' : 'alt'}" onclick="setParentView('history')">📋 Training</button>
-        <button class="pill ${parentView === 'password' ? 'active' : 'alt'}" onclick="setParentView('password')">🔑 Passwort</button>
-      </div>
-      
-      ${parentView === 'kind' ? `
-        <div class="card">
-          <h3>👤 ${player.name}</h3>
-          
-          <div class="current-stats">
-            <div class="stat-card">
-              <div class="value">${player.goals || 0}</div>
-              <div class="label">Tore</div>
-            </div>
-            <div class="stat-card">
-              <div class="value">${player.assists || 0}</div>
-              <div class="label">Assists</div>
-            </div>
-          </div>
-          
-          <h4 style="margin: 20px 0 12px 0;">📅 Anstehende Spiele</h4>
-          ${upcomingMatches.length > 0 ? upcomingMatches.map(match => {
-            const status = match.attendance[player.id] || 'open';
-            const statusClass = getAttendanceStatusClass(status);
-            const statusText = status === 'coming' ? '✓ Du kommst' : status === 'maybe' ? '? Vielleicht' : status === 'missing' ? '✗ Du fehlst' : '○ Nicht abgestimmt';
-            
-            return `
-              <div class="next-match-card ${statusClass}" style="margin-bottom: 12px;">
-                <div class="small">${match.date} · ${match.time}</div>
-                <div class="title">${match.title}</div>
-                <div class="details">${match.location}</div>
-                <div class="small" style="margin-top: 4px;">${statusText}</div>
-                <div class="small" style="margin-top: 4px;">Treffpunkt: ${match.meeting}</div>
-              </div>
-            `;
-          }).join('') : '<div class="card" style="text-align: center; padding: 20px;">Keine anstehenden Spiele</div>'}
-          
-          <div style="display: flex; gap: 16px; margin: 20px 0;">
-            <div class="stat" style="flex: 1;"><strong>${percent}%</strong><br><span class="small">Training</span></div>
-          </div>
-          
-          <div style="margin-top: 16px;">
-            <div class="listline">Geburtstag: ${player.birthday || '-'}</div>
-            <div class="listline">Position: ${player.position || '-'}</div>
-            <div class="listline">Trikot: ${player.jersey || '-'}</div>
-          </div>
-        </div>
-      ` : parentView === 'calendar' ? renderCalendar() : 
-         parentView === 'history' ? `
-        <div class="card">
-          <h3>📋 Training-History</h3>
-          ${history.length > 0 ? history.map(h => {
-            const statusClass = h.status === 'present' ? 'history-present' : h.status === 'excused' ? 'history-excused' : 'history-missing';
-            const statusText = h.status === 'present' ? '✓ anwesend' : h.status === 'excused' ? 'F entschuldigt' : '✗ unentschuldigt';
-            return `
-              <div class="history-item ${statusClass}">
-                <span style="font-weight: 600;">${h.date}</span> - ${statusText}
-              </div>
-            `;
-          }).join('') : '<p class="small">Noch keine Trainings erfasst</p>'}
-        </div>
-      ` : `
-        <div class="card">
-          <h3>🔑 Passwort ändern</h3>
-          <label>Altes Passwort</label>
-          <input id="old-password" type="password">
-          <label>Neues Passwort</label>
-          <input id="new-password" type="password">
-          <label>Passwort wiederholen</label>
-          <input id="confirm-password" type="password">
-          <button class="btn primary" style="width: 100%; margin-top: 16px;" onclick="changePassword()">Passwort ändern</button>
-        </div>
-      `}
-    </div>
-  `;
-}
-
-function changePassword() {
-  const oldPw = document.getElementById("old-password").value;
-  const newPw = document.getElementById("new-password").value;
-  const confirmPw = document.getElementById("confirm-password").value;
-  
-  if (session.password !== oldPw) { alert("Altes Passwort ist falsch!"); return; }
-  if (newPw.length < 4) { alert("Passwort muss mindestens 4 Zeichen lang sein!"); return; }
-  if (newPw !== confirmPw) { alert("Neue Passwörter stimmen nicht überein!"); return; }
-  
-  session.password = newPw;
-  const user = state.users.find(u => u.id === session.id);
-  if (user) user.password = newPw;
-  
-  if (user.role === "parent") {
-    localStorage.setItem("last-password", newPw);
-  }
-  
-  save();
-  saveSession();
-  alert("✅ Passwort wurde geändert!");
-}
-
-function renderCoachView() {
-  let content = '';
-  
-  if (coachView === "dashboard") content += renderDashboard();
-  else if (coachView === "calendar") content += renderCalendar();
-  else if (coachView === "training") content += renderTraining();
-  else if (coachView === "traininghistory") content += renderTrainingHistory();
-  else if (coachView === "password") content += `
-    <div class="section">
-      <div class="card">
-        <h3>🔑 Passwort ändern</h3>
-        <label>Altes Passwort</label>
-        <input id="old-password" type="password">
-        <label>Neues Passwort</label>
-        <input id="new-password" type="password">
-        <label>Passwort wiederholen</label>
-        <input id="confirm-password" type="password">
-        <button class="btn primary" style="width: 100%; margin-top: 16px;" onclick="changePassword()">Passwort ändern</button>
-      </div>
-    </div>
-  `;
-  else content += renderDashboard();
-  
-  return `<div class="section">${content}</div>`;
 }
 
 // ==================== RENDER ====================
@@ -1400,41 +858,26 @@ function render() {
     else if (adminView === "training") content += renderTraining();
     else if (adminView === "traininghistory") content += renderTrainingHistory();
     else if (adminView === "players") content += renderPlayers();
-    else if (adminView === "config") content += renderConfig();
-    else if (adminView === "password") content += `
-      <div class="section">
-        <div class="card">
-          <h3>🔑 Passwort ändern</h3>
-          <label>Altes Passwort</label>
-          <input id="old-password" type="password">
-          <label>Neues Passwort</label>
-          <input id="new-password" type="password">
-          <label>Passwort wiederholen</label>
-          <input id="confirm-password" type="password">
-          <button class="btn primary" style="width: 100%; margin-top: 16px;" onclick="changePassword()">Passwort ändern</button>
-        </div>
-      </div>
-    `;
     else content += renderDashboard();
   }
   
   content += renderNav();
   app.innerHTML = content;
   
-  if ((session.role === "admin" && adminView === "training") || (session.role === "coach" && coachView === "training")) {
+  if (adminView === "training" || coachView === "training") {
     setTodayForTraining();
   }
 }
 
 // ==================== START ====================
 window.startApp = async function() {
-  console.log("🚀 App wird gestartet...");
+  console.log("🚀 App startet...");
   await loadState();
   listenState();
   render();
 }
 
-// Globale Funktionen verfügbar machen
+// Globale Funktionen
 window.login = login;
 window.logout = logout;
 window.setTeam = setTeam;
@@ -1443,25 +886,18 @@ window.updateMatchAttendance = updateMatchAttendance;
 window.finishTraining = finishTraining;
 window.setTodayForTraining = setTodayForTraining;
 window.setSelectedPlayer = setSelectedPlayer;
-window.savePlayerData = savePlayerData;
 window.setAdminView = setAdminView;
 window.setCoachView = setCoachView;
 window.setParentView = setParentView;
-window.setTrainerKindView = setTrainerKindView;
-window.setCoachKindView = setCoachKindView;
-window.changePassword = changePassword;
 
-// App starten
+// Start
 setTimeout(() => {
-  if (window.startApp) {
-    window.startApp();
-  }
+  if (window.startApp) window.startApp();
 }, 100);
 </script>
 
-<!-- ===== App Footer ===== -->
-<div style="text-align:center;margin-top:20px;font-size:12px;color:#888;padding:10px;">
-Stephan Köck – Relais 2026 – Version 1.0
+<div style="text-align: center; padding: 10px; font-size: 12px; color: #888;">
+Stephan Köck – Version 1.0
 </div>
 
 </body>
