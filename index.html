@@ -1670,7 +1670,7 @@ function renderHeader() {
 
 function renderFooter() {
   return `
-    <div class="footer">
+    <div class="footer" style="margin-bottom: 70px;">  <!-- Platz für Navigation -->
       <div class="copyright">
         © Trainer Stephan Köck, Release 2026 Version 1.0
       </div>
@@ -3658,8 +3658,10 @@ function render() {
     else content += renderDashboard();
   }
   
-  content += renderFooter();
-  content += renderNav();
+  // WICHTIG: Erst Navigation, dann Footer!
+  content += renderNav();     // Navigation zuerst (fixed am unteren Rand)
+  content += renderFooter();  // Footer danach (kommt unter die Navigation)
+  
   app.innerHTML = content;
   
   if ((session.role === "admin" && adminView === "training") || 
