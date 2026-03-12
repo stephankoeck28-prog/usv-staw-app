@@ -4,6 +4,9 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>USV St Andrä Wördern - Team App</title>
+<!-- PWA Manifest -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#156d3b">
 <style>
 :root {
   --green: #156d3b;
@@ -59,7 +62,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .role-badge { background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 20px; font-size: 11px; margin-top: 4px; display: inline-block; }
 
 /* Footer */
-.footer { background: linear-gradient(180deg, #1f7f47, var(--green)); color: white; padding: 12px 16px; border-top-left-radius: 24px; border-top-right-radius: 24px; text-align: center; font-size: 12px; width: 100%; }
+.footer { background: linear-gradient(180deg, #1f7f47, var(--green)); color: white; padding: 12px 16px; border-top-left-radius: 24px; border-top-right-radius: 24px; text-align: center; font-size: 12px; width: 100%; margin-top: 20px; }
 .footer .copyright { opacity: 0.9; letter-spacing: 0.5px; }
 
 /* Tabs */
@@ -318,6 +321,11 @@ let deferredPrompt;
 let isAppInstalled = false;
 
 // Prüfen ob App bereits installiert ist
+if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+  isAppInstalled = true;
+  console.log('✅ App läuft im installierten Modus');
+}
+
 window.addEventListener('appinstalled', (evt) => {
   isAppInstalled = true;
   console.log('✅ App wurde installiert');
@@ -1685,7 +1693,7 @@ function renderLogin() {
         </div>
         
         <label>Benutzername</label>
-        <input id="login-username" type="text" placeholder="z.B. fabian-köck" value="">
+        <input id="login-username" type="text" placeholder="z.B. fabian-mustermann" value="">
         
         <label>Passwort</label>
         <input id="login-password" type="password" placeholder="Passwort" value="">
@@ -3652,7 +3660,6 @@ function render() {
   
   content += renderFooter();
   content += renderNav();
-  
   app.innerHTML = content;
   
   if ((session.role === "admin" && adminView === "training") || 
