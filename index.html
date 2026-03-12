@@ -432,7 +432,7 @@ seed.players.forEach(p => {
 
 // ==================== STATE ====================
 const STORAGE_KEY = "usv-staw-app";
-let state = seed;
+let state = {};
 let session = JSON.parse(sessionStorage.getItem("usv-staw-session") || "null");
 
 // Views für verschiedene Rollen
@@ -452,10 +452,17 @@ async function save() {
   const snap = await getDoc(docRef);
 
   if (snap.exists()) {
-    state = snap.data();
+
+    const cloudState = snap.data();
+
+    // Seed + Cloud kombinieren (damit neue Felder erhalten bleiben)
+    state = { ...seed, ...cloudState };
+
   } else {
+
     await setDoc(docRef, seed);
     state = seed;
+
   }
 
   render();
