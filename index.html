@@ -46,8 +46,7 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.4; }
-.app { max-width: 720px; margin: 0 auto; min-height: 100vh; background: var(--bg); display: flex; flex-direction: column; }
-.content { flex: 1; }
+.app { max-width: 720px; margin: 0 auto; min-height: 100vh; background: var(--bg); }
 
 /* Header */
 .header { background: linear-gradient(180deg, var(--green), #1f7f47); color: white; padding: 16px; border-bottom-left-radius: 24px; border-bottom-right-radius: 24px; position: sticky; top: 0; z-index: 20; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
@@ -60,7 +59,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .role-badge { background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 20px; font-size: 11px; margin-top: 4px; display: inline-block; }
 
 /* Footer */
-.footer { background: linear-gradient(180deg, #1f7f47, var(--green)); color: white; padding: 12px 16px; border-top-left-radius: 24px; border-top-right-radius: 24px; text-align: center; font-size: 12px; margin-top: auto; }
+.footer { background: linear-gradient(180deg, #1f7f47, var(--green)); color: white; padding: 12px 16px; border-top-left-radius: 24px; border-top-right-radius: 24px; text-align: center; font-size: 12px; width: 100%; }
 .footer .copyright { opacity: 0.9; letter-spacing: 0.5px; }
 
 /* Tabs */
@@ -322,9 +321,7 @@ let isAppInstalled = false;
 window.addEventListener('appinstalled', (evt) => {
   isAppInstalled = true;
   console.log('✅ App wurde installiert');
-  if (document.getElementById('install-button-container')) {
-    document.getElementById('install-button-container').style.display = 'none';
-  }
+  render();
 });
 
 window.addEventListener('beforeinstallprompt', (e) => {
@@ -1754,112 +1751,110 @@ function renderDashboard() {
   const bottom3Training = trainingStats.slice(-3).reverse();
   
   return `
-    <div class="content">
-      <div class="section">
-        ${requestsHtml}
-        
-        <div class="card" style="background: linear-gradient(135deg, var(--green), var(--green2)); color: white;">
-          <h3 style="color: white;">📅 Nächste Spiele</h3>
-          ${matches.length > 0 ? matches.map(m => {
-            const c = countAttendance(m);
-            return `
-              <div style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.2);">
-                <div style="font-weight: 600;">${m.date} - ${m.title}</div>
-                <div style="display: flex; gap: 12px; font-size: 12px; margin-top: 6px;">
-                  <span>✓ ${c.coming}</span>
-                  <span>? ${c.maybe}</span>
-                  <span>✗ ${c.missing}</span>
-                  <span>○ ${c.open}</span>
-                </div>
+    <div class="section">
+      ${requestsHtml}
+      
+      <div class="card" style="background: linear-gradient(135deg, var(--green), var(--green2)); color: white;">
+        <h3 style="color: white;">📅 Nächste Spiele</h3>
+        ${matches.length > 0 ? matches.map(m => {
+          const c = countAttendance(m);
+          return `
+            <div style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.2);">
+              <div style="font-weight: 600;">${m.date} - ${m.title}</div>
+              <div style="display: flex; gap: 12px; font-size: 12px; margin-top: 6px;">
+                <span>✓ ${c.coming}</span>
+                <span>? ${c.maybe}</span>
+                <span>✗ ${c.missing}</span>
+                <span>○ ${c.open}</span>
               </div>
-            `;
-          }).join('') : '<p>Keine anstehenden Spiele</p>'}
-        </div>
-        
-        <div class="card">
-          <h3>🎂 Nächste Geburtstage</h3>
-          ${upcomingBirthdays.map(b => {
-            const days = Math.ceil((b.nextBirthday - new Date()) / (1000 * 60 * 60 * 24));
-            return `
-              <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--line);">
-                <span>${b.player.name}</span>
-                <span style="font-weight: 600;">${b.player.birthday} (in ${days} Tagen)</span>
-              </div>
-            `;
-          }).join('')}
-          ${upcomingBirthdays.length === 0 ? '<p class="small">Keine anstehenden Geburtstage</p>' : ''}
-        </div>
-        
-        <div class="card">
-          <h3>⚽ Torschützen</h3>
-          <h4 style="margin: 10px 0 5px; font-size: 14px;">Top 3</h4>
-          ${top3Scorers.map(p => `
-            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--line);">
-              <span>${p.name}</span>
-              <span style="font-weight: 600; color: var(--green);">${p.goals} Tore</span>
             </div>
-          `).join('')}
-          
-          ${bottom3Scorers.length > 0 && bottom3Scorers[0].goals > 0 ? `
-            <h4 style="margin: 15px 0 5px; font-size: 14px;">Schlechteste 3</h4>
-            ${bottom3Scorers.map(p => `
-              <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--line);">
-                <span>${p.name}</span>
-                <span style="font-weight: 600; color: ${p.goals === 0 ? 'var(--red)' : 'var(--muted)'};">${p.goals} Tore</span>
-              </div>
-            `).join('')}
-          ` : ''}
-          
-          ${topScorers.length === 0 ? '<p class="small">Keine Tore erzielt</p>' : ''}
-        </div>
-        
-        <div class="card">
-          <h3>🎯 Assists</h3>
-          <h4 style="margin: 10px 0 5px; font-size: 14px;">Top 3</h4>
-          ${top3Assists.map(p => `
+          `;
+        }).join('') : '<p>Keine anstehenden Spiele</p>'}
+      </div>
+      
+      <div class="card">
+        <h3>🎂 Nächste Geburtstage</h3>
+        ${upcomingBirthdays.map(b => {
+          const days = Math.ceil((b.nextBirthday - new Date()) / (1000 * 60 * 60 * 24));
+          return `
             <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--line);">
-              <span>${p.name}</span>
-              <span style="font-weight: 600; color: var(--blue);">${p.assists} Assists</span>
+              <span>${b.player.name}</span>
+              <span style="font-weight: 600;">${b.player.birthday} (in ${days} Tagen)</span>
             </div>
-          `).join('')}
-          
-          ${bottom3Assists.length > 0 && bottom3Assists[0].assists > 0 ? `
-            <h4 style="margin: 15px 0 5px; font-size: 14px;">Schlechteste 3</h4>
-            ${bottom3Assists.map(p => `
-              <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--line);">
-                <span>${p.name}</span>
-                <span style="font-weight: 600; color: ${p.assists === 0 ? 'var(--red)' : 'var(--muted)'};">${p.assists} Assists</span>
-              </div>
-            `).join('')}
-          ` : ''}
-          
-          ${topAssists.length === 0 ? '<p class="small">Keine Assists</p>' : ''}
-        </div>
+          `;
+        }).join('')}
+        ${upcomingBirthdays.length === 0 ? '<p class="small">Keine anstehenden Geburtstage</p>' : ''}
+      </div>
+      
+      <div class="card">
+        <h3>⚽ Torschützen</h3>
+        <h4 style="margin: 10px 0 5px; font-size: 14px;">Top 3</h4>
+        ${top3Scorers.map(p => `
+          <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--line);">
+            <span>${p.name}</span>
+            <span style="font-weight: 600; color: var(--green);">${p.goals} Tore</span>
+          </div>
+        `).join('')}
         
-        <div class="card">
-          <h3>🏋️ Trainingsbeteiligung</h3>
-          <h4 style="margin: 10px 0 5px; font-size: 14px;">Top 3</h4>
-          ${top3Training.map(p => {
-            const percent = calculatePlayerPercentage(p.id);
-            return `
-              <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--line);">
-                <span>${p.name}</span>
-                <span style="font-weight: 600; color: var(--green);">${percent}%</span>
-              </div>
-            `;
-          }).join('')}
-          
+        ${bottom3Scorers.length > 0 && bottom3Scorers[0].goals > 0 ? `
           <h4 style="margin: 15px 0 5px; font-size: 14px;">Schlechteste 3</h4>
-          ${bottom3Training.map(p => {
-            const percent = calculatePlayerPercentage(p.id);
-            return `
-              <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--line);">
-                <span>${p.name}</span>
-                <span style="font-weight: 600; color: ${percent < 50 ? 'var(--red)' : 'var(--muted)'};">${percent}%</span>
-              </div>
-            `;
-          }).join('')}
-        </div>
+          ${bottom3Scorers.map(p => `
+            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--line);">
+              <span>${p.name}</span>
+              <span style="font-weight: 600; color: ${p.goals === 0 ? 'var(--red)' : 'var(--muted)'};">${p.goals} Tore</span>
+            </div>
+          `).join('')}
+        ` : ''}
+        
+        ${topScorers.length === 0 ? '<p class="small">Keine Tore erzielt</p>' : ''}
+      </div>
+      
+      <div class="card">
+        <h3>🎯 Assists</h3>
+        <h4 style="margin: 10px 0 5px; font-size: 14px;">Top 3</h4>
+        ${top3Assists.map(p => `
+          <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--line);">
+            <span>${p.name}</span>
+            <span style="font-weight: 600; color: var(--blue);">${p.assists} Assists</span>
+          </div>
+        `).join('')}
+        
+        ${bottom3Assists.length > 0 && bottom3Assists[0].assists > 0 ? `
+          <h4 style="margin: 15px 0 5px; font-size: 14px;">Schlechteste 3</h4>
+          ${bottom3Assists.map(p => `
+            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--line);">
+              <span>${p.name}</span>
+              <span style="font-weight: 600; color: ${p.assists === 0 ? 'var(--red)' : 'var(--muted)'};">${p.assists} Assists</span>
+            </div>
+          `).join('')}
+        ` : ''}
+        
+        ${topAssists.length === 0 ? '<p class="small">Keine Assists</p>' : ''}
+      </div>
+      
+      <div class="card">
+        <h3>🏋️ Trainingsbeteiligung</h3>
+        <h4 style="margin: 10px 0 5px; font-size: 14px;">Top 3</h4>
+        ${top3Training.map(p => {
+          const percent = calculatePlayerPercentage(p.id);
+          return `
+            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--line);">
+              <span>${p.name}</span>
+              <span style="font-weight: 600; color: var(--green);">${percent}%</span>
+            </div>
+          `;
+        }).join('')}
+        
+        <h4 style="margin: 15px 0 5px; font-size: 14px;">Schlechteste 3</h4>
+        ${bottom3Training.map(p => {
+          const percent = calculatePlayerPercentage(p.id);
+          return `
+            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--line);">
+              <span>${p.name}</span>
+              <span style="font-weight: 600; color: ${percent < 50 ? 'var(--red)' : 'var(--muted)'};">${percent}%</span>
+            </div>
+          `;
+        }).join('')}
       </div>
     </div>
   `;
@@ -1915,141 +1910,139 @@ function renderStatistics() {
   const selectedTestPlayer = state.selectedPlayerId ? findPlayer(state.selectedPlayerId) : null;
   
   return `
-    <div class="content">
-      <div class="section">
-        <!-- Erste Karte: Normale Gesamtstatistik (unverändert) -->
-        <div class="card">
-          <h3>📊 Gesamtstatistik aller Spieler</h3>
-          
-          ${Object.keys(playersByTeam).sort().map(team => {
-            // Hier die normale unsortierte Team-Anzeige
-            const teamPlayers = players.filter(p => p.team === team);
-            return `
-              <div style="margin-top: 20px;">
-                <h4 style="color: var(--blue); border-bottom: 1px solid var(--blue); padding-bottom: 5px;">Team ${team}</h4>
-                <table class="statistics-table">
-                  <thead>
-                    <tr>
-                      <th>Spieler</th>
-                      <th>⚽ Tore</th>
-                      <th>🎯 Assists</th>
-                      <th>🏋️ Training</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${teamPlayers.map(p => {
-                      const percent = calculatePlayerPercentage(p.id);
-                      return `
-                        <tr>
-                          <td><strong>${p.name}</strong></td>
-                          <td style="color: var(--green); font-weight: 600; text-align: center;">${p.goals || 0}</td>
-                          <td style="color: var(--blue); font-weight: 600; text-align: center;">${p.assists || 0}</td>
-                          <td style="font-weight: 600; text-align: center; color: ${percent >= 75 ? 'var(--green)' : percent >= 50 ? '#f3a43b' : 'var(--red)'};">${percent}%</td>
-                        </tr>
-                      `;
-                    }).join('')}
-                  </tbody>
-                </table>
-              </div>
-            `;
-          }).join('')}
-          
-          <div style="margin-top: 20px; padding: 12px; background: #f5f9f6; border-radius: 12px;">
-            <div style="display: flex; justify-content: space-between; font-weight: 600;">
-              <span>Gesamt:</span>
-              <span>
-                ⚽ ${players.reduce((sum, p) => sum + (p.goals || 0), 0)} Tore · 
-                🎯 ${players.reduce((sum, p) => sum + (p.assists || 0), 0)} Assists
-              </span>
-            </div>
-          </div>
-        </div>
+    <div class="section">
+      <!-- Erste Karte: Normale Gesamtstatistik (unverändert) -->
+      <div class="card">
+        <h3>📊 Gesamtstatistik aller Spieler</h3>
         
-        <!-- Zweite Karte: SEPARATE Leistungstest-Statistik (sortiert nach Sternen) -->
-        <div class="card" style="margin-top: 20px; background: linear-gradient(135deg, #f5f9f6, #e8f0fe);">
-          <h3>⭐ Leistungstest-Ranking</h3>
-          <p class="small" style="margin-bottom: 16px; text-align: center;">Sortiert nach ⌀ Sternen (beste zuerst) - Klick auf Namen für Details</p>
-          
-          ${Object.keys(playersByTeamForTests).sort().map(team => `
+        ${Object.keys(playersByTeam).sort().map(team => {
+          // Hier die normale unsortierte Team-Anzeige
+          const teamPlayers = players.filter(p => p.team === team);
+          return `
             <div style="margin-top: 20px;">
-              <h4 style="color: var(--trainer-kind-border); border-bottom: 1px solid var(--trainer-kind-border); padding-bottom: 5px;">Team ${team}</h4>
+              <h4 style="color: var(--blue); border-bottom: 1px solid var(--blue); padding-bottom: 5px;">Team ${team}</h4>
               <table class="statistics-table">
                 <thead>
                   <tr>
-                    <th style="text-align: center; width: 40px;">#</th>
                     <th>Spieler</th>
-                    <th style="text-align: center;">⭐ ⌀ Sterne</th>
-                    <th style="text-align: center;">📊 Tests</th>
+                    <th>⚽ Tore</th>
+                    <th>🎯 Assists</th>
+                    <th>🏋️ Training</th>
                   </tr>
                 </thead>
                 <tbody>
-                  ${playersByTeamForTests[team].map((p, index) => {
-                    const avgStars = getAverageStars(p);
-                    const testCount = p.tests?.length || 0;
-                    
-                    // Sterne als Text
-                    let starsDisplay = '';
-                    if (avgStars > 0) {
-                      const fullStars = Math.round(avgStars);
-                      starsDisplay = '<span style="color: #f3c623; font-size: 18px;">';
-                      for (let i = 1; i <= 5; i++) {
-                        starsDisplay += i <= fullStars ? '★' : '☆';
-                      }
-                      starsDisplay += ` <span style="color: var(--text); font-size: 12px;">(${avgStars.toFixed(1)})</span>`;
-                      starsDisplay += '</span>';
-                    } else {
-                      starsDisplay = '<span style="color: var(--muted);">Keine Tests</span>';
-                    }
-                    
+                  ${teamPlayers.map(p => {
+                    const percent = calculatePlayerPercentage(p.id);
                     return `
-                      <tr onclick="setSelectedPlayer('${p.id}')" style="cursor: pointer;">
-                        <td style="font-weight: 600; text-align: center; ${index < 3 ? 'font-size: 18px;' : ''}">
-                          ${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : (index + 1) + '.'}
-                        </td>
+                      <tr>
                         <td><strong>${p.name}</strong></td>
-                        <td style="text-align: center;">${starsDisplay}</td>
-                        <td style="text-align: center; color: var(--blue);">${testCount} Test${testCount !== 1 ? 's' : ''}</td>
+                        <td style="color: var(--green); font-weight: 600; text-align: center;">${p.goals || 0}</td>
+                        <td style="color: var(--blue); font-weight: 600; text-align: center;">${p.assists || 0}</td>
+                        <td style="font-weight: 600; text-align: center; color: ${percent >= 75 ? 'var(--green)' : percent >= 50 ? '#f3a43b' : 'var(--red)'};">${percent}%</td>
                       </tr>
                     `;
                   }).join('')}
                 </tbody>
               </table>
             </div>
-          `).join('')}
-          
-          <!-- Detailansicht für ausgewählten Spieler -->
-          ${selectedTestPlayer && selectedTestPlayer.tests && selectedTestPlayer.tests.length > 0 ? `
-            <div style="margin-top: 30px; padding: 16px; background: white; border-radius: 12px; border: 2px solid var(--trainer-kind-border);">
-              <h4 style="color: var(--trainer-kind-border); margin-bottom: 16px;">📋 Test-Historie: ${selectedTestPlayer.name}</h4>
-              
-              ${selectedTestPlayer.tests.sort((a,b) => b.date.localeCompare(a.date)).map(test => `
-                <div style="margin-bottom: 16px; padding: 12px; background: #f5f9f6; border-radius: 8px;">
-                  <div style="font-weight: 600; color: var(--blue); margin-bottom: 8px;">📅 ${test.date}</div>
-                  ${Object.entries(test.results).map(([testId, value]) => {
-                    const testConfig = state.testConfig?.find(t => t.id === testId);
-                    if (!testConfig) return '';
-                    const stars = calculateStars(value, testConfig);
-                    return `
-                      <div style="display: flex; justify-content: space-between; align-items: center; margin: 4px 0; padding: 4px 8px; background: white; border-radius: 6px;">
-                        <span>${testConfig.name}: <strong>${value} ${testConfig.unit}</strong></span>
-                        <span style="color: #f3c623;">${'★'.repeat(stars)}${'☆'.repeat(5-stars)}</span>
-                      </div>
-                    `;
-                  }).join('')}
-                </div>
-              `).join('')}
-              
-              <button class="btn secondary small" style="margin-top: 8px;" onclick="setSelectedPlayer(null)">Schließen</button>
-            </div>
-          ` : selectedTestPlayer ? `
-            <div style="margin-top: 30px; padding: 16px; background: white; border-radius: 12px; text-align: center; color: var(--muted);">
-              ${selectedTestPlayer.name} hat noch keine Tests.
-            </div>
-          ` : ''}
-          
-          <div style="margin-top: 16px; padding: 8px; background: #f0f0f0; border-radius: 8px; text-align: center; font-size: 12px;">
-            ⌀ berechnet aus allen Tests • Klick auf Namen für Details
+          `;
+        }).join('')}
+        
+        <div style="margin-top: 20px; padding: 12px; background: #f5f9f6; border-radius: 12px;">
+          <div style="display: flex; justify-content: space-between; font-weight: 600;">
+            <span>Gesamt:</span>
+            <span>
+              ⚽ ${players.reduce((sum, p) => sum + (p.goals || 0), 0)} Tore · 
+              🎯 ${players.reduce((sum, p) => sum + (p.assists || 0), 0)} Assists
+            </span>
           </div>
+        </div>
+      </div>
+      
+      <!-- Zweite Karte: SEPARATE Leistungstest-Statistik (sortiert nach Sternen) -->
+      <div class="card" style="margin-top: 20px; background: linear-gradient(135deg, #f5f9f6, #e8f0fe);">
+        <h3>⭐ Leistungstest-Ranking</h3>
+        <p class="small" style="margin-bottom: 16px; text-align: center;">Sortiert nach ⌀ Sternen (beste zuerst) - Klick auf Namen für Details</p>
+        
+        ${Object.keys(playersByTeamForTests).sort().map(team => `
+          <div style="margin-top: 20px;">
+            <h4 style="color: var(--trainer-kind-border); border-bottom: 1px solid var(--trainer-kind-border); padding-bottom: 5px;">Team ${team}</h4>
+            <table class="statistics-table">
+              <thead>
+                <tr>
+                  <th style="text-align: center; width: 40px;">#</th>
+                  <th>Spieler</th>
+                  <th style="text-align: center;">⭐ ⌀ Sterne</th>
+                  <th style="text-align: center;">📊 Tests</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${playersByTeamForTests[team].map((p, index) => {
+                  const avgStars = getAverageStars(p);
+                  const testCount = p.tests?.length || 0;
+                  
+                  // Sterne als Text
+                  let starsDisplay = '';
+                  if (avgStars > 0) {
+                    const fullStars = Math.round(avgStars);
+                    starsDisplay = '<span style="color: #f3c623; font-size: 18px;">';
+                    for (let i = 1; i <= 5; i++) {
+                      starsDisplay += i <= fullStars ? '★' : '☆';
+                    }
+                    starsDisplay += ` <span style="color: var(--text); font-size: 12px;">(${avgStars.toFixed(1)})</span>`;
+                    starsDisplay += '</span>';
+                  } else {
+                    starsDisplay = '<span style="color: var(--muted);">Keine Tests</span>';
+                  }
+                  
+                  return `
+                    <tr onclick="setSelectedPlayer('${p.id}')" style="cursor: pointer;">
+                      <td style="font-weight: 600; text-align: center; ${index < 3 ? 'font-size: 18px;' : ''}">
+                        ${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : (index + 1) + '.'}
+                      </td>
+                      <td><strong>${p.name}</strong></td>
+                      <td style="text-align: center;">${starsDisplay}</td>
+                      <td style="text-align: center; color: var(--blue);">${testCount} Test${testCount !== 1 ? 's' : ''}</td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        `).join('')}
+        
+        <!-- Detailansicht für ausgewählten Spieler -->
+        ${selectedTestPlayer && selectedTestPlayer.tests && selectedTestPlayer.tests.length > 0 ? `
+          <div style="margin-top: 30px; padding: 16px; background: white; border-radius: 12px; border: 2px solid var(--trainer-kind-border);">
+            <h4 style="color: var(--trainer-kind-border); margin-bottom: 16px;">📋 Test-Historie: ${selectedTestPlayer.name}</h4>
+            
+            ${selectedTestPlayer.tests.sort((a,b) => b.date.localeCompare(a.date)).map(test => `
+              <div style="margin-bottom: 16px; padding: 12px; background: #f5f9f6; border-radius: 8px;">
+                <div style="font-weight: 600; color: var(--blue); margin-bottom: 8px;">📅 ${test.date}</div>
+                ${Object.entries(test.results).map(([testId, value]) => {
+                  const testConfig = state.testConfig?.find(t => t.id === testId);
+                  if (!testConfig) return '';
+                  const stars = calculateStars(value, testConfig);
+                  return `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin: 4px 0; padding: 4px 8px; background: white; border-radius: 6px;">
+                      <span>${testConfig.name}: <strong>${value} ${testConfig.unit}</strong></span>
+                      <span style="color: #f3c623;">${'★'.repeat(stars)}${'☆'.repeat(5-stars)}</span>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            `).join('')}
+            
+            <button class="btn secondary small" style="margin-top: 8px;" onclick="setSelectedPlayer(null)">Schließen</button>
+          </div>
+        ` : selectedTestPlayer ? `
+          <div style="margin-top: 30px; padding: 16px; background: white; border-radius: 12px; text-align: center; color: var(--muted);">
+            ${selectedTestPlayer.name} hat noch keine Tests.
+          </div>
+        ` : ''}
+        
+        <div style="margin-top: 16px; padding: 8px; background: #f0f0f0; border-radius: 8px; text-align: center; font-size: 12px;">
+          ⌀ berechnet aus allen Tests • Klick auf Namen für Details
         </div>
       </div>
     </div>
@@ -2082,156 +2075,154 @@ function renderCalendar() {
   });
   
   return `
-    <div class="content">
-      <div class="section">
-        ${Object.keys(byMonth).map(month => `
-          <div class="month">${month}</div>
-          ${byMonth[month].map(m => {
-            const d = formatDate(m.date);
-            const c = countAttendance(m);
-            const isExpanded = state.expandedMatch === m.id;
-            const myStatus = isParentMode && playerId ? m.attendance?.[playerId] : null;
-            const showOpponents = isYouthTeam(m.team) && m.opponents && m.opponents.length > 0;
-            const isPast = isMatchPast(m);
-            
-            let approvalMessage = '';
-            if (isParentMode && playerId && state.attendanceRequests) {
-              const myRequest = state.attendanceRequests.find(r => 
-                r.matchId === m.id && r.playerId === playerId && r.status !== 'pending'
-              );
-              if (myRequest) {
-                approvalMessage = myRequest.status === 'approved' 
-                  ? '<div class="approval-message approved">✅ Trainer hat zugestimmt</div>'
-                  : '<div class="approval-message rejected">❌ Trainer hat abgelehnt</div>';
-              }
+    <div class="section">
+      ${Object.keys(byMonth).map(month => `
+        <div class="month">${month}</div>
+        ${byMonth[month].map(m => {
+          const d = formatDate(m.date);
+          const c = countAttendance(m);
+          const isExpanded = state.expandedMatch === m.id;
+          const myStatus = isParentMode && playerId ? m.attendance?.[playerId] : null;
+          const showOpponents = isYouthTeam(m.team) && m.opponents && m.opponents.length > 0;
+          const isPast = isMatchPast(m);
+          
+          let approvalMessage = '';
+          if (isParentMode && playerId && state.attendanceRequests) {
+            const myRequest = state.attendanceRequests.find(r => 
+              r.matchId === m.id && r.playerId === playerId && r.status !== 'pending'
+            );
+            if (myRequest) {
+              approvalMessage = myRequest.status === 'approved' 
+                ? '<div class="approval-message approved">✅ Trainer hat zugestimmt</div>'
+                : '<div class="approval-message rejected">❌ Trainer hat abgelehnt</div>';
             }
+          }
+          
+          let detailedHtml = '';
+          if (isTrainerOrCoach && !isParentMode && isExpanded) {
+            const eligiblePlayers = getEligiblePlayersForMatch(m).sort((a, b) => a.name.localeCompare(b.name));
             
-            let detailedHtml = '';
-            if (isTrainerOrCoach && !isParentMode && isExpanded) {
-              const eligiblePlayers = getEligiblePlayersForMatch(m).sort((a, b) => a.name.localeCompare(b.name));
-              
-              detailedHtml = `
-                <div class="detailed-attendance">
-                  <div class="detailed-header">
-                    <div>Spieler</div>
-                    <div>Status</div>
-                    <div></div>
-                    <div></div>
-                    <div></div>
-                  </div>
-                  
-                  ${eligiblePlayers.map(player => {
-                    const status = m.attendance?.[player.id] || 'open';
-                    const statusClass = status === 'coming' ? 'status-coming' : 
-                                       status === 'maybe' ? 'status-maybe' : 
-                                       status === 'missing' ? 'status-missing' : 'status-open';
-                    const statusText = status === 'coming' ? '✓' : 
-                                      status === 'maybe' ? '?' : 
-                                      status === 'missing' ? '✗' : '○';
-                    
-                    return `
-                      <div class="detailed-row">
-                        <div><strong>${player.name}</strong> (${player.team})</div>
-                        <div class="detailed-status ${statusClass}">${statusText} ${getGermanStatus(status)}</div>
-                        <div></div>
-                        <div></div>
-                        <div></div>
-                      </div>
-                    `;
-                  }).join('')}
+            detailedHtml = `
+              <div class="detailed-attendance">
+                <div class="detailed-header">
+                  <div>Spieler</div>
+                  <div>Status</div>
+                  <div></div>
+                  <div></div>
+                  <div></div>
                 </div>
-              `;
-            }
-            
-            const matchClass = isPast ? 'match past' : 'match';
-            
-            return `
-              <div class="${matchClass} ${isExpanded ? 'expanded' : ''}" onclick="toggleMatchExpand('${m.id}')">
-                <div class="datebox">
-                  <div class="day">${d.day}</div>
-                  <div class="mon">${d.mon}</div>
-                </div>
-                <div class="info">
-                  <div class="badges">
-                    <span class="badge ${m.team === state.teams.main ? 'team1' : 'team2'}">${m.team}</span>
-                    ${isPast ? '<span class="badge" style="background: #888; color: white;">Abgeschlossen</span>' : ''}
-                  </div>
-                  <div class="name">${m.title}</div>
-                  <div class="time">${m.time} · ${m.location}</div>
-                  <div class="small mt-2">Treffpunkt: ${m.meeting}</div>
+                
+                ${eligiblePlayers.map(player => {
+                  const status = m.attendance?.[player.id] || 'open';
+                  const statusClass = status === 'coming' ? 'status-coming' : 
+                                     status === 'maybe' ? 'status-maybe' : 
+                                     status === 'missing' ? 'status-missing' : 'status-open';
+                  const statusText = status === 'coming' ? '✓' : 
+                                    status === 'maybe' ? '?' : 
+                                    status === 'missing' ? '✗' : '○';
                   
-                  ${showOpponents ? `
-                    <div class="opponents-list">
-                      <h4>Teilnehmende Teams:</h4>
-                      <div class="opponents-items">
-                        ${m.opponents.map(opp => `<span class="opponent-tag">${opp}</span>`).join('')}
-                      </div>
+                  return `
+                    <div class="detailed-row">
+                      <div><strong>${player.name}</strong> (${player.team})</div>
+                      <div class="detailed-status ${statusClass}">${statusText} ${getGermanStatus(status)}</div>
+                      <div></div>
+                      <div></div>
+                      <div></div>
                     </div>
-                  ` : ''}
-                  
-                  <div class="attendance-overview" style="margin-top: 10px;">
-                    <div class="attendance-item coming">
-                      <div class="count">${c.coming}</div>
-                      <div class="label">Kommen</div>
-                    </div>
-                    <div class="attendance-item maybe">
-                      <div class="count">${c.maybe}</div>
-                      <div class="label">Vielleicht</div>
-                    </div>
-                    <div class="attendance-item missing">
-                      <div class="count">${c.missing}</div>
-                      <div class="label">Fehlen</div>
-                    </div>
-                    <div class="attendance-item open">
-                      <div class="count">${c.open}</div>
-                      <div class="label">Offen</div>
-                    </div>
-                  </div>
-                  <div class="small" style="text-align: center; margin-top: 4px;">Gesamt: ${c.total} Spieler</div>
-                  
-                  ${isExpanded ? detailedHtml : ''}
-                  
-                  ${approvalMessage}
-                  
-                  ${isParentMode && !isPast ? `
-                    <div class="attendance-buttons" onclick="event.stopPropagation()">
-                      <button class="btn ${myStatus === 'coming' ? 'yes' : 'secondary'}" 
-                        onclick="updateMatchAttendance('${m.id}','coming')">
-                        ✓ Kommen
-                      </button>
-                      <button class="btn ${myStatus === 'maybe' ? 'maybe' : 'secondary'}" 
-                        onclick="updateMatchAttendance('${m.id}','maybe')">
-                        ? Vielleicht
-                      </button>
-                      <button class="btn ${myStatus === 'missing' ? 'no' : 'secondary'}" 
-                        onclick="updateMatchAttendance('${m.id}','missing')">
-                        ✗ Nicht
-                      </button>
-                    </div>
-                    
-                    ${myStatus === 'coming' ? `
-                      <div class="small" style="margin-top: 8px; color: var(--muted); text-align: center;">
-                        Änderung nur mit Trainer-Genehmigung möglich
-                      </div>
-                    ` : ''}
-                  ` : ''}
-                  
-                  ${m.result ? `<div style="margin-top: 8px; font-weight: 600;">Ergebnis: ${m.result}</div>` : ''}
-                  
-                  ${session.role === "admin" && !isParentMode ? `
-                    <div style="display: flex; gap: 8px; margin-top: 12px;" onclick="event.stopPropagation()">
-                      <button class="btn secondary small" onclick="editMatch('${m.id}')">Bearbeiten</button>
-                      <button class="btn warn small" onclick="deleteMatch('${m.id}')">Löschen</button>
-                    </div>
-                  ` : ''}
-                </div>
+                  `;
+                }).join('')}
               </div>
             `;
-          }).join('')}
-        `).join('')}
-        
-        ${matches.length === 0 ? '<p class="small" style="text-align: center;">Keine Spiele vorhanden</p>' : ''}
-      </div>
+          }
+          
+          const matchClass = isPast ? 'match past' : 'match';
+          
+          return `
+            <div class="${matchClass} ${isExpanded ? 'expanded' : ''}" onclick="toggleMatchExpand('${m.id}')">
+              <div class="datebox">
+                <div class="day">${d.day}</div>
+                <div class="mon">${d.mon}</div>
+              </div>
+              <div class="info">
+                <div class="badges">
+                  <span class="badge ${m.team === state.teams.main ? 'team1' : 'team2'}">${m.team}</span>
+                  ${isPast ? '<span class="badge" style="background: #888; color: white;">Abgeschlossen</span>' : ''}
+                </div>
+                <div class="name">${m.title}</div>
+                <div class="time">${m.time} · ${m.location}</div>
+                <div class="small mt-2">Treffpunkt: ${m.meeting}</div>
+                
+                ${showOpponents ? `
+                  <div class="opponents-list">
+                    <h4>Teilnehmende Teams:</h4>
+                    <div class="opponents-items">
+                      ${m.opponents.map(opp => `<span class="opponent-tag">${opp}</span>`).join('')}
+                    </div>
+                  </div>
+                ` : ''}
+                
+                <div class="attendance-overview" style="margin-top: 10px;">
+                  <div class="attendance-item coming">
+                    <div class="count">${c.coming}</div>
+                    <div class="label">Kommen</div>
+                  </div>
+                  <div class="attendance-item maybe">
+                    <div class="count">${c.maybe}</div>
+                    <div class="label">Vielleicht</div>
+                  </div>
+                  <div class="attendance-item missing">
+                    <div class="count">${c.missing}</div>
+                    <div class="label">Fehlen</div>
+                  </div>
+                  <div class="attendance-item open">
+                    <div class="count">${c.open}</div>
+                    <div class="label">Offen</div>
+                  </div>
+                </div>
+                <div class="small" style="text-align: center; margin-top: 4px;">Gesamt: ${c.total} Spieler</div>
+                
+                ${isExpanded ? detailedHtml : ''}
+                
+                ${approvalMessage}
+                
+                ${isParentMode && !isPast ? `
+                  <div class="attendance-buttons" onclick="event.stopPropagation()">
+                    <button class="btn ${myStatus === 'coming' ? 'yes' : 'secondary'}" 
+                      onclick="updateMatchAttendance('${m.id}','coming')">
+                      ✓ Kommen
+                    </button>
+                    <button class="btn ${myStatus === 'maybe' ? 'maybe' : 'secondary'}" 
+                      onclick="updateMatchAttendance('${m.id}','maybe')">
+                      ? Vielleicht
+                    </button>
+                    <button class="btn ${myStatus === 'missing' ? 'no' : 'secondary'}" 
+                      onclick="updateMatchAttendance('${m.id}','missing')">
+                      ✗ Nicht
+                    </button>
+                  </div>
+                  
+                  ${myStatus === 'coming' ? `
+                    <div class="small" style="margin-top: 8px; color: var(--muted); text-align: center;">
+                      Änderung nur mit Trainer-Genehmigung möglich
+                    </div>
+                  ` : ''}
+                ` : ''}
+                
+                ${m.result ? `<div style="margin-top: 8px; font-weight: 600;">Ergebnis: ${m.result}</div>` : ''}
+                
+                ${session.role === "admin" && !isParentMode ? `
+                  <div style="display: flex; gap: 8px; margin-top: 12px;" onclick="event.stopPropagation()">
+                    <button class="btn secondary small" onclick="editMatch('${m.id}')">Bearbeiten</button>
+                    <button class="btn warn small" onclick="deleteMatch('${m.id}')">Löschen</button>
+                  </div>
+                ` : ''}
+              </div>
+            </div>
+          `;
+        }).join('')}
+      `).join('')}
+      
+      ${matches.length === 0 ? '<p class="small" style="text-align: center;">Keine Spiele vorhanden</p>' : ''}
     </div>
   `;
 }
@@ -2241,42 +2232,40 @@ function renderTraining() {
   const players = playersForCurrentTeam();
   
   return `
-    <div class="content">
-      <div class="section">
-        <div class="card">
-          <h3>🏋️ Training erfassen</h3>
-          
-          <label>Datum</label>
-          <input id="training-date" type="date" value="${today}">
-          
-          <div style="margin: 16px 0; padding: 12px; background: #f0f7f2; border-radius: 12px;">
-            <div style="display: flex; gap: 12px; justify-content: space-around; font-size: 13px;">
-              <span style="color: #2e9b58;">✓ anwesend = 100%</span>
-              <span style="color: #f3a43b;">F entschuldigt = 25%</span>
-              <span style="color: #d45d4a;">X fehlt = 0%</span>
+    <div class="section">
+      <div class="card">
+        <h3>🏋️ Training erfassen</h3>
+        
+        <label>Datum</label>
+        <input id="training-date" type="date" value="${today}">
+        
+        <div style="margin: 16px 0; padding: 12px; background: #f0f7f2; border-radius: 12px;">
+          <div style="display: flex; gap: 12px; justify-content: space-around; font-size: 13px;">
+            <span style="color: #2e9b58;">✓ anwesend = 100%</span>
+            <span style="color: #f3a43b;">F entschuldigt = 25%</span>
+            <span style="color: #d45d4a;">X fehlt = 0%</span>
+          </div>
+        </div>
+        
+        ${players.map(p => `
+          <div class="training-player">
+            <span style="font-weight: 600;">${p.name}</span>
+            <div class="training-options">
+              <input type="radio" name="tr-${p.id}" value="present" id="${p.id}-present">
+              <label for="${p.id}-present">✓</label>
+              
+              <input type="radio" name="tr-${p.id}" value="excused" id="${p.id}-excused">
+              <label for="${p.id}-excused">F</label>
+              
+              <input type="radio" name="tr-${p.id}" value="missing" id="${p.id}-missing" checked>
+              <label for="${p.id}-missing">X</label>
             </div>
           </div>
-          
-          ${players.map(p => `
-            <div class="training-player">
-              <span style="font-weight: 600;">${p.name}</span>
-              <div class="training-options">
-                <input type="radio" name="tr-${p.id}" value="present" id="${p.id}-present">
-                <label for="${p.id}-present">✓</label>
-                
-                <input type="radio" name="tr-${p.id}" value="excused" id="${p.id}-excused">
-                <label for="${p.id}-excused">F</label>
-                
-                <input type="radio" name="tr-${p.id}" value="missing" id="${p.id}-missing" checked>
-                <label for="${p.id}-missing">X</label>
-              </div>
-            </div>
-          `).join('')}
-          
-          <div style="display: flex; gap: 12px; margin-top: 24px;">
-            <button class="btn primary" style="flex: 2;" onclick="finishTraining()">Training speichern</button>
-            <button class="btn secondary" style="flex: 1;" onclick="setTodayForTraining()">Heute</button>
-          </div>
+        `).join('')}
+        
+        <div style="display: flex; gap: 12px; margin-top: 24px;">
+          <button class="btn primary" style="flex: 2;" onclick="finishTraining()">Training speichern</button>
+          <button class="btn secondary" style="flex: 1;" onclick="setTodayForTraining()">Heute</button>
         </div>
       </div>
     </div>
@@ -2287,31 +2276,29 @@ function renderTrainingHistory() {
   const trainings = [...(state.trainings || [])].sort((a,b) => b.date.localeCompare(a.date));
   
   return `
-    <div class="content">
-      <div class="section">
-        <div class="card">
-          <h3>📋 Trainingsübersicht</h3>
+    <div class="section">
+      <div class="card">
+        <h3>📋 Trainingsübersicht</h3>
+        
+        ${trainings.length > 0 ? trainings.map(t => {
+          const present = state.players?.filter(p => t.attendance?.[p.id] === "present").map(p => p.name).join(', ') || '';
+          const excused = state.players?.filter(p => t.attendance?.[p.id] === "excused").map(p => p.name).join(', ') || '';
+          const missing = state.players?.filter(p => t.attendance?.[p.id] === "missing").map(p => p.name).join(', ') || '';
           
-          ${trainings.length > 0 ? trainings.map(t => {
-            const present = state.players?.filter(p => t.attendance?.[p.id] === "present").map(p => p.name).join(', ') || '';
-            const excused = state.players?.filter(p => t.attendance?.[p.id] === "excused").map(p => p.name).join(', ') || '';
-            const missing = state.players?.filter(p => t.attendance?.[p.id] === "missing").map(p => p.name).join(', ') || '';
-            
-            return `
-              <div style="margin-bottom: 16px; padding: 12px; background: #f5f9f6; border-radius: 12px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                  <div style="font-weight: 600;">📅 ${t.date}</div>
-                  ${session.role === "admin" ? `
-                    <button class="btn danger small" onclick="deleteTraining('${t.id}')">🗑️</button>
-                  ` : ''}
-                </div>
-                ${present ? `<div style="color: #2e9b58; margin: 4px 0;">✓ Anwesend: ${present}</div>` : ''}
-                ${excused ? `<div style="color: #f3a43b; margin: 4px 0;">F Entschuldigt: ${excused}</div>` : ''}
-                ${missing ? `<div style="color: #d45d4a; margin: 4px 0;">✗ Unentschuldigt: ${missing}</div>` : ''}
+          return `
+            <div style="margin-bottom: 16px; padding: 12px; background: #f5f9f6; border-radius: 12px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <div style="font-weight: 600;">📅 ${t.date}</div>
+                ${session.role === "admin" ? `
+                  <button class="btn danger small" onclick="deleteTraining('${t.id}')">🗑️</button>
+                ` : ''}
               </div>
-            `;
-          }).join('') : '<p class="small">Noch keine Trainings erfasst</p>'}
-        </div>
+              ${present ? `<div style="color: #2e9b58; margin: 4px 0;">✓ Anwesend: ${present}</div>` : ''}
+              ${excused ? `<div style="color: #f3a43b; margin: 4px 0;">F Entschuldigt: ${excused}</div>` : ''}
+              ${missing ? `<div style="color: #d45d4a; margin: 4px 0;">✗ Unentschuldigt: ${missing}</div>` : ''}
+            </div>
+          `;
+        }).join('') : '<p class="small">Noch keine Trainings erfasst</p>'}
       </div>
     </div>
   `;
@@ -2320,12 +2307,10 @@ function renderTrainingHistory() {
 function renderMatchReport() {
   if (session.role !== "admin") {
     return `
-      <div class="content">
-        <div class="section">
-          <div class="card">
-            <h3>⛔ Kein Zugriff</h3>
-            <p class="small">Nur der Haupttrainer kann Spielberichte verwalten.</p>
-          </div>
+      <div class="section">
+        <div class="card">
+          <h3>⛔ Kein Zugriff</h3>
+          <p class="small">Nur der Haupttrainer kann Spielberichte verwalten.</p>
         </div>
       </div>
     `;
@@ -2341,98 +2326,96 @@ function renderMatchReport() {
     state.matches?.find(m => m.id === state.selectedReportMatchId) : null;
   
   return `
-    <div class="content">
-      <div class="section">
-        <div class="card">
-          <h3>📝 Spielberichte verwalten</h3>
-          
-          <div style="margin-bottom: 24px;">
-            <label>Spiel auswählen (ohne Bericht)</label>
-            <select id="match-report-select" onchange="setSelectedReportMatch(this.value)">
-              <option value="">Bitte auswählen...</option>
-              ${matchesWithoutReport.map(m => `
-                <option value="${m.id}" ${state.selectedReportMatchId === m.id ? 'selected' : ''}>
-                  ${m.date} - ${m.title} (${m.team})
-                </option>
-              `).join('')}
-            </select>
+    <div class="section">
+      <div class="card">
+        <h3>📝 Spielberichte verwalten</h3>
+        
+        <div style="margin-bottom: 24px;">
+          <label>Spiel auswählen (ohne Bericht)</label>
+          <select id="match-report-select" onchange="setSelectedReportMatch(this.value)">
+            <option value="">Bitte auswählen...</option>
+            ${matchesWithoutReport.map(m => `
+              <option value="${m.id}" ${state.selectedReportMatchId === m.id ? 'selected' : ''}>
+                ${m.date} - ${m.title} (${m.team})
+              </option>
+            `).join('')}
+          </select>
+        </div>
+        
+        ${selectedMatch ? `
+          <div style="margin-bottom: 30px; padding: 20px; background: #f5f9f6; border-radius: 16px;">
+            <h4 style="margin: 0 0 16px 0;">${selectedMatch.date} - ${selectedMatch.title}</h4>
+            
+            <label>Ergebnis (z.B. 4:4)</label>
+            <input id="match-result-${selectedMatch.id}" value="${selectedMatch.result || ''}" placeholder="z.B. 4:4">
+            
+            <h5 style="margin: 20px 0 10px;">⚽ Torschützen</h5>
+            ${getEligiblePlayersForMatch(selectedMatch).sort((a,b) => a.name.localeCompare(b.name)).map(player => `
+              <div style="display: flex; gap: 10px; align-items: center; margin: 8px 0;">
+                <span style="width: 140px;"><strong>${player.name}</strong></span>
+                <input id="goal-${selectedMatch.id}-${player.id}" type="number" min="0" value="${selectedMatch.report?.goals?.[player.id] || 0}" style="width: 70px;">
+                <span class="small">Tore</span>
+              </div>
+            `).join('')}
+            
+            <h5 style="margin: 20px 0 10px;">🎯 Assists</h5>
+            ${getEligiblePlayersForMatch(selectedMatch).sort((a,b) => a.name.localeCompare(b.name)).map(player => `
+              <div style="display: flex; gap: 10px; align-items: center; margin: 8px 0;">
+                <span style="width: 140px;"><strong>${player.name}</strong></span>
+                <input id="assist-${selectedMatch.id}-${player.id}" type="number" min="0" value="${selectedMatch.report?.assists?.[player.id] || 0}" style="width: 70px;">
+                <span class="small">Assists</span>
+              </div>
+            `).join('')}
+            
+            <div style="display: flex; gap: 12px; margin-top: 24px;">
+              <button class="btn primary" style="flex: 2;" onclick="saveMatchReport('${selectedMatch.id}')">
+                💾 Bericht speichern
+              </button>
+              <button class="btn secondary" style="flex: 1;" onclick="setSelectedReportMatch(null)">
+                ✗ Abbrechen
+              </button>
+            </div>
           </div>
+        ` : ''}
+        
+        <h4 style="margin: 30px 0 16px 0;">📋 Erstellte Berichte</h4>
+        
+        ${matchesWithReport.length > 0 ? matchesWithReport.map(m => {
+          // NUR Spieler mit Toren > 0 anzeigen
+          const playersWithGoals = Object.entries(m.report?.goals || {}).filter(([_, count]) => count > 0);
+          // NUR Spieler mit Assists > 0 anzeigen
+          const playersWithAssists = Object.entries(m.report?.assists || {}).filter(([_, count]) => count > 0);
           
-          ${selectedMatch ? `
-            <div style="margin-bottom: 30px; padding: 20px; background: #f5f9f6; border-radius: 16px;">
-              <h4 style="margin: 0 0 16px 0;">${selectedMatch.date} - ${selectedMatch.title}</h4>
-              
-              <label>Ergebnis (z.B. 4:4)</label>
-              <input id="match-result-${selectedMatch.id}" value="${selectedMatch.result || ''}" placeholder="z.B. 4:4">
-              
-              <h5 style="margin: 20px 0 10px;">⚽ Torschützen</h5>
-              ${getEligiblePlayersForMatch(selectedMatch).sort((a,b) => a.name.localeCompare(b.name)).map(player => `
-                <div style="display: flex; gap: 10px; align-items: center; margin: 8px 0;">
-                  <span style="width: 140px;"><strong>${player.name}</strong></span>
-                  <input id="goal-${selectedMatch.id}-${player.id}" type="number" min="0" value="${selectedMatch.report?.goals?.[player.id] || 0}" style="width: 70px;">
-                  <span class="small">Tore</span>
+          return `
+            <div class="match-report-item completed">
+              <div class="match-report-header">
+                <div class="match-report-title">${m.date} - ${m.title} (${m.team})</div>
+                <div class="match-report-actions">
+                  <button class="btn secondary small" onclick="setSelectedReportMatch('${m.id}')">✏️</button>
+                  <button class="btn danger small" onclick="deleteMatchReport('${m.id}')">🗑️</button>
                 </div>
-              `).join('')}
-              
-              <h5 style="margin: 20px 0 10px;">🎯 Assists</h5>
-              ${getEligiblePlayersForMatch(selectedMatch).sort((a,b) => a.name.localeCompare(b.name)).map(player => `
-                <div style="display: flex; gap: 10px; align-items: center; margin: 8px 0;">
-                  <span style="width: 140px;"><strong>${player.name}</strong></span>
-                  <input id="assist-${selectedMatch.id}-${player.id}" type="number" min="0" value="${selectedMatch.report?.assists?.[player.id] || 0}" style="width: 70px;">
-                  <span class="small">Assists</span>
-                </div>
-              `).join('')}
-              
-              <div style="display: flex; gap: 12px; margin-top: 24px;">
-                <button class="btn primary" style="flex: 2;" onclick="saveMatchReport('${selectedMatch.id}')">
-                  💾 Bericht speichern
-                </button>
-                <button class="btn secondary" style="flex: 1;" onclick="setSelectedReportMatch(null)">
-                  ✗ Abbrechen
-                </button>
+              </div>
+              <div class="match-report-result">Ergebnis: ${m.result}</div>
+              <div style="margin-top: 10px;">
+                ${playersWithGoals.length > 0 ? `
+                  <div style="font-weight: 600; color: var(--green);">⚽ Torschützen:</div>
+                  ${playersWithGoals.map(([playerId, count]) => {
+                    const player = findPlayer(playerId);
+                    return `<div style="margin-left: 16px;">${player?.name}: ${count} Tor${count !== 1 ? 'e' : ''}</div>`;
+                  }).join('')}
+                ` : ''}
+                
+                ${playersWithAssists.length > 0 ? `
+                  <div style="font-weight: 600; color: var(--blue); margin-top: ${playersWithGoals.length > 0 ? '8px' : '0'};">🎯 Assists:</div>
+                  ${playersWithAssists.map(([playerId, count]) => {
+                    const player = findPlayer(playerId);
+                    return `<div style="margin-left: 16px;">${player?.name}: ${count} Assist${count !== 1 ? 's' : ''}</div>`;
+                  }).join('')}
+                ` : ''}
               </div>
             </div>
-          ` : ''}
-          
-          <h4 style="margin: 30px 0 16px 0;">📋 Erstellte Berichte</h4>
-          
-          ${matchesWithReport.length > 0 ? matchesWithReport.map(m => {
-            // NUR Spieler mit Toren > 0 anzeigen
-            const playersWithGoals = Object.entries(m.report?.goals || {}).filter(([_, count]) => count > 0);
-            // NUR Spieler mit Assists > 0 anzeigen
-            const playersWithAssists = Object.entries(m.report?.assists || {}).filter(([_, count]) => count > 0);
-            
-            return `
-              <div class="match-report-item completed">
-                <div class="match-report-header">
-                  <div class="match-report-title">${m.date} - ${m.title} (${m.team})</div>
-                  <div class="match-report-actions">
-                    <button class="btn secondary small" onclick="setSelectedReportMatch('${m.id}')">✏️</button>
-                    <button class="btn danger small" onclick="deleteMatchReport('${m.id}')">🗑️</button>
-                  </div>
-                </div>
-                <div class="match-report-result">Ergebnis: ${m.result}</div>
-                <div style="margin-top: 10px;">
-                  ${playersWithGoals.length > 0 ? `
-                    <div style="font-weight: 600; color: var(--green);">⚽ Torschützen:</div>
-                    ${playersWithGoals.map(([playerId, count]) => {
-                      const player = findPlayer(playerId);
-                      return `<div style="margin-left: 16px;">${player?.name}: ${count} Tor${count !== 1 ? 'e' : ''}</div>`;
-                    }).join('')}
-                  ` : ''}
-                  
-                  ${playersWithAssists.length > 0 ? `
-                    <div style="font-weight: 600; color: var(--blue); margin-top: ${playersWithGoals.length > 0 ? '8px' : '0'};">🎯 Assists:</div>
-                    ${playersWithAssists.map(([playerId, count]) => {
-                      const player = findPlayer(playerId);
-                      return `<div style="margin-left: 16px;">${player?.name}: ${count} Assist${count !== 1 ? 's' : ''}</div>`;
-                    }).join('')}
-                  ` : ''}
-                </div>
-              </div>
-            `;
-          }).join('') : '<p class="small">Noch keine Spielberichte erstellt</p>'}
-        </div>
+          `;
+        }).join('') : '<p class="small">Noch keine Spielberichte erstellt</p>'}
       </div>
     </div>
   `;
@@ -2443,71 +2426,69 @@ function renderTests() {
   const today = new Date().toISOString().split('T')[0];
   
   return `
-    <div class="content">
-      <div class="section">
-        <div class="card">
-          <h3>📊 Leistungstests</h3>
-          
-          <div class="player-list">
-            ${players.map(p => `
-              <button class="${state.selectedPlayerId === p.id ? 'active' : ''}" onclick="setSelectedPlayer('${p.id}')">
-                ${p.name}
-              </button>
-            `).join('')}
-          </div>
-          
-          ${state.selectedPlayerId ? (() => {
-            const player = findPlayer(state.selectedPlayerId);
-            if (!player) return '';
-            
-            return `
-              <div>
-                <h4>${player.name}</h4>
-                
-                <label>Testdatum</label>
-                <input id="test-date-${player.id}" type="date" value="${today}">
-                
-                ${(state.testConfig || []).map(t => `
-                  <div style="margin-top: 12px;">
-                    <label>${t.name} (${t.unit}) - Ziel: ${t.target}</label>
-                    <input id="test-${player.id}-${t.id}" type="number" step="0.01" placeholder="Wert eingeben">
-                  </div>
-                `).join('')}
-                
-                <button class="btn primary" style="width: 100%; margin-top: 16px;" onclick="saveTestResults('${player.id}')">
-                  ✅ Tests speichern
-                </button>
-                
-                ${player.tests && player.tests.length > 0 ? `
-                  <div style="margin-top: 20px;">
-                    <h5 style="margin: 0 0 8px 0;">Alle Tests</h5>
-                    ${player.tests.map((test, index) => `
-                      <div style="margin-bottom: 12px; padding: 12px; background: white; border-radius: 8px; position: relative;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                          <div style="font-weight: 600;">📅 ${test.date}</div>
-                          ${session.role === "admin" ? `
-                            <button class="btn danger small" onclick="deleteSingleTest('${player.id}', ${index})">✗</button>
-                          ` : ''}
-                        </div>
-                        ${Object.entries(test.results).map(([testId, value]) => {
-                          const testConfig = state.testConfig?.find(t => t.id === testId);
-                          if (!testConfig) return '';
-                          const stars = calculateStars(value, testConfig);
-                          return `
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin: 4px 0;">
-                              <span>${testConfig.name}: <strong>${value} ${testConfig.unit}</strong></span>
-                              <span>${getStarsHtml(stars)}</span>
-                            </div>
-                          `;
-                        }).join('')}
-                      </div>
-                    `).join('')}
-                  </div>
-                ` : ''}
-              </div>
-            `;
-          })() : '<p class="small">Bitte Spieler auswählen</p>'}
+    <div class="section">
+      <div class="card">
+        <h3>📊 Leistungstests</h3>
+        
+        <div class="player-list">
+          ${players.map(p => `
+            <button class="${state.selectedPlayerId === p.id ? 'active' : ''}" onclick="setSelectedPlayer('${p.id}')">
+              ${p.name}
+            </button>
+          `).join('')}
         </div>
+        
+        ${state.selectedPlayerId ? (() => {
+          const player = findPlayer(state.selectedPlayerId);
+          if (!player) return '';
+          
+          return `
+            <div>
+              <h4>${player.name}</h4>
+              
+              <label>Testdatum</label>
+              <input id="test-date-${player.id}" type="date" value="${today}">
+              
+              ${(state.testConfig || []).map(t => `
+                <div style="margin-top: 12px;">
+                  <label>${t.name} (${t.unit}) - Ziel: ${t.target}</label>
+                  <input id="test-${player.id}-${t.id}" type="number" step="0.01" placeholder="Wert eingeben">
+                </div>
+              `).join('')}
+              
+              <button class="btn primary" style="width: 100%; margin-top: 16px;" onclick="saveTestResults('${player.id}')">
+                ✅ Tests speichern
+              </button>
+              
+              ${player.tests && player.tests.length > 0 ? `
+                <div style="margin-top: 20px;">
+                  <h5 style="margin: 0 0 8px 0;">Alle Tests</h5>
+                  ${player.tests.map((test, index) => `
+                    <div style="margin-bottom: 12px; padding: 12px; background: white; border-radius: 8px; position: relative;">
+                      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <div style="font-weight: 600;">📅 ${test.date}</div>
+                        ${session.role === "admin" ? `
+                          <button class="btn danger small" onclick="deleteSingleTest('${player.id}', ${index})">✗</button>
+                        ` : ''}
+                      </div>
+                      ${Object.entries(test.results).map(([testId, value]) => {
+                        const testConfig = state.testConfig?.find(t => t.id === testId);
+                        if (!testConfig) return '';
+                        const stars = calculateStars(value, testConfig);
+                        return `
+                          <div style="display: flex; justify-content: space-between; align-items: center; margin: 4px 0;">
+                            <span>${testConfig.name}: <strong>${value} ${testConfig.unit}</strong></span>
+                            <span>${getStarsHtml(stars)}</span>
+                          </div>
+                        `;
+                      }).join('')}
+                    </div>
+                  `).join('')}
+                </div>
+              ` : ''}
+            </div>
+          `;
+        })() : '<p class="small">Bitte Spieler auswählen</p>'}
       </div>
     </div>
   `;
@@ -2519,12 +2500,10 @@ function renderPlayers() {
   
   if (!selectedPlayer) {
     return `
-      <div class="content">
-        <div class="section">
-          <div class="card">
-            <h3>👥 Spieler</h3>
-            <p class="small">Keine Spieler vorhanden</p>
-          </div>
+      <div class="section">
+        <div class="card">
+          <h3>👥 Spieler</h3>
+          <p class="small">Keine Spieler vorhanden</p>
         </div>
       </div>
     `;
@@ -2539,131 +2518,129 @@ function renderPlayers() {
     '<span>📷 Foto hinzufügen</span>';
   
   return `
-    <div class="content">
-      <div class="section">
-        <div class="card">
-          <h3>👥 Spieler verwalten</h3>
+    <div class="section">
+      <div class="card">
+        <h3>👥 Spieler verwalten</h3>
+        
+        <div class="player-list">
+          ${players.map(p => `
+            <button class="${state.selectedPlayerId === p.id ? 'active' : ''}" onclick="setSelectedPlayer('${p.id}')">
+              ${p.name} (${p.team})
+            </button>
+          `).join('')}
+        </div>
+        
+        <div>
+          <h4>${selectedPlayer.name}</h4>
           
-          <div class="player-list">
-            ${players.map(p => `
-              <button class="${state.selectedPlayerId === p.id ? 'active' : ''}" onclick="setSelectedPlayer('${p.id}')">
-                ${p.name} (${p.team})
-              </button>
-            `).join('')}
+          <div class="photo-upload">
+            <div class="photo-preview" id="photo-preview">${photoHtml}</div>
+            <label class="btn secondary" style="cursor: pointer; margin-bottom: 10px;">
+              📷 Foto auswählen
+              <input type="file" id="photo-upload" accept="image/*" style="display:none;" onchange="handlePhotoUpload(event)">
+            </label>
+            <input type="hidden" id="player-photo" value="${selectedPlayer.photo || ''}">
           </div>
           
-          <div>
-            <h4>${selectedPlayer.name}</h4>
-            
-            <div class="photo-upload">
-              <div class="photo-preview" id="photo-preview">${photoHtml}</div>
-              <label class="btn secondary" style="cursor: pointer; margin-bottom: 10px;">
-                📷 Foto auswählen
-                <input type="file" id="photo-upload" accept="image/*" style="display:none;" onchange="handlePhotoUpload(event)">
-              </label>
-              <input type="hidden" id="player-photo" value="${selectedPlayer.photo || ''}">
+          <div class="grid2">
+            <div>
+              <label>Geburtstag</label>
+              <input id="player-birthday" type="date" value="${selectedPlayer.birthday || ''}">
             </div>
-            
-            <div class="grid2">
-              <div>
-                <label>Geburtstag</label>
-                <input id="player-birthday" type="date" value="${selectedPlayer.birthday || ''}">
-              </div>
-              <div>
-                <label>Im Verein seit</label>
-                <input id="player-since" value="${selectedPlayer.since || ''}">
-              </div>
-              <div>
-                <label>Position</label>
-                <input id="player-position" value="${selectedPlayer.position || ''}">
-              </div>
-              <div>
-                <label>Alternative Position</label>
-                <input id="player-altPosition" value="${selectedPlayer.altPosition || ''}">
-              </div>
-              <div>
-                <label>Trikotnummer</label>
-                <input id="player-jersey" type="number" value="${selectedPlayer.jersey || 0}">
-              </div>
-              <div>
-                <label>Eltern</label>
-                <input id="player-parent" value="${selectedPlayer.parentName || ''}">
-              </div>
-              <div>
-                <label>Telefon</label>
-                <input id="player-phone" value="${selectedPlayer.phone || ''}">
-              </div>
-              <div>
-                <label>Eltern Login</label>
-                <input value="${parentUser ? parentUser.username : '-'}" disabled>
-              </div>
-              <div>
-                <label>Speed (1-10)</label>
-                <input id="player-speed" value="${selectedPlayer.speed || ''}">
-              </div>
-              <div>
-                <label>Dribbling (1-10)</label>
-                <input id="player-dribbling" value="${selectedPlayer.dribbling || ''}">
-              </div>
-              <div>
-                <label>Passspiel (1-10)</label>
-                <input id="player-passing" value="${selectedPlayer.passing || ''}">
-              </div>
-              <div>
-                <label>Nächstes Team</label>
-                <input id="player-nextTeam" value="${selectedPlayer.nextTeam || ''}">
-              </div>
+            <div>
+              <label>Im Verein seit</label>
+              <input id="player-since" value="${selectedPlayer.since || ''}">
             </div>
-            
-            <label>Trainer-Notiz</label>
-            <textarea id="player-note" rows="3">${selectedPlayer.note || ''}</textarea>
-            
-            <div class="grid3" style="margin-top: 16px;">
-              <div class="stat"><strong>${selectedPlayer.goals || 0}</strong><span class="small">Tore</span></div>
-              <div class="stat"><strong>${selectedPlayer.assists || 0}</strong><span class="small">Assists</span></div>
-              <div class="stat"><strong>${calculatePlayerPercentage(selectedPlayer.id)}%</strong><span class="small">Training</span></div>
+            <div>
+              <label>Position</label>
+              <input id="player-position" value="${selectedPlayer.position || ''}">
             </div>
-            
-            <div style="display: flex; gap: 12px; margin-top: 16px;">
-              <button class="btn primary" style="flex: 2;" onclick="savePlayerData()">💾 Speichern</button>
-              <button class="btn secondary" style="flex: 1;" onclick="resetParentPassword('${selectedPlayer.id}')">🔑 Eltern-PW</button>
-              <button class="btn danger" style="flex: 1;" onclick="deletePlayer('${selectedPlayer.id}')">🗑️ Löschen</button>
+            <div>
+              <label>Alternative Position</label>
+              <input id="player-altPosition" value="${selectedPlayer.altPosition || ''}">
             </div>
-            
-            ${lastTest ? `
-              <div style="margin-top: 20px;">
-                <h5>📊 Letzter Test (${lastTest.date})</h5>
-                ${Object.entries(lastTest.results).map(([testId, value]) => {
-                  const testConfig = state.testConfig?.find(t => t.id === testId);
-                  if (!testConfig) return '';
-                  const stars = calculateStars(value, testConfig);
-                  return `
-                    <div style="display: flex; justify-content: space-between; margin: 4px 0;">
-                      <span>${testConfig.name}: <strong>${value} ${testConfig.unit}</strong></span>
-                      <span>${getStarsHtml(stars)}</span>
-                    </div>
-                  `;
-                }).join('')}
-              </div>
-            ` : ''}
-            
-            ${history.length > 0 ? `
-              <div style="margin-top: 20px;">
-                <h5>📅 Training-History</h5>
-                ${history.map(h => {
-                  const statusClass = h.status === 'present' ? 'history-present' : 
-                                    h.status === 'excused' ? 'history-excused' : 'history-missing';
-                  const statusText = h.status === 'present' ? '✓ anwesend' : 
-                                    h.status === 'excused' ? 'F entschuldigt' : '✗ unentschuldigt';
-                  return `
-                    <div class="history-item ${statusClass}">
-                      <span style="font-weight: 600;">${h.date}</span> - ${statusText}
-                    </div>
-                  `;
-                }).join('')}
-              </div>
-            ` : ''}
+            <div>
+              <label>Trikotnummer</label>
+              <input id="player-jersey" type="number" value="${selectedPlayer.jersey || 0}">
+            </div>
+            <div>
+              <label>Eltern</label>
+              <input id="player-parent" value="${selectedPlayer.parentName || ''}">
+            </div>
+            <div>
+              <label>Telefon</label>
+              <input id="player-phone" value="${selectedPlayer.phone || ''}">
+            </div>
+            <div>
+              <label>Eltern Login</label>
+              <input value="${parentUser ? parentUser.username : '-'}" disabled>
+            </div>
+            <div>
+              <label>Speed (1-10)</label>
+              <input id="player-speed" value="${selectedPlayer.speed || ''}">
+            </div>
+            <div>
+              <label>Dribbling (1-10)</label>
+              <input id="player-dribbling" value="${selectedPlayer.dribbling || ''}">
+            </div>
+            <div>
+              <label>Passspiel (1-10)</label>
+              <input id="player-passing" value="${selectedPlayer.passing || ''}">
+            </div>
+            <div>
+              <label>Nächstes Team</label>
+              <input id="player-nextTeam" value="${selectedPlayer.nextTeam || ''}">
+            </div>
           </div>
+          
+          <label>Trainer-Notiz</label>
+          <textarea id="player-note" rows="3">${selectedPlayer.note || ''}</textarea>
+          
+          <div class="grid3" style="margin-top: 16px;">
+            <div class="stat"><strong>${selectedPlayer.goals || 0}</strong><span class="small">Tore</span></div>
+            <div class="stat"><strong>${selectedPlayer.assists || 0}</strong><span class="small">Assists</span></div>
+            <div class="stat"><strong>${calculatePlayerPercentage(selectedPlayer.id)}%</strong><span class="small">Training</span></div>
+          </div>
+          
+          <div style="display: flex; gap: 12px; margin-top: 16px;">
+            <button class="btn primary" style="flex: 2;" onclick="savePlayerData()">💾 Speichern</button>
+            <button class="btn secondary" style="flex: 1;" onclick="resetParentPassword('${selectedPlayer.id}')">🔑 Eltern-PW</button>
+            <button class="btn danger" style="flex: 1;" onclick="deletePlayer('${selectedPlayer.id}')">🗑️ Löschen</button>
+          </div>
+          
+          ${lastTest ? `
+            <div style="margin-top: 20px;">
+              <h5>📊 Letzter Test (${lastTest.date})</h5>
+              ${Object.entries(lastTest.results).map(([testId, value]) => {
+                const testConfig = state.testConfig?.find(t => t.id === testId);
+                if (!testConfig) return '';
+                const stars = calculateStars(value, testConfig);
+                return `
+                  <div style="display: flex; justify-content: space-between; margin: 4px 0;">
+                    <span>${testConfig.name}: <strong>${value} ${testConfig.unit}</strong></span>
+                    <span>${getStarsHtml(stars)}</span>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          ` : ''}
+          
+          ${history.length > 0 ? `
+            <div style="margin-top: 20px;">
+              <h5>📅 Training-History</h5>
+              ${history.map(h => {
+                const statusClass = h.status === 'present' ? 'history-present' : 
+                                  h.status === 'excused' ? 'history-excused' : 'history-missing';
+                const statusText = h.status === 'present' ? '✓ anwesend' : 
+                                  h.status === 'excused' ? 'F entschuldigt' : '✗ unentschuldigt';
+                return `
+                  <div class="history-item ${statusClass}">
+                    <span style="font-weight: 600;">${h.date}</span> - ${statusText}
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          ` : ''}
         </div>
       </div>
     </div>
@@ -2673,12 +2650,10 @@ function renderPlayers() {
 function renderConfig() {
   if (session.role !== "admin") {
     return `
-      <div class="content">
-        <div class="section">
-          <div class="card">
-            <h3>⛔ Kein Zugriff</h3>
-            <p class="small">Nur der Haupttrainer hat Zugriff auf die Konfiguration.</p>
-          </div>
+      <div class="section">
+        <div class="card">
+          <h3>⛔ Kein Zugriff</h3>
+          <p class="small">Nur der Haupttrainer hat Zugriff auf die Konfiguration.</p>
         </div>
       </div>
     `;
@@ -2692,199 +2667,197 @@ function renderConfig() {
     '<span>⚽</span>';
   
   return `
-    <div class="content">
-      <div class="section">
-        <div class="card">
-          <h3>⚙️ Konfiguration</h3>
-          
-          <div class="logo-upload">
-            <div class="logo-preview" id="logo-preview">${logoHtml}</div>
-            <label class="btn secondary" style="cursor: pointer; margin-bottom: 10px;">
-              📷 Vereinslogo auswählen
-              <input type="file" id="logo-upload" accept="image/*" style="display:none;" onchange="handleLogoUpload(event)">
-            </label>
-            <input type="hidden" id="club-logo" value="${state.clubLogo || ''}">
-            <button class="btn primary" style="width: 100%;" onclick="saveClubLogo()">💾 Logo speichern</button>
-            <p class="small" style="margin-top: 10px;">Das Logo wird im Header und auf der Login-Seite angezeigt.</p>
-          </div>
-          
-          <h4>Team-Namen</h4>
-          <div class="grid2">
-            <div>
-              <label>Team 1</label>
-              <input id="config-team1" value="${state.teams.main}">
-            </div>
-            <div>
-              <label>Team 2</label>
-              <input id="config-team2" value="${state.teams.second}">
-            </div>
-          </div>
-          <label style="display: flex; align-items: center; gap: 8px; margin: 12px 0;">
-            <input type="checkbox" id="config-show2" ${state.teams.showSecond ? 'checked' : ''}> Zweites Team anzeigen
+    <div class="section">
+      <div class="card">
+        <h3>⚙️ Konfiguration</h3>
+        
+        <div class="logo-upload">
+          <div class="logo-preview" id="logo-preview">${logoHtml}</div>
+          <label class="btn secondary" style="cursor: pointer; margin-bottom: 10px;">
+            📷 Vereinslogo auswählen
+            <input type="file" id="logo-upload" accept="image/*" style="display:none;" onchange="handleLogoUpload(event)">
           </label>
-          <button class="btn primary" style="width: 100%; margin-bottom: 24px;" onclick="saveTeamConfig()">Team-Namen speichern</button>
-          
-          <h4>👤 Trainer-Kind</h4>
-          <div style="margin-bottom: 24px;">
-            <label>Kind auswählen (für blauen Bereich mit Abstimmung)</label>
-            <select onchange="updateTrainerChild(this.value)">
-              <option value="">Kein Kind</option>
-              ${players.map(p => `<option value="${p.id}" ${trainer?.childId === p.id ? 'selected' : ''}>${p.name} (${p.team})</option>`).join('')}
+          <input type="hidden" id="club-logo" value="${state.clubLogo || ''}">
+          <button class="btn primary" style="width: 100%;" onclick="saveClubLogo()">💾 Logo speichern</button>
+          <p class="small" style="margin-top: 10px;">Das Logo wird im Header und auf der Login-Seite angezeigt.</p>
+        </div>
+        
+        <h4>Team-Namen</h4>
+        <div class="grid2">
+          <div>
+            <label>Team 1</label>
+            <input id="config-team1" value="${state.teams.main}">
+          </div>
+          <div>
+            <label>Team 2</label>
+            <input id="config-team2" value="${state.teams.second}">
+          </div>
+        </div>
+        <label style="display: flex; align-items: center; gap: 8px; margin: 12px 0;">
+          <input type="checkbox" id="config-show2" ${state.teams.showSecond ? 'checked' : ''}> Zweites Team anzeigen
+        </label>
+        <button class="btn primary" style="width: 100%; margin-bottom: 24px;" onclick="saveTeamConfig()">Team-Namen speichern</button>
+        
+        <h4>👤 Trainer-Kind</h4>
+        <div style="margin-bottom: 24px;">
+          <label>Kind auswählen (für blauen Bereich mit Abstimmung)</label>
+          <select onchange="updateTrainerChild(this.value)">
+            <option value="">Kein Kind</option>
+            ${players.map(p => `<option value="${p.id}" ${trainer?.childId === p.id ? 'selected' : ''}>${p.name} (${p.team})</option>`).join('')}
+          </select>
+        </div>
+        
+        <h4>➕ Neuen Spieler anlegen</h4>
+        <div class="grid2">
+          <div>
+            <label>Name (Vor- und Nachname)</label>
+            <input id="new-player-name" placeholder="z.B. Max Mustermann">
+          </div>
+          <div>
+            <label>Team</label>
+            <select id="new-player-team">
+              <option value="${state.teams.main}">${state.teams.main}</option>
+              ${state.teams.showSecond ? `<option value="${state.teams.second}">${state.teams.second}</option>` : ''}
             </select>
           </div>
-          
-          <h4>➕ Neuen Spieler anlegen</h4>
-          <div class="grid2">
-            <div>
-              <label>Name (Vor- und Nachname)</label>
-              <input id="new-player-name" placeholder="z.B. Max Mustermann">
-            </div>
-            <div>
-              <label>Team</label>
-              <select id="new-player-team">
-                <option value="${state.teams.main}">${state.teams.main}</option>
-                ${state.teams.showSecond ? `<option value="${state.teams.second}">${state.teams.second}</option>` : ''}
-              </select>
-            </div>
+        </div>
+        <p class="small">Login-Name wird automatisch aus Vor- und Nachname generiert (z.B. max-mustermann)</p>
+        <button class="btn primary" style="width: 100%; margin-bottom: 24px;" onclick="addPlayer()">Spieler anlegen</button>
+        
+        <h4>⚽ Neues Spiel anlegen</h4>
+        <div class="grid2">
+          <div>
+            <label>Titel</label>
+            <input id="match-title" placeholder="z.B. U8 Tulln">
           </div>
-          <p class="small">Login-Name wird automatisch aus Vor- und Nachname generiert (z.B. max-mustermann)</p>
-          <button class="btn primary" style="width: 100%; margin-bottom: 24px;" onclick="addPlayer()">Spieler anlegen</button>
-          
-          <h4>⚽ Neues Spiel anlegen</h4>
-          <div class="grid2">
-            <div>
-              <label>Titel</label>
-              <input id="match-title" placeholder="z.B. U8 Tulln">
-            </div>
-            <div>
-              <label>Team</label>
-              <select id="match-team">
-                <option value="${state.teams.main}">${state.teams.main}</option>
-                ${state.teams.showSecond ? `<option value="${state.teams.second}">${state.teams.second}</option>` : ''}
-              </select>
-            </div>
-            <div>
-              <label>Datum</label>
-              <input id="match-date" type="date">
-            </div>
-            <div>
-              <label>Uhrzeit</label>
-              <input id="match-time" placeholder="z.B. 14:00">
-            </div>
-            <div>
-              <label>Art</label>
-              <select id="match-kind">
-                <option>TESTSPIEL</option>
-                <option>MEISTERSCHAFT</option>
-                <option>CUP</option>
-              </select>
-            </div>
-            <div>
-              <label>Ort</label>
-              <select id="match-location">
-                <option>Heim</option>
-                <option>Auswärts</option>
-              </select>
-            </div>
+          <div>
+            <label>Team</label>
+            <select id="match-team">
+              <option value="${state.teams.main}">${state.teams.main}</option>
+              ${state.teams.showSecond ? `<option value="${state.teams.second}">${state.teams.second}</option>` : ''}
+            </select>
           </div>
-          <label>Treffpunkt</label>
-          <input id="match-meeting" placeholder="z.B. 13:15 Sportplatz">
-          
-          <div id="opponents-field" style="margin-top: 12px; ${!isYouthTeam(state.teams.main) ? 'display: none;' : ''}">
-            <label>Gegner (durch Komma getrennt) - für U8 und kleiner</label>
-            <input id="match-opponents" placeholder="z.B. SV Klosterneuburg, SC Tulln, ASK Stockerau">
-            <p class="small">Maximal 5 Gegner möglich</p>
+          <div>
+            <label>Datum</label>
+            <input id="match-date" type="date">
           </div>
-          
-          <button class="btn primary" style="width: 100%; margin-top: 16px;" onclick="addMatch()">Spiel anlegen</button>
-          
-          <h4>📊 Leistungstests</h4>
-          ${(state.testConfig || []).map(t => `
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; background: white; border-radius: 8px; margin: 4px 0;">
-              <span><strong>${t.name}</strong> (${t.unit}) - Ziel: ${t.target}</span>
-              <button class="btn warn small" onclick="deleteTestConfig('${t.id}')">✗</button>
-            </div>
-          `).join('')}
-          
-          <div class="grid2" style="margin-top: 12px;">
-            <div>
-              <label>Name</label>
-              <input id="test-name" placeholder="z.B. 20m Sprint">
-            </div>
-            <div>
-              <label>Einheit</label>
-              <input id="test-unit" placeholder="z.B. sek">
-            </div>
-            <div>
-              <label>Zielwert</label>
-              <input id="test-target" type="number" step="0.01">
-            </div>
-            <div>
-              <label>Besser ist</label>
-              <select id="test-better">
-                <option value="lower">kleiner</option>
-                <option value="higher">größer</option>
-              </select>
-            </div>
+          <div>
+            <label>Uhrzeit</label>
+            <input id="match-time" placeholder="z.B. 14:00">
           </div>
-          <button class="btn primary" style="width: 100%; margin-bottom: 24px;" onclick="addTestConfig()">Test hinzufügen</button>
-          
-          <h4>👥 Co-Trainer</h4>
-          <div style="margin-bottom: 16px;">
-            <label>Neuer Co-Trainer</label>
-            <div style="display: flex; gap: 8px;">
-              <input id="coach-name" placeholder="Name" style="flex: 1;">
-              <button class="btn primary" onclick="addCoach()">Anlegen</button>
-            </div>
+          <div>
+            <label>Art</label>
+            <select id="match-kind">
+              <option>TESTSPIEL</option>
+              <option>MEISTERSCHAFT</option>
+              <option>CUP</option>
+            </select>
           </div>
-          
-          ${coaches.map(c => `
-            <div style="background: white; padding: 12px; border-radius: 8px; margin: 8px 0;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <span><strong>${c.name}</strong> (${c.username})</span>
-                <div>
-                  <button class="btn secondary small" style="margin-right: 5px;" onclick="resetCoachPassword('${c.id}')">🔑 PW</button>
-                  <button class="btn danger small" onclick="deleteCoach('${c.id}')">🗑️</button>
-                </div>
+          <div>
+            <label>Ort</label>
+            <select id="match-location">
+              <option>Heim</option>
+              <option>Auswärts</option>
+            </select>
+          </div>
+        </div>
+        <label>Treffpunkt</label>
+        <input id="match-meeting" placeholder="z.B. 13:15 Sportplatz">
+        
+        <div id="opponents-field" style="margin-top: 12px; ${!isYouthTeam(state.teams.main) ? 'display: none;' : ''}">
+          <label>Gegner (durch Komma getrennt) - für U8 und kleiner</label>
+          <input id="match-opponents" placeholder="z.B. SV Klosterneuburg, SC Tulln, ASK Stockerau">
+          <p class="small">Maximal 5 Gegner möglich</p>
+        </div>
+        
+        <button class="btn primary" style="width: 100%; margin-top: 16px;" onclick="addMatch()">Spiel anlegen</button>
+        
+        <h4>📊 Leistungstests</h4>
+        ${(state.testConfig || []).map(t => `
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; background: white; border-radius: 8px; margin: 4px 0;">
+            <span><strong>${t.name}</strong> (${t.unit}) - Ziel: ${t.target}</span>
+            <button class="btn warn small" onclick="deleteTestConfig('${t.id}')">✗</button>
+          </div>
+        `).join('')}
+        
+        <div class="grid2" style="margin-top: 12px;">
+          <div>
+            <label>Name</label>
+            <input id="test-name" placeholder="z.B. 20m Sprint">
+          </div>
+          <div>
+            <label>Einheit</label>
+            <input id="test-unit" placeholder="z.B. sek">
+          </div>
+          <div>
+            <label>Zielwert</label>
+            <input id="test-target" type="number" step="0.01">
+          </div>
+          <div>
+            <label>Besser ist</label>
+            <select id="test-better">
+              <option value="lower">kleiner</option>
+              <option value="higher">größer</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn primary" style="width: 100%; margin-bottom: 24px;" onclick="addTestConfig()">Test hinzufügen</button>
+        
+        <h4>👥 Co-Trainer</h4>
+        <div style="margin-bottom: 16px;">
+          <label>Neuer Co-Trainer</label>
+          <div style="display: flex; gap: 8px;">
+            <input id="coach-name" placeholder="Name" style="flex: 1;">
+            <button class="btn primary" onclick="addCoach()">Anlegen</button>
+          </div>
+        </div>
+        
+        ${coaches.map(c => `
+          <div style="background: white; padding: 12px; border-radius: 8px; margin: 8px 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span><strong>${c.name}</strong> (${c.username})</span>
+              <div>
+                <button class="btn secondary small" style="margin-right: 5px;" onclick="resetCoachPassword('${c.id}')">🔑 PW</button>
+                <button class="btn danger small" onclick="deleteCoach('${c.id}')">🗑️</button>
               </div>
-              <label>Kind zuweisen (für gelben Bereich mit Abstimmung)</label>
-              <select onchange="updateCoachChild('${c.id}', this.value)">
-                <option value="">Kein Kind</option>
-                ${players.map(p => `<option value="${p.id}" ${c.childId === p.id ? 'selected' : ''}>${p.name} (${p.team})</option>`).join('')}
-              </select>
             </div>
-          `).join('')}
-          
-          <h4 style="margin-top: 30px; color: var(--red);">⚠️ GEFAHRENZONE</h4>
-          
-          <div style="background: #ffe6e3; padding: 16px; border-radius: 12px; margin-bottom: 16px; border-left: 4px solid var(--red);">
-            <h4 style="margin: 0 0 8px 0; color: var(--red);">📊 Leistungsstatistiken zurücksetzen</h4>
-            <p class="small">Löscht ALLE Testergebnisse aller Spieler. Die Test-Kategorien bleiben erhalten.</p>
-            <button class="btn danger" style="width: 100%;" onclick="confirmResetTests()">📊 Alle Tests löschen</button>
+            <label>Kind zuweisen (für gelben Bereich mit Abstimmung)</label>
+            <select onchange="updateCoachChild('${c.id}', this.value)">
+              <option value="">Kein Kind</option>
+              ${players.map(p => `<option value="${p.id}" ${c.childId === p.id ? 'selected' : ''}>${p.name} (${p.team})</option>`).join('')}
+            </select>
           </div>
-          
-          <div style="background: #ffe6e3; padding: 16px; border-radius: 12px; margin-bottom: 16px; border-left: 4px solid var(--red);">
-            <h4 style="margin: 0 0 8px 0; color: var(--red);">🔄 Neue Saison starten</h4>
-            <p class="small">Löscht ALLE Spiele, Trainings, Tore und Assists. Spieler und Tests bleiben erhalten. Die alten Statistiken werden in der Historie gespeichert.</p>
-            <button class="btn danger" style="width: 100%;" onclick="resetSeason()">🔄 Neue Saison starten</button>
-          </div>
-          
-          <div style="background: #ffd7d7; padding: 16px; border-radius: 12px; margin-bottom: 24px; border-left: 4px solid #b30000;">
-            <h4 style="margin: 0 0 8px 0; color: #b30000;">⚠️ GESAMTES TEAM LÖSCHEN</h4>
-            <p class="small">Löscht ALLE Spieler und deren Eltern-Zugänge. Diese Aktion kann nicht rückgängig gemacht werden!</p>
-            <button class="btn danger" style="width: 100%; font-weight: 800;" onclick="confirmDeleteAllPlayers()">🗑️ ALLE SPIELER LÖSCHEN</button>
-          </div>
-          
-          <h4 style="margin-top: 24px;">📊 Statistiken</h4>
-          <div style="background: #f5f9f6; padding: 12px; border-radius: 12px;">
-            <div class="listline">👥 Spieler: ${state.players?.length || 0}</div>
-            <div class="listline">⚽ Spiele: ${state.matches?.length || 0}</div>
-            <div class="listline">🏋️ Trainings: ${state.trainings?.length || 0}</div>
-            <div class="listline">👤 Eltern-Zugänge: ${state.users?.filter(u => u.role === "parent").length || 0}</div>
-            <div class="listline">👥 Co-Trainer: ${coaches.length}</div>
-            <div class="listline">📊 Gespeicherte Tests: ${state.players?.reduce((sum, p) => sum + (p.tests?.length || 0), 0) || 0}</div>
-            <div class="listline">📅 Aktuelle Saison: ${state.currentSeason}</div>
-          </div>
+        `).join('')}
+        
+        <h4 style="margin-top: 30px; color: var(--red);">⚠️ GEFAHRENZONE</h4>
+        
+        <div style="background: #ffe6e3; padding: 16px; border-radius: 12px; margin-bottom: 16px; border-left: 4px solid var(--red);">
+          <h4 style="margin: 0 0 8px 0; color: var(--red);">📊 Leistungsstatistiken zurücksetzen</h4>
+          <p class="small">Löscht ALLE Testergebnisse aller Spieler. Die Test-Kategorien bleiben erhalten.</p>
+          <button class="btn danger" style="width: 100%;" onclick="confirmResetTests()">📊 Alle Tests löschen</button>
+        </div>
+        
+        <div style="background: #ffe6e3; padding: 16px; border-radius: 12px; margin-bottom: 16px; border-left: 4px solid var(--red);">
+          <h4 style="margin: 0 0 8px 0; color: var(--red);">🔄 Neue Saison starten</h4>
+          <p class="small">Löscht ALLE Spiele, Trainings, Tore und Assists. Spieler und Tests bleiben erhalten. Die alten Statistiken werden in der Historie gespeichert.</p>
+          <button class="btn danger" style="width: 100%;" onclick="resetSeason()">🔄 Neue Saison starten</button>
+        </div>
+        
+        <div style="background: #ffd7d7; padding: 16px; border-radius: 12px; margin-bottom: 24px; border-left: 4px solid #b30000;">
+          <h4 style="margin: 0 0 8px 0; color: #b30000;">⚠️ GESAMTES TEAM LÖSCHEN</h4>
+          <p class="small">Löscht ALLE Spieler und deren Eltern-Zugänge. Diese Aktion kann nicht rückgängig gemacht werden!</p>
+          <button class="btn danger" style="width: 100%; font-weight: 800;" onclick="confirmDeleteAllPlayers()">🗑️ ALLE SPIELER LÖSCHEN</button>
+        </div>
+        
+        <h4 style="margin-top: 24px;">📊 Statistiken</h4>
+        <div style="background: #f5f9f6; padding: 12px; border-radius: 12px;">
+          <div class="listline">👥 Spieler: ${state.players?.length || 0}</div>
+          <div class="listline">⚽ Spiele: ${state.matches?.length || 0}</div>
+          <div class="listline">🏋️ Trainings: ${state.trainings?.length || 0}</div>
+          <div class="listline">👤 Eltern-Zugänge: ${state.users?.filter(u => u.role === "parent").length || 0}</div>
+          <div class="listline">👥 Co-Trainer: ${coaches.length}</div>
+          <div class="listline">📊 Gespeicherte Tests: ${state.players?.reduce((sum, p) => sum + (p.tests?.length || 0), 0) || 0}</div>
+          <div class="listline">📅 Aktuelle Saison: ${state.currentSeason}</div>
         </div>
       </div>
     </div>
@@ -2942,63 +2915,61 @@ function renderMilestones(player) {
   const sortedSeasons = Object.keys(seasons).sort((a, b) => b - a);
   
   return `
-    <div class="content">
-      <div class="section">
-        <div class="card">
-          <h3>🏆 Meilensteine - ${player.name}</h3>
-          <p class="small" style="margin-bottom: 16px; text-align: center;">Alle Saison-Statistiken auf einen Blick</p>
-          
-          <!-- Aktuelle Saison (hervorgehoben) mit korrektem Saison-Format -->
-          <div class="milestone-card" style="background: linear-gradient(135deg, #e8f0fe, #d4e3ff); border-color: var(--blue);">
-            <div class="milestone-year">⚡ Aktuelle Saison ${currentSeasonFormatted}</div>
-            <div class="milestone-stats">
-              <div class="milestone-stat">
-                <div class="value">${currentSeasonData.goals}</div>
-                <div class="label">⚽ Tore</div>
-              </div>
-              <div class="milestone-stat">
-                <div class="value">${currentSeasonData.assists}</div>
-                <div class="label">🎯 Assists</div>
-              </div>
-              <div class="milestone-stat">
-                <div class="value">${currentSeasonData.percentage}%</div>
-                <div class="label">🏋️ Training</div>
-              </div>
+    <div class="section">
+      <div class="card">
+        <h3>🏆 Meilensteine - ${player.name}</h3>
+        <p class="small" style="margin-bottom: 16px; text-align: center;">Alle Saison-Statistiken auf einen Blick</p>
+        
+        <!-- Aktuelle Saison (hervorgehoben) mit korrektem Saison-Format -->
+        <div class="milestone-card" style="background: linear-gradient(135deg, #e8f0fe, #d4e3ff); border-color: var(--blue);">
+          <div class="milestone-year">⚡ Aktuelle Saison ${currentSeasonFormatted}</div>
+          <div class="milestone-stats">
+            <div class="milestone-stat">
+              <div class="value">${currentSeasonData.goals}</div>
+              <div class="label">⚽ Tore</div>
+            </div>
+            <div class="milestone-stat">
+              <div class="value">${currentSeasonData.assists}</div>
+              <div class="label">🎯 Assists</div>
+            </div>
+            <div class="milestone-stat">
+              <div class="value">${currentSeasonData.percentage}%</div>
+              <div class="label">🏋️ Training</div>
             </div>
           </div>
-          
-          ${sortedSeasons.length > 0 ? sortedSeasons.map(year => {
-            const data = seasons[year];
-            // Vergangene Saison im Format JJJJ/JJJJ
-            const seasonFormatted = formatSeason(year);
-            return `
-              <div class="milestone-card">
-                <div class="milestone-year">📅 Saison ${seasonFormatted}</div>
-                <div class="milestone-stats">
-                  <div class="milestone-stat">
-                    <div class="value">${data.goals}</div>
-                    <div class="label">⚽ Tore</div>
-                  </div>
-                  <div class="milestone-stat">
-                    <div class="value">${data.assists}</div>
-                    <div class="label">🎯 Assists</div>
-                  </div>
-                  <div class="milestone-stat">
-                    <div class="value">${data.percentage}%</div>
-                    <div class="label">🏋️ Training</div>
-                  </div>
+        </div>
+        
+        ${sortedSeasons.length > 0 ? sortedSeasons.map(year => {
+          const data = seasons[year];
+          // Vergangene Saison im Format JJJJ/JJJJ
+          const seasonFormatted = formatSeason(year);
+          return `
+            <div class="milestone-card">
+              <div class="milestone-year">📅 Saison ${seasonFormatted}</div>
+              <div class="milestone-stats">
+                <div class="milestone-stat">
+                  <div class="value">${data.goals}</div>
+                  <div class="label">⚽ Tore</div>
+                </div>
+                <div class="milestone-stat">
+                  <div class="value">${data.assists}</div>
+                  <div class="label">🎯 Assists</div>
+                </div>
+                <div class="milestone-stat">
+                  <div class="value">${data.percentage}%</div>
+                  <div class="label">🏋️ Training</div>
                 </div>
               </div>
-            `;
-          }).join('') : `
-            <div style="text-align: center; padding: 20px; color: var(--muted);">
-              Noch keine abgeschlossenen Saisons vorhanden.
             </div>
-          `}
-          
-          <div style="margin-top: 20px; padding: 12px; background: #f5f9f6; border-radius: 12px; font-size: 12px; text-align: center;">
-            ⚡ Aktuelle Saison • 📅 Abgeschlossene Saisons (bleiben dauerhaft gespeichert)
+          `;
+        }).join('') : `
+          <div style="text-align: center; padding: 20px; color: var(--muted);">
+            Noch keine abgeschlossenen Saisons vorhanden.
           </div>
+        `}
+        
+        <div style="margin-top: 20px; padding: 12px; background: #f5f9f6; border-radius: 12px; font-size: 12px; text-align: center;">
+          ⚡ Aktuelle Saison • 📅 Abgeschlossene Saisons (bleiben dauerhaft gespeichert)
         </div>
       </div>
     </div>
@@ -3007,7 +2978,7 @@ function renderMilestones(player) {
 
 function renderParentView() {
   const player = findPlayer(session.playerId);
-  if (!player) return `<div class="content"><div class="section">Fehler: Kein Spieler gefunden</div></div>`;
+  if (!player) return `<div class="section">Fehler: Kein Spieler gefunden</div>`;
   
   const upcomingMatches = getUpcomingMatchesForParent(player.id);
   const history = getTrainingHistory(player.id);
@@ -3029,143 +3000,141 @@ function renderParentView() {
   const assistRank = assistRanking[player.id] || '-';
   
   return `
-    <div class="content">
-      <div class="section">
-        <div class="tabs" style="margin-bottom: 16px;">
-          <button class="pill ${parentView === 'kind' ? 'active' : 'alt'}" onclick="setParentView('kind')">👤 Mein Kind</button>
-          <button class="pill ${parentView === 'calendar' ? 'active' : 'alt'}" onclick="setParentView('calendar')">📅 Spiele</button>
-          <button class="pill ${parentView === 'tests' ? 'active' : 'alt'}" onclick="setParentView('tests')">📊 Tests</button>
-          <button class="pill ${parentView === 'history' ? 'active' : 'alt'}" onclick="setParentView('history')">📋 Training</button>
-          <button class="pill ${parentView === 'milestones' ? 'active' : 'alt'}" onclick="setParentView('milestones')">🏆 Meilensteine</button>
-          <button class="pill ${parentView === 'password' ? 'active' : 'alt'}" onclick="setParentView('password')">🔑 Passwort</button>
-        </div>
-        
-        ${parentView === 'kind' ? `
-          <div class="card">
-            <h3>👤 ${player.name}</h3>
-            
-            ${photoHtml}
-            
-            <div class="current-stats">
-              <div class="stat-card">
-                <div class="value">${player.goals || 0}</div>
-                <div class="label">Tore</div>
-                <div class="ranking">
-                  Rang ${goalRank} ${goalRank !== '-' ? getRankingBadge(goalRank) : ''}
-                </div>
-              </div>
-              <div class="stat-card">
-                <div class="value">${player.assists || 0}</div>
-                <div class="label">Assists</div>
-                <div class="ranking">
-                  Rang ${assistRank} ${assistRank !== '-' ? getRankingBadge(assistRank) : ''}
-                </div>
-              </div>
-            </div>
-            
-            <h4 style="margin: 20px 0 12px 0;">📅 Anstehende Spiele</h4>
-            ${upcomingMatches.length > 0 ? upcomingMatches.map(match => {
-              const status = match.attendance?.[player.id] || 'open';
-              const statusClass = getAttendanceStatusClass(status);
-              const statusText = status === 'coming' ? '✓ Du kommst' : 
-                                status === 'maybe' ? '? Vielleicht' : 
-                                status === 'missing' ? '✗ Du fehlst' : '○ Nicht abgestimmt';
-              
-              return `
-                <div class="next-match-card ${statusClass}" style="margin-bottom: 12px;">
-                  <div class="small">${match.date} · ${match.time}</div>
-                  <div class="title">${match.title}</div>
-                  <div class="details">${match.location}</div>
-                  <div class="small" style="margin-top: 4px;">${statusText}</div>
-                  <div class="small" style="margin-top: 4px;">Treffpunkt: ${match.meeting}</div>
-                </div>
-              `;
-            }).join('') : '<div class="card" style="text-align: center; padding: 20px;">Keine anstehenden Spiele</div>'}
-            
-            <div style="display: flex; gap: 16px; margin: 20px 0;">
-              <div class="stat" style="flex: 1;"><strong>${percent}%</strong><br><span class="small">Training</span></div>
-              <div class="stat" style="flex: 1;"><strong>${matchPercent}%</strong><br><span class="small">Spiele</span></div>
-            </div>
-            
-            <div style="margin-top: 16px;">
-              <div class="listline">Geburtstag: ${player.birthday || '-'}</div>
-              <div class="listline">Position: ${player.position || '-'}</div>
-              <div class="listline">Trikot: ${player.jersey || '-'}</div>
-              <div class="listline">Im Verein seit: ${player.since || '-'}</div>
-              <div class="listline">Nächstes Team: ${player.nextTeam || '-'}</div>
-            </div>
-            
-            ${player.note ? `
-              <h4 style="margin: 20px 0 8px;">📝 Trainer-Notiz</h4>
-              <div style="background: #f5f9f6; padding: 12px; border-radius: 8px;">${player.note}</div>
-            ` : ''}
-            
-            ${lastTest ? `
-              <h4 style="margin: 20px 0 8px;">📊 Letzter Test (${lastTest.date})</h4>
-              <div style="background: #f5f9f6; padding: 12px; border-radius: 8px;">
-                ${Object.entries(lastTest.results).map(([testId, value]) => {
-                  const testConfig = state.testConfig?.find(t => t.id === testId);
-                  if (!testConfig) return '';
-                  const stars = calculateStars(value, testConfig);
-                  return `
-                    <div style="display: flex; justify-content: space-between; margin: 4px 0;">
-                      <span>${testConfig.name}: <strong>${value} ${testConfig.unit}</strong></span>
-                      <span>${getStarsHtml(stars)}</span>
-                    </div>
-                  `;
-                }).join('')}
-              </div>
-            ` : ''}
-          </div>
-        ` : parentView === 'calendar' ? renderCalendar() : 
-           parentView === 'tests' ? `
-          <div class="card">
-            <h3>📊 Leistungstests - ${player.name}</h3>
-            ${tests.length > 0 ? tests.sort((a,b) => b.date.localeCompare(a.date)).map(test => `
-              <div style="margin-bottom: 16px; padding: 12px; background: #f5f9f6; border-radius: 8px;">
-                <div style="font-weight: 600; margin-bottom: 8px;">📅 ${test.date}</div>
-                ${Object.entries(test.results).map(([testId, value]) => {
-                  const testConfig = state.testConfig?.find(t => t.id === testId);
-                  if (!testConfig) return '';
-                  const stars = calculateStars(value, testConfig);
-                  return `
-                    <div style="display: flex; justify-content: space-between; margin: 4px 0;">
-                      <span>${testConfig.name}: <strong>${value} ${testConfig.unit}</strong></span>
-                      <span>${getStarsHtml(stars)}</span>
-                    </div>
-                  `;
-                }).join('')}
-              </div>
-            `).join('') : '<p class="small">Noch keine Tests vorhanden</p>'}
-          </div>
-        ` : parentView === 'history' ? `
-          <div class="card">
-            <h3>📋 Training-History</h3>
-            ${history.length > 0 ? history.map(h => {
-              const statusClass = h.status === 'present' ? 'history-present' : 
-                                h.status === 'excused' ? 'history-excused' : 'history-missing';
-              const statusText = h.status === 'present' ? '✓ anwesend' : 
-                                h.status === 'excused' ? 'F entschuldigt' : '✗ unentschuldigt';
-              return `
-                <div class="history-item ${statusClass}">
-                  <span style="font-weight: 600;">${h.date}</span> - ${statusText}
-                </div>
-              `;
-            }).join('') : '<p class="small">Noch keine Trainings erfasst</p>'}
-          </div>
-        ` : parentView === 'milestones' ? renderMilestones(player) : `
-          <div class="card">
-            <h3>🔑 Passwort ändern</h3>
-            <label>Altes Passwort</label>
-            <input id="old-password" type="password">
-            <label>Neues Passwort</label>
-            <input id="new-password" type="password">
-            <label>Passwort wiederholen</label>
-            <input id="confirm-password" type="password">
-            <button class="btn primary" style="width: 100%; margin-top: 16px;" onclick="changePassword()">Passwort ändern</button>
-          </div>
-        `}
+    <div class="section">
+      <div class="tabs" style="margin-bottom: 16px;">
+        <button class="pill ${parentView === 'kind' ? 'active' : 'alt'}" onclick="setParentView('kind')">👤 Mein Kind</button>
+        <button class="pill ${parentView === 'calendar' ? 'active' : 'alt'}" onclick="setParentView('calendar')">📅 Spiele</button>
+        <button class="pill ${parentView === 'tests' ? 'active' : 'alt'}" onclick="setParentView('tests')">📊 Tests</button>
+        <button class="pill ${parentView === 'history' ? 'active' : 'alt'}" onclick="setParentView('history')">📋 Training</button>
+        <button class="pill ${parentView === 'milestones' ? 'active' : 'alt'}" onclick="setParentView('milestones')">🏆 Meilensteine</button>
+        <button class="pill ${parentView === 'password' ? 'active' : 'alt'}" onclick="setParentView('password')">🔑 Passwort</button>
       </div>
+      
+      ${parentView === 'kind' ? `
+        <div class="card">
+          <h3>👤 ${player.name}</h3>
+          
+          ${photoHtml}
+          
+          <div class="current-stats">
+            <div class="stat-card">
+              <div class="value">${player.goals || 0}</div>
+              <div class="label">Tore</div>
+              <div class="ranking">
+                Rang ${goalRank} ${goalRank !== '-' ? getRankingBadge(goalRank) : ''}
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="value">${player.assists || 0}</div>
+              <div class="label">Assists</div>
+              <div class="ranking">
+                Rang ${assistRank} ${assistRank !== '-' ? getRankingBadge(assistRank) : ''}
+              </div>
+            </div>
+          </div>
+          
+          <h4 style="margin: 20px 0 12px 0;">📅 Anstehende Spiele</h4>
+          ${upcomingMatches.length > 0 ? upcomingMatches.map(match => {
+            const status = match.attendance?.[player.id] || 'open';
+            const statusClass = getAttendanceStatusClass(status);
+            const statusText = status === 'coming' ? '✓ Du kommst' : 
+                              status === 'maybe' ? '? Vielleicht' : 
+                              status === 'missing' ? '✗ Du fehlst' : '○ Nicht abgestimmt';
+            
+            return `
+              <div class="next-match-card ${statusClass}" style="margin-bottom: 12px;">
+                <div class="small">${match.date} · ${match.time}</div>
+                <div class="title">${match.title}</div>
+                <div class="details">${match.location}</div>
+                <div class="small" style="margin-top: 4px;">${statusText}</div>
+                <div class="small" style="margin-top: 4px;">Treffpunkt: ${match.meeting}</div>
+              </div>
+            `;
+          }).join('') : '<div class="card" style="text-align: center; padding: 20px;">Keine anstehenden Spiele</div>'}
+          
+          <div style="display: flex; gap: 16px; margin: 20px 0;">
+            <div class="stat" style="flex: 1;"><strong>${percent}%</strong><br><span class="small">Training</span></div>
+            <div class="stat" style="flex: 1;"><strong>${matchPercent}%</strong><br><span class="small">Spiele</span></div>
+          </div>
+          
+          <div style="margin-top: 16px;">
+            <div class="listline">Geburtstag: ${player.birthday || '-'}</div>
+            <div class="listline">Position: ${player.position || '-'}</div>
+            <div class="listline">Trikot: ${player.jersey || '-'}</div>
+            <div class="listline">Im Verein seit: ${player.since || '-'}</div>
+            <div class="listline">Nächstes Team: ${player.nextTeam || '-'}</div>
+          </div>
+          
+          ${player.note ? `
+            <h4 style="margin: 20px 0 8px;">📝 Trainer-Notiz</h4>
+            <div style="background: #f5f9f6; padding: 12px; border-radius: 8px;">${player.note}</div>
+          ` : ''}
+          
+          ${lastTest ? `
+            <h4 style="margin: 20px 0 8px;">📊 Letzter Test (${lastTest.date})</h4>
+            <div style="background: #f5f9f6; padding: 12px; border-radius: 8px;">
+              ${Object.entries(lastTest.results).map(([testId, value]) => {
+                const testConfig = state.testConfig?.find(t => t.id === testId);
+                if (!testConfig) return '';
+                const stars = calculateStars(value, testConfig);
+                return `
+                  <div style="display: flex; justify-content: space-between; margin: 4px 0;">
+                    <span>${testConfig.name}: <strong>${value} ${testConfig.unit}</strong></span>
+                    <span>${getStarsHtml(stars)}</span>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          ` : ''}
+        </div>
+      ` : parentView === 'calendar' ? renderCalendar() : 
+         parentView === 'tests' ? `
+        <div class="card">
+          <h3>📊 Leistungstests - ${player.name}</h3>
+          ${tests.length > 0 ? tests.sort((a,b) => b.date.localeCompare(a.date)).map(test => `
+            <div style="margin-bottom: 16px; padding: 12px; background: #f5f9f6; border-radius: 8px;">
+              <div style="font-weight: 600; margin-bottom: 8px;">📅 ${test.date}</div>
+              ${Object.entries(test.results).map(([testId, value]) => {
+                const testConfig = state.testConfig?.find(t => t.id === testId);
+                if (!testConfig) return '';
+                const stars = calculateStars(value, testConfig);
+                return `
+                  <div style="display: flex; justify-content: space-between; margin: 4px 0;">
+                    <span>${testConfig.name}: <strong>${value} ${testConfig.unit}</strong></span>
+                    <span>${getStarsHtml(stars)}</span>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          `).join('') : '<p class="small">Noch keine Tests vorhanden</p>'}
+        </div>
+      ` : parentView === 'history' ? `
+        <div class="card">
+          <h3>📋 Training-History</h3>
+          ${history.length > 0 ? history.map(h => {
+            const statusClass = h.status === 'present' ? 'history-present' : 
+                              h.status === 'excused' ? 'history-excused' : 'history-missing';
+            const statusText = h.status === 'present' ? '✓ anwesend' : 
+                              h.status === 'excused' ? 'F entschuldigt' : '✗ unentschuldigt';
+            return `
+              <div class="history-item ${statusClass}">
+                <span style="font-weight: 600;">${h.date}</span> - ${statusText}
+              </div>
+            `;
+          }).join('') : '<p class="small">Noch keine Trainings erfasst</p>'}
+        </div>
+      ` : parentView === 'milestones' ? renderMilestones(player) : `
+        <div class="card">
+          <h3>🔑 Passwort ändern</h3>
+          <label>Altes Passwort</label>
+          <input id="old-password" type="password">
+          <label>Neues Passwort</label>
+          <input id="new-password" type="password">
+          <label>Passwort wiederholen</label>
+          <input id="confirm-password" type="password">
+          <button class="btn primary" style="width: 100%; margin-top: 16px;" onclick="changePassword()">Passwort ändern</button>
+        </div>
+      `}
     </div>
   `;
 }
@@ -3233,117 +3202,115 @@ function renderTrainerKindView() {
   }
   
   return `
-    <div class="content">
-      <div class="trainer-kind-section">
-        <div class="section-title">👤 Mein Kind: ${player.name} (mit Abstimmrecht)</div>
-        
-        <div class="tabs" style="margin-bottom: 16px;">
-          <button class="pill ${trainerKindView === 'kind' ? 'active' : 'alt'}" onclick="setTrainerKindView('kind')">👤 Mein Kind</button>
-          <button class="pill ${trainerKindView === 'calendar' ? 'active' : 'alt'}" onclick="setTrainerKindView('calendar')">📅 Spiele</button>
-          <button class="pill ${trainerKindView === 'tests' ? 'active' : 'alt'}" onclick="setTrainerKindView('tests')">📊 Tests</button>
-          <button class="pill ${trainerKindView === 'history' ? 'active' : 'alt'}" onclick="setTrainerKindView('history')">📋 Training</button>
-          <button class="pill ${trainerKindView === 'milestones' ? 'active' : 'alt'}" onclick="setTrainerKindView('milestones')">🏆 Meilensteine</button>
-        </div>
-        
-        ${trainerKindView === 'kind' ? `
-          <div class="card">
-            <h3>${player.name}</h3>
-            
-            ${photoHtml}
-            
-            <div class="current-stats">
-              <div class="stat-card">
-                <div class="value">${player.goals || 0}</div>
-                <div class="label">Tore</div>
-                <div class="ranking">
-                  Rang ${goalRank} ${goalRank !== '-' ? getRankingBadge(goalRank) : ''}
-                </div>
-              </div>
-              <div class="stat-card">
-                <div class="value">${player.assists || 0}</div>
-                <div class="label">Assists</div>
-                <div class="ranking">
-                  Rang ${assistRank} ${assistRank !== '-' ? getRankingBadge(assistRank) : ''}
-                </div>
-              </div>
-            </div>
-            
-            <h4 style="margin: 20px 0 12px 0;">📅 Anstehende Spiele</h4>
-            ${upcomingMatchesHtml}
-            
-            <div style="display: flex; gap: 16px; margin: 20px 0;">
-              <div class="stat" style="flex: 1;"><strong>${percent}%</strong><br><span class="small">Training</span></div>
-              <div class="stat" style="flex: 1;"><strong>${matchPercent}%</strong><br><span class="small">Spiele</span></div>
-            </div>
-            
-            <div style="margin-top: 16px;">
-              <div class="listline">Geburtstag: ${player.birthday || '-'}</div>
-              <div class="listline">Position: ${player.position || '-'}</div>
-              <div class="listline">Trikot: ${player.jersey || '-'}</div>
-              <div class="listline">Im Verein seit: ${player.since || '-'}</div>
-              <div class="listline">Nächstes Team: ${player.nextTeam || '-'}</div>
-            </div>
-            
-            ${player.note ? `
-              <h4 style="margin: 20px 0 8px;">📝 Trainer-Notiz</h4>
-              <div style="background: #f5f9f6; padding: 12px; border-radius: 8px;">${player.note}</div>
-            ` : ''}
-            
-            ${lastTest ? `
-              <h4 style="margin: 20px 0 8px;">📊 Letzter Test (${lastTest.date})</h4>
-              <div style="background: #f5f9f6; padding: 12px; border-radius: 8px;">
-                ${Object.entries(lastTest.results).map(([testId, value]) => {
-                  const testConfig = state.testConfig?.find(t => t.id === testId);
-                  if (!testConfig) return '';
-                  const stars = calculateStars(value, testConfig);
-                  return `
-                    <div style="display: flex; justify-content: space-between; margin: 4px 0;">
-                      <span>${testConfig.name}: <strong>${value} ${testConfig.unit}</strong></span>
-                      <span>${getStarsHtml(stars)}</span>
-                    </div>
-                  `;
-                }).join('')}
-              </div>
-            ` : ''}
-          </div>
-        ` : trainerKindView === 'calendar' ? renderCalendar() : trainerKindView === 'tests' ? `
-          <div class="card">
-            <h3>📊 Leistungstests - ${player.name}</h3>
-            ${tests.length > 0 ? tests.sort((a,b) => b.date.localeCompare(a.date)).map(test => `
-              <div style="margin-bottom: 16px; padding: 12px; background: #f5f9f6; border-radius: 8px;">
-                <div style="font-weight: 600; margin-bottom: 8px;">📅 ${test.date}</div>
-                ${Object.entries(test.results).map(([testId, value]) => {
-                  const testConfig = state.testConfig?.find(t => t.id === testId);
-                  if (!testConfig) return '';
-                  const stars = calculateStars(value, testConfig);
-                  return `
-                    <div style="display: flex; justify-content: space-between; margin: 4px 0;">
-                      <span>${testConfig.name}: <strong>${value} ${testConfig.unit}</strong></span>
-                      <span>${getStarsHtml(stars)}</span>
-                    </div>
-                  `;
-                }).join('')}
-              </div>
-            `).join('') : '<p class="small">Noch keine Tests vorhanden</p>'}
-          </div>
-        ` : trainerKindView === 'history' ? `
-          <div class="card">
-            <h3>📋 Training-History</h3>
-            ${history.length > 0 ? history.map(h => {
-              const statusClass = h.status === 'present' ? 'history-present' : 
-                                h.status === 'excused' ? 'history-excused' : 'history-missing';
-              const statusText = h.status === 'present' ? '✓ anwesend' : 
-                                h.status === 'excused' ? 'F entschuldigt' : '✗ unentschuldigt';
-              return `
-                <div class="history-item ${statusClass}">
-                  <span style="font-weight: 600;">${h.date}</span> - ${statusText}
-                </div>
-              `;
-            }).join('') : '<p class="small">Noch keine Trainings erfasst</p>'}
-          </div>
-        ` : trainerKindView === 'milestones' ? renderMilestones(player) : ''
-        }
+    <div class="trainer-kind-section">
+      <div class="section-title">👤 Mein Kind: ${player.name} (mit Abstimmrecht)</div>
+      
+      <div class="tabs" style="margin-bottom: 16px;">
+        <button class="pill ${trainerKindView === 'kind' ? 'active' : 'alt'}" onclick="setTrainerKindView('kind')">👤 Mein Kind</button>
+        <button class="pill ${trainerKindView === 'calendar' ? 'active' : 'alt'}" onclick="setTrainerKindView('calendar')">📅 Spiele</button>
+        <button class="pill ${trainerKindView === 'tests' ? 'active' : 'alt'}" onclick="setTrainerKindView('tests')">📊 Tests</button>
+        <button class="pill ${trainerKindView === 'history' ? 'active' : 'alt'}" onclick="setTrainerKindView('history')">📋 Training</button>
+        <button class="pill ${trainerKindView === 'milestones' ? 'active' : 'alt'}" onclick="setTrainerKindView('milestones')">🏆 Meilensteine</button>
       </div>
+      
+      ${trainerKindView === 'kind' ? `
+        <div class="card">
+          <h3>${player.name}</h3>
+          
+          ${photoHtml}
+          
+          <div class="current-stats">
+            <div class="stat-card">
+              <div class="value">${player.goals || 0}</div>
+              <div class="label">Tore</div>
+              <div class="ranking">
+                Rang ${goalRank} ${goalRank !== '-' ? getRankingBadge(goalRank) : ''}
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="value">${player.assists || 0}</div>
+              <div class="label">Assists</div>
+              <div class="ranking">
+                Rang ${assistRank} ${assistRank !== '-' ? getRankingBadge(assistRank) : ''}
+              </div>
+            </div>
+          </div>
+          
+          <h4 style="margin: 20px 0 12px 0;">📅 Anstehende Spiele</h4>
+          ${upcomingMatchesHtml}
+          
+          <div style="display: flex; gap: 16px; margin: 20px 0;">
+            <div class="stat" style="flex: 1;"><strong>${percent}%</strong><br><span class="small">Training</span></div>
+            <div class="stat" style="flex: 1;"><strong>${matchPercent}%</strong><br><span class="small">Spiele</span></div>
+          </div>
+          
+          <div style="margin-top: 16px;">
+            <div class="listline">Geburtstag: ${player.birthday || '-'}</div>
+            <div class="listline">Position: ${player.position || '-'}</div>
+            <div class="listline">Trikot: ${player.jersey || '-'}</div>
+            <div class="listline">Im Verein seit: ${player.since || '-'}</div>
+            <div class="listline">Nächstes Team: ${player.nextTeam || '-'}</div>
+          </div>
+          
+          ${player.note ? `
+            <h4 style="margin: 20px 0 8px;">📝 Trainer-Notiz</h4>
+            <div style="background: #f5f9f6; padding: 12px; border-radius: 8px;">${player.note}</div>
+          ` : ''}
+          
+          ${lastTest ? `
+            <h4 style="margin: 20px 0 8px;">📊 Letzter Test (${lastTest.date})</h4>
+            <div style="background: #f5f9f6; padding: 12px; border-radius: 8px;">
+              ${Object.entries(lastTest.results).map(([testId, value]) => {
+                const testConfig = state.testConfig?.find(t => t.id === testId);
+                if (!testConfig) return '';
+                const stars = calculateStars(value, testConfig);
+                return `
+                  <div style="display: flex; justify-content: space-between; margin: 4px 0;">
+                    <span>${testConfig.name}: <strong>${value} ${testConfig.unit}</strong></span>
+                    <span>${getStarsHtml(stars)}</span>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          ` : ''}
+        </div>
+      ` : trainerKindView === 'calendar' ? renderCalendar() : trainerKindView === 'tests' ? `
+        <div class="card">
+          <h3>📊 Leistungstests - ${player.name}</h3>
+          ${tests.length > 0 ? tests.sort((a,b) => b.date.localeCompare(a.date)).map(test => `
+            <div style="margin-bottom: 16px; padding: 12px; background: #f5f9f6; border-radius: 8px;">
+              <div style="font-weight: 600; margin-bottom: 8px;">📅 ${test.date}</div>
+              ${Object.entries(test.results).map(([testId, value]) => {
+                const testConfig = state.testConfig?.find(t => t.id === testId);
+                if (!testConfig) return '';
+                const stars = calculateStars(value, testConfig);
+                return `
+                  <div style="display: flex; justify-content: space-between; margin: 4px 0;">
+                    <span>${testConfig.name}: <strong>${value} ${testConfig.unit}</strong></span>
+                    <span>${getStarsHtml(stars)}</span>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          `).join('') : '<p class="small">Noch keine Tests vorhanden</p>'}
+        </div>
+      ` : trainerKindView === 'history' ? `
+        <div class="card">
+          <h3>📋 Training-History</h3>
+          ${history.length > 0 ? history.map(h => {
+            const statusClass = h.status === 'present' ? 'history-present' : 
+                              h.status === 'excused' ? 'history-excused' : 'history-missing';
+            const statusText = h.status === 'present' ? '✓ anwesend' : 
+                              h.status === 'excused' ? 'F entschuldigt' : '✗ unentschuldigt';
+            return `
+              <div class="history-item ${statusClass}">
+                <span style="font-weight: 600;">${h.date}</span> - ${statusText}
+              </div>
+            `;
+          }).join('') : '<p class="small">Noch keine Trainings erfasst</p>'}
+        </div>
+      ` : trainerKindView === 'milestones' ? renderMilestones(player) : ''
+      }
     </div>
   `;
 }
@@ -3411,117 +3378,115 @@ function renderCoachKindView() {
   }
   
   return `
-    <div class="content">
-      <div class="coach-kind-section">
-        <div class="section-title">👤 Mein Kind: ${player.name} (mit Abstimmrecht)</div>
-        
-        <div class="tabs" style="margin-bottom: 16px;">
-          <button class="pill ${coachKindView === 'kind' ? 'active' : 'alt'}" onclick="setCoachKindView('kind')">👤 Mein Kind</button>
-          <button class="pill ${coachKindView === 'calendar' ? 'active' : 'alt'}" onclick="setCoachKindView('calendar')">📅 Spiele</button>
-          <button class="pill ${coachKindView === 'tests' ? 'active' : 'alt'}" onclick="setCoachKindView('tests')">📊 Tests</button>
-          <button class="pill ${coachKindView === 'history' ? 'active' : 'alt'}" onclick="setCoachKindView('history')">📋 Training</button>
-          <button class="pill ${coachKindView === 'milestones' ? 'active' : 'alt'}" onclick="setCoachKindView('milestones')">🏆 Meilensteine</button>
-        </div>
-        
-        ${coachKindView === 'kind' ? `
-          <div class="card">
-            <h3>${player.name}</h3>
-            
-            ${photoHtml}
-            
-            <div class="current-stats">
-              <div class="stat-card">
-                <div class="value">${player.goals || 0}</div>
-                <div class="label">Tore</div>
-                <div class="ranking">
-                  Rang ${goalRank} ${goalRank !== '-' ? getRankingBadge(goalRank) : ''}
-                </div>
-              </div>
-              <div class="stat-card">
-                <div class="value">${player.assists || 0}</div>
-                <div class="label">Assists</div>
-                <div class="ranking">
-                  Rang ${assistRank} ${assistRank !== '-' ? getRankingBadge(assistRank) : ''}
-                </div>
-              </div>
-            </div>
-            
-            <h4 style="margin: 20px 0 12px 0;">📅 Anstehende Spiele</h4>
-            ${upcomingMatchesHtml}
-            
-            <div style="display: flex; gap: 16px; margin: 20px 0;">
-              <div class="stat" style="flex: 1;"><strong>${percent}%</strong><br><span class="small">Training</span></div>
-              <div class="stat" style="flex: 1;"><strong>${matchPercent}%</strong><br><span class="small">Spiele</span></div>
-            </div>
-            
-            <div style="margin-top: 16px;">
-              <div class="listline">Geburtstag: ${player.birthday || '-'}</div>
-              <div class="listline">Position: ${player.position || '-'}</div>
-              <div class="listline">Trikot: ${player.jersey || '-'}</div>
-              <div class="listline">Im Verein seit: ${player.since || '-'}</div>
-              <div class="listline">Nächstes Team: ${player.nextTeam || '-'}</div>
-            </div>
-            
-            ${player.note ? `
-              <h4 style="margin: 20px 0 8px;">📝 Trainer-Notiz</h4>
-              <div style="background: #f5f9f6; padding: 12px; border-radius: 8px;">${player.note}</div>
-            ` : ''}
-            
-            ${lastTest ? `
-              <h4 style="margin: 20px 0 8px;">📊 Letzter Test (${lastTest.date})</h4>
-              <div style="background: #f5f9f6; padding: 12px; border-radius: 8px;">
-                ${Object.entries(lastTest.results).map(([testId, value]) => {
-                  const testConfig = state.testConfig?.find(t => t.id === testId);
-                  if (!testConfig) return '';
-                  const stars = calculateStars(value, testConfig);
-                  return `
-                    <div style="display: flex; justify-content: space-between; margin: 4px 0;">
-                      <span>${testConfig.name}: <strong>${value} ${testConfig.unit}</strong></span>
-                      <span>${getStarsHtml(stars)}</span>
-                    </div>
-                  `;
-                }).join('')}
-              </div>
-            ` : ''}
-          </div>
-        ` : coachKindView === 'calendar' ? renderCalendar() : coachKindView === 'tests' ? `
-          <div class="card">
-            <h3>📊 Leistungstests - ${player.name}</h3>
-            ${tests.length > 0 ? tests.sort((a,b) => b.date.localeCompare(a.date)).map(test => `
-              <div style="margin-bottom: 16px; padding: 12px; background: #f5f9f6; border-radius: 8px;">
-                <div style="font-weight: 600; margin-bottom: 8px;">📅 ${test.date}</div>
-                ${Object.entries(test.results).map(([testId, value]) => {
-                  const testConfig = state.testConfig?.find(t => t.id === testId);
-                  if (!testConfig) return '';
-                  const stars = calculateStars(value, testConfig);
-                  return `
-                    <div style="display: flex; justify-content: space-between; margin: 4px 0;">
-                      <span>${testConfig.name}: <strong>${value} ${testConfig.unit}</strong></span>
-                      <span>${getStarsHtml(stars)}</span>
-                    </div>
-                  `;
-                }).join('')}
-              </div>
-            `).join('') : '<p class="small">Noch keine Tests vorhanden</p>'}
-          </div>
-        ` : coachKindView === 'history' ? `
-          <div class="card">
-            <h3>📋 Training-History</h3>
-            ${history.length > 0 ? history.map(h => {
-              const statusClass = h.status === 'present' ? 'history-present' : 
-                                h.status === 'excused' ? 'history-excused' : 'history-missing';
-              const statusText = h.status === 'present' ? '✓ anwesend' : 
-                                h.status === 'excused' ? 'F entschuldigt' : '✗ unentschuldigt';
-              return `
-                <div class="history-item ${statusClass}">
-                  <span style="font-weight: 600;">${h.date}</span> - ${statusText}
-                </div>
-              `;
-            }).join('') : '<p class="small">Noch keine Trainings erfasst</p>'}
-          </div>
-        ` : coachKindView === 'milestones' ? renderMilestones(player) : ''
-        }
+    <div class="coach-kind-section">
+      <div class="section-title">👤 Mein Kind: ${player.name} (mit Abstimmrecht)</div>
+      
+      <div class="tabs" style="margin-bottom: 16px;">
+        <button class="pill ${coachKindView === 'kind' ? 'active' : 'alt'}" onclick="setCoachKindView('kind')">👤 Mein Kind</button>
+        <button class="pill ${coachKindView === 'calendar' ? 'active' : 'alt'}" onclick="setCoachKindView('calendar')">📅 Spiele</button>
+        <button class="pill ${coachKindView === 'tests' ? 'active' : 'alt'}" onclick="setCoachKindView('tests')">📊 Tests</button>
+        <button class="pill ${coachKindView === 'history' ? 'active' : 'alt'}" onclick="setCoachKindView('history')">📋 Training</button>
+        <button class="pill ${coachKindView === 'milestones' ? 'active' : 'alt'}" onclick="setCoachKindView('milestones')">🏆 Meilensteine</button>
       </div>
+      
+      ${coachKindView === 'kind' ? `
+        <div class="card">
+          <h3>${player.name}</h3>
+          
+          ${photoHtml}
+          
+          <div class="current-stats">
+            <div class="stat-card">
+              <div class="value">${player.goals || 0}</div>
+              <div class="label">Tore</div>
+              <div class="ranking">
+                Rang ${goalRank} ${goalRank !== '-' ? getRankingBadge(goalRank) : ''}
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="value">${player.assists || 0}</div>
+              <div class="label">Assists</div>
+              <div class="ranking">
+                Rang ${assistRank} ${assistRank !== '-' ? getRankingBadge(assistRank) : ''}
+              </div>
+            </div>
+          </div>
+          
+          <h4 style="margin: 20px 0 12px 0;">📅 Anstehende Spiele</h4>
+          ${upcomingMatchesHtml}
+          
+          <div style="display: flex; gap: 16px; margin: 20px 0;">
+            <div class="stat" style="flex: 1;"><strong>${percent}%</strong><br><span class="small">Training</span></div>
+            <div class="stat" style="flex: 1;"><strong>${matchPercent}%</strong><br><span class="small">Spiele</span></div>
+          </div>
+          
+          <div style="margin-top: 16px;">
+            <div class="listline">Geburtstag: ${player.birthday || '-'}</div>
+            <div class="listline">Position: ${player.position || '-'}</div>
+            <div class="listline">Trikot: ${player.jersey || '-'}</div>
+            <div class="listline">Im Verein seit: ${player.since || '-'}</div>
+            <div class="listline">Nächstes Team: ${player.nextTeam || '-'}</div>
+          </div>
+          
+          ${player.note ? `
+            <h4 style="margin: 20px 0 8px;">📝 Trainer-Notiz</h4>
+            <div style="background: #f5f9f6; padding: 12px; border-radius: 8px;">${player.note}</div>
+          ` : ''}
+          
+          ${lastTest ? `
+            <h4 style="margin: 20px 0 8px;">📊 Letzter Test (${lastTest.date})</h4>
+            <div style="background: #f5f9f6; padding: 12px; border-radius: 8px;">
+              ${Object.entries(lastTest.results).map(([testId, value]) => {
+                const testConfig = state.testConfig?.find(t => t.id === testId);
+                if (!testConfig) return '';
+                const stars = calculateStars(value, testConfig);
+                return `
+                  <div style="display: flex; justify-content: space-between; margin: 4px 0;">
+                    <span>${testConfig.name}: <strong>${value} ${testConfig.unit}</strong></span>
+                    <span>${getStarsHtml(stars)}</span>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          ` : ''}
+        </div>
+      ` : coachKindView === 'calendar' ? renderCalendar() : coachKindView === 'tests' ? `
+        <div class="card">
+          <h3>📊 Leistungstests - ${player.name}</h3>
+          ${tests.length > 0 ? tests.sort((a,b) => b.date.localeCompare(a.date)).map(test => `
+            <div style="margin-bottom: 16px; padding: 12px; background: #f5f9f6; border-radius: 8px;">
+              <div style="font-weight: 600; margin-bottom: 8px;">📅 ${test.date}</div>
+              ${Object.entries(test.results).map(([testId, value]) => {
+                const testConfig = state.testConfig?.find(t => t.id === testId);
+                if (!testConfig) return '';
+                const stars = calculateStars(value, testConfig);
+                return `
+                  <div style="display: flex; justify-content: space-between; margin: 4px 0;">
+                    <span>${testConfig.name}: <strong>${value} ${testConfig.unit}</strong></span>
+                    <span>${getStarsHtml(stars)}</span>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          `).join('') : '<p class="small">Noch keine Tests vorhanden</p>'}
+        </div>
+      ` : coachKindView === 'history' ? `
+        <div class="card">
+          <h3>📋 Training-History</h3>
+          ${history.length > 0 ? history.map(h => {
+            const statusClass = h.status === 'present' ? 'history-present' : 
+                              h.status === 'excused' ? 'history-excused' : 'history-missing';
+            const statusText = h.status === 'present' ? '✓ anwesend' : 
+                              h.status === 'excused' ? 'F entschuldigt' : '✗ unentschuldigt';
+            return `
+              <div class="history-item ${statusClass}">
+                <span style="font-weight: 600;">${h.date}</span> - ${statusText}
+              </div>
+            `;
+          }).join('') : '<p class="small">Noch keine Trainings erfasst</p>'}
+        </div>
+      ` : coachKindView === 'milestones' ? renderMilestones(player) : ''
+      }
     </div>
   `;
 }
@@ -3541,18 +3506,16 @@ function renderCoachView() {
   else if (coachView === "training") content += renderTraining();
   else if (coachView === "traininghistory") content += renderTrainingHistory();
   else if (coachView === "password") content += `
-    <div class="content">
-      <div class="section">
-        <div class="card">
-          <h3>🔑 Passwort ändern</h3>
-          <label>Altes Passwort</label>
-          <input id="old-password" type="password">
-          <label>Neues Passwort</label>
-          <input id="new-password" type="password">
-          <label>Passwort wiederholen</label>
-          <input id="confirm-password" type="password">
-          <button class="btn primary" style="width: 100%; margin-top: 16px;" onclick="changePassword()">Passwort ändern</button>
-        </div>
+    <div class="section">
+      <div class="card">
+        <h3>🔑 Passwort ändern</h3>
+        <label>Altes Passwort</label>
+        <input id="old-password" type="password">
+        <label>Neues Passwort</label>
+        <input id="new-password" type="password">
+        <label>Passwort wiederholen</label>
+        <input id="confirm-password" type="password">
+        <button class="btn primary" style="width: 100%; margin-top: 16px;" onclick="changePassword()">Passwort ändern</button>
       </div>
     </div>
   `;
@@ -3565,7 +3528,7 @@ function renderCoachView() {
     }
   } else content += renderDashboard();
   
-  return content;
+  return `<div class="section">${content}</div>`;
 }
 
 function renderNav() {
@@ -3620,4 +3583,138 @@ function renderNav() {
           <button class="${adminView === 'config' ? 'active' : ''}" onclick="setAdminView('config')">⚙️</button>
           <button class="${adminView === 'password' ? 'active' : ''}" onclick="setAdminView('password')">🔑</button>
           ${hasChild ? `
-            <button class="trainer-kind-nav ${adminView === 'trainerkind' ? 'active' : ''}" onclick="setAdminView('trainerkind')">👨‍
+            <button class="trainer-kind-nav ${adminView === 'trainerkind' ? 'active' : ''}" onclick="setAdminView('trainerkind')">👨‍👦</button>
+          ` : ''}
+          <button onclick="logout()">🚪</button>
+        </div>
+      </div>
+    `;
+  }
+}
+
+function setAdminView(view) {
+  adminView = view;
+  render();
+}
+
+function setCoachView(view) {
+  coachView = view;
+  if (view === 'password') {
+    setTimeout(() => {
+      document.getElementById('old-password')?.focus();
+    }, 100);
+  }
+  render();
+}
+
+// ==================== MAIN RENDER ====================
+function render() {
+  const app = document.getElementById('app');
+  
+  if (!session) {
+    app.innerHTML = renderLogin();
+    return;
+  }
+  
+  let content = renderHeader();
+  
+  if (session.role === "parent") {
+    content += renderParentView();
+  } else if (session.role === "coach") {
+    content += renderCoachView();
+  } else {
+    if (adminView === "dashboard") content += renderDashboard();
+    else if (adminView === "calendar") content += renderCalendar();
+    else if (adminView === "training") content += renderTraining();
+    else if (adminView === "matchreport") content += renderMatchReport();
+    else if (adminView === "traininghistory") content += renderTrainingHistory();
+    else if (adminView === "players") content += renderPlayers();
+    else if (adminView === "tests") content += renderTests();
+    else if (adminView === "statistics") content += renderStatistics();
+    else if (adminView === "config") content += renderConfig();
+    else if (adminView === "password") content += `
+      <div class="section">
+        <div class="card">
+          <h3>🔑 Passwort ändern</h3>
+          <label>Altes Passwort</label>
+          <input id="old-password" type="password">
+          <label>Neues Passwort</label>
+          <input id="new-password" type="password">
+          <label>Passwort wiederholen</label>
+          <input id="confirm-password" type="password">
+          <button class="btn primary" style="width: 100%; margin-top: 16px;" onclick="changePassword()">Passwort ändern</button>
+        </div>
+      </div>
+    `;
+    else if (adminView === "trainerkind") content += renderTrainerKindView();
+    else content += renderDashboard();
+  }
+  
+  content += renderFooter();
+  content += renderNav();
+  
+  app.innerHTML = content;
+  
+  if ((session.role === "admin" && adminView === "training") || 
+      (session.role === "coach" && coachView === "training")) {
+    setTodayForTraining();
+  }
+}
+
+// ==================== START ====================
+async function startApp() {
+  console.log("🚀 App wird gestartet...");
+  await loadState();
+  listenState();
+  render();
+}
+
+// Alle Funktionen global verfügbar machen
+window.login = login;
+window.logout = logout;
+window.setTeam = setTeam;
+window.toggleMatchExpand = toggleMatchExpand;
+window.updateMatchAttendance = updateMatchAttendance;
+window.approveAttendanceRequest = approveAttendanceRequest;
+window.finishTraining = finishTraining;
+window.deleteTraining = deleteTraining;
+window.setTodayForTraining = setTodayForTraining;
+window.setSelectedPlayer = setSelectedPlayer;
+window.addPlayer = addPlayer;
+window.deletePlayer = deletePlayer;
+window.resetParentPassword = resetParentPassword;
+window.savePlayerData = savePlayerData;
+window.handlePhotoUpload = handlePhotoUpload;
+window.handleLogoUpload = handleLogoUpload;
+window.saveClubLogo = saveClubLogo;
+window.addMatch = addMatch;
+window.deleteMatch = deleteMatch;
+window.editMatch = editMatch;
+window.addCoach = addCoach;
+window.updateCoachChild = updateCoachChild;
+window.updateTrainerChild = updateTrainerChild;
+window.deleteCoach = deleteCoach;
+window.addTestConfig = addTestConfig;
+window.deleteTestConfig = deleteTestConfig;
+window.saveTestResults = saveTestResults;
+window.deleteSingleTest = deleteSingleTest;
+window.resetSeason = resetSeason;
+window.changePassword = changePassword;
+window.confirmResetTests = confirmResetTests;
+window.confirmDeleteAllPlayers = confirmDeleteAllPlayers;
+window.setAdminView = setAdminView;
+window.setCoachView = setCoachView;
+window.setParentView = setParentView;
+window.setTrainerKindView = setTrainerKindView;
+window.setCoachKindView = setCoachKindView;
+window.saveTeamConfig = saveTeamConfig;
+window.setSelectedReportMatch = setSelectedReportMatch;
+window.saveMatchReport = saveMatchReport;
+window.deleteMatchReport = deleteMatchReport;
+window.installApp = installApp;
+
+// App starten
+startApp();
+</script>
+</body>
+</html>
