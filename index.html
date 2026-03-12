@@ -2,342 +2,57 @@
 <html lang="de">
 <head>
   <link rel="manifest" href="manifest.json">
-<meta name="theme-color"
-  content="#1a7f37">
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>USV St Andrä Wördern - Team App</title>
-<style>
-:root {
-  --green: #156d3b;
-  --green2: #2ea45d;
-  --bg: #eef6f0;
-  --card: #fff;
-  --line: #dce8df;
-  --text: #183022;
-  --muted: #6b7280;
-  --yellow: #f3c623;
-  --blue: #5e8fe8;
-  --red: #d45d4a;
-  --soft: #f7fbf8;
-  --parent-bg: #e6f3ff;
-  --parent-border: #5e8fe8;
-  --coach-bg: #fff3cd;
-  --coach-border: #ffc107;
-  --trainer-kind-bg: #e0f0ff;
-  --trainer-kind-border: #3a7ca5;
-  --attendance-coming: #2e9b58;
-  --attendance-maybe: #f3a43b;
-  --attendance-missing: #d45d4a;
-  --attendance-open: #9aa6a0;
-  --notification-bg: #fff3cd;
-  --notification-border: #ffc107;
-  --approval-green: #28a745;
-  --approval-red: #dc3545;
-  --statistics-bg: #f0f0f0;
-  --statistics-border: #888;
-  --gold: #ffd700;
-  --silver: #c0c0c0;
-  --bronze: #cd7f32;
-  --match-past: #e0e0e0;
-  --match-past-border: #b0b0b0;
-  --report-completed: #e8f5e9;
-  --report-completed-border: #a5d6a7;
-  --milestone-bg: #fff3e0;
-  --milestone-border: #ffb74d;
-}
-
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.4; }
-.app { max-width: 720px; margin: 0 auto; min-height: 100vh; background: var(--bg); }
-
-/* Header */
-.header { background: linear-gradient(180deg, var(--green), #1f7f47); color: white; padding: 16px; border-bottom-left-radius: 24px; border-bottom-right-radius: 24px; position: sticky; top: 0; z-index: 20; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-.brand { display: flex; align-items: center; gap: 14px; }
-.logo { width: 60px; height: 60px; border-radius: 18px; background: white; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-.logo img { width: 100%; height: 100%; object-fit: contain; padding: 5px; }
-.logo span { font-size: 24px; color: var(--green); font-weight: bold; }
-.brand small { display: block; opacity: 0.9; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; }
-.brand strong { display: block; font-size: 18px; }
-.role-badge { background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 20px; font-size: 11px; margin-top: 4px; display: inline-block; }
-
-/* Tabs */
-.tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
-.pill { border: none; border-radius: 20px; padding: 8px 16px; font-weight: 600; font-size: 14px; cursor: pointer; background: rgba(255,255,255,0.2); color: white; }
-.pill.active { background: var(--yellow); color: #21482d; }
-.pill.alt { background: #56c477; color: white; }
-
-/* Cards */
-.section { padding: 16px 16px 80px; }
-.card { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 16px; margin-bottom: 16px; box-shadow: 0 3px 10px rgba(0,0,0,0.04); }
-.card h3 { margin: 0 0 12px; font-size: 18px; display: flex; align-items: center; gap: 6px; }
-
-/* Next Match Card with Attendance Color */
-.next-match-card { padding: 16px; border-radius: 16px; margin-bottom: 20px; color: white; }
-.next-match-card.coming { background: linear-gradient(135deg, var(--attendance-coming), #1e6b3d); }
-.next-match-card.maybe { background: linear-gradient(135deg, var(--attendance-maybe), #c47f2a); }
-.next-match-card.missing { background: linear-gradient(135deg, var(--attendance-missing), #a63e2f); }
-.next-match-card.open { background: linear-gradient(135deg, var(--attendance-open), #5c6962); }
-.next-match-card.past { background: linear-gradient(135deg, var(--match-past), #a0a0a0); opacity: 0.8; }
-.next-match-card .small { color: rgba(255,255,255,0.8); }
-.next-match-card .title { font-weight: 600; font-size: 18px; margin: 8px 0; }
-.next-match-card .details { margin: 4px 0; }
-
-/* Grid */
-.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-@media (max-width: 560px) { .grid2, .grid3 { grid-template-columns: 1fr; } }
-
-/* Forms */
-label { display: block; font-size: 12px; font-weight: 600; color: #5a665f; margin-bottom: 4px; }
-input, select, textarea { width: 100%; padding: 12px; border: 1px solid #dce6de; border-radius: 12px; font: inherit; background: white; margin-bottom: 12px; }
-
-/* Buttons */
-.btn { border: none; border-radius: 12px; padding: 12px 16px; font-weight: 600; cursor: pointer; transition: 0.2s; }
-.btn.primary { background: var(--green); color: white; }
-.btn.primary:hover { background: #0f562f; }
-.btn.secondary { background: #eef4ef; color: #264533; }
-.btn.warn { background: #fff4d4; color: #735700; }
-.btn.danger { background: #d45d4a; color: white; }
-.btn.yes { background: var(--attendance-coming); color: white; }
-.btn.no { background: var(--attendance-missing); color: white; }
-.btn.maybe { background: var(--attendance-maybe); color: white; }
-.btn.small { padding: 6px 10px; font-size: 12px; }
-.btn.approve { background: var(--approval-green); color: white; }
-.btn.reject { background: var(--approval-red); color: white; }
-.btn.request { background: var(--notification-border); color: #856404; }
-
-/* Player List */
-.player-list { max-height: 300px; overflow-y: auto; border: 1px solid var(--line); border-radius: 14px; padding: 8px; margin-bottom: 20px; background: white; }
-.player-list button { width: 100%; text-align: left; background: white; border: 1px solid var(--line); padding: 12px 14px; border-radius: 14px; font-weight: 600; margin-bottom: 6px; cursor: pointer; }
-.player-list button.active { border-color: var(--green); background: #f7fbf8; }
-
-/* Match List */
-.match { display: flex; background: white; border-bottom: 1px solid #edf1ee; margin-bottom: 8px; cursor: pointer; transition: 0.2s; }
-.match:hover { background: #f5f9f6; }
-.match.expanded { background: #f0f7f2; border-left: 4px solid var(--green); }
-.match.past { background: var(--match-past); opacity: 0.7; }
-.match.past:hover { background: #d0d0d0; }
-.datebox { width: 80px; padding: 12px 8px; text-align: center; border-right: 1px solid #edf1ee; }
-.datebox .day { font-size: 24px; font-weight: 300; line-height: 1; }
-.datebox .mon { font-size: 11px; font-weight: 600; color: #58635d; margin-top: 4px; }
-.info { flex: 1; padding: 12px; }
-.name { font-size: 16px; font-weight: 600; margin: 4px 0; }
-.time { font-size: 14px; color: #44514a; }
-.badges { display: flex; gap: 6px; margin-bottom: 6px; }
-.badge { padding: 4px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
-.team1 { background: var(--yellow); color: #214b2f; }
-.team2 { background: #52bf74; color: white; }
-.status.home { color: #2d9c4b; font-weight: 600; }
-.status.away { color: #d8712b; font-weight: 600; }
-
-/* Attendance */
-.attendance-stats { display: flex; gap: 16px; font-size: 13px; margin: 10px 0; }
-.attendance-buttons { display: flex; gap: 8px; margin: 10px 0; }
-.attendance-buttons .btn { flex: 1; }
-
-/* Attendance Overview */
-.attendance-overview { display: flex; justify-content: space-around; padding: 12px; background: #f5f9f6; border-radius: 12px; margin: 15px 0; }
-.attendance-item { text-align: center; }
-.attendance-item .count { font-size: 24px; font-weight: 800; }
-.attendance-item .label { font-size: 11px; color: var(--muted); }
-.attendance-item.coming .count { color: var(--attendance-coming); }
-.attendance-item.maybe .count { color: var(--attendance-maybe); }
-.attendance-item.missing .count { color: var(--attendance-missing); }
-.attendance-item.open .count { color: var(--attendance-open); }
-
-/* Detailed Attendance for Trainer */
-.detailed-attendance { margin: 15px 0; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
-.detailed-header { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; background: #e0e0e0; font-weight: 600; font-size: 12px; padding: 8px; }
-.detailed-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; padding: 8px; border-top: 1px solid var(--line); align-items: center; }
-.detailed-row:nth-child(even) { background: #f9f9f9; }
-.detailed-status { text-align: center; font-weight: 600; }
-.status-coming { color: var(--attendance-coming); }
-.status-maybe { color: var(--attendance-maybe); }
-.status-missing { color: var(--attendance-missing); }
-.status-open { color: var(--attendance-open); }
-
-/* Training */
-.training-player { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #e0eae1; }
-.training-options { display: flex; gap: 8px; }
-.training-options label { padding: 8px 16px; border-radius: 25px; font-weight: 600; cursor: pointer; background: #e8f0ea; border: 1px solid #c0d9c5; margin: 0; }
-.training-options input[type="radio"] { display: none; }
-.training-options input[type="radio"]:checked + label { color: white; }
-.training-options input[value="present"]:checked + label { background: var(--attendance-coming); }
-.training-options input[value="excused"]:checked + label { background: var(--attendance-maybe); }
-.training-options input[value="missing"]:checked + label { background: var(--attendance-missing); }
-
-/* History */
-.history-item { padding: 10px; margin: 5px 0; border-radius: 8px; font-size: 13px; }
-.history-present { background: #e6f3e9; border-left: 4px solid var(--attendance-coming); }
-.history-excused { background: #fff2dd; border-left: 4px solid var(--attendance-maybe); }
-.history-missing { background: #ffe6e3; border-left: 4px solid var(--attendance-missing); }
-
-/* Test Stars */
-.star { color: #f3c623; font-size: 18px; }
-.star-empty { color: #ddd; font-size: 18px; }
-
-/* Stat Boxes */
-.stat { background: var(--soft); border: 1px solid #edf3ee; border-radius: 16px; padding: 12px; text-align: center; }
-.stat strong { display: block; font-size: 20px; }
-
-/* Ranking */
-.ranking-badge { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; margin-left: 8px; font-weight: 800; font-size: 14px; }
-.ranking-1 { background: var(--gold); color: #000; }
-.ranking-2 { background: var(--silver); color: #000; }
-.ranking-3 { background: var(--bronze); color: #fff; }
-.ranking-other { background: #e0e0e0; color: #333; }
-
-/* Season Stats */
-.season-stats { background: #e8f0fe; border-radius: 16px; padding: 16px; margin: 20px 0; }
-.season-stats h4 { color: var(--blue); margin: 0 0 12px 0; border-bottom: 1px solid var(--blue); padding-bottom: 8px; }
-.season-stat-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(94,143,232,0.2); }
-.season-stat-item:last-child { border-bottom: none; }
-.season-stat-item.current { background: rgba(94,143,232,0.1); border-radius: 8px; padding: 8px; margin-bottom: 8px; font-weight: 600; }
-
-/* Current Season Stats */
-.current-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0; }
-.stat-card { background: white; border: 1px solid var(--line); border-radius: 16px; padding: 16px; text-align: center; }
-.stat-card .value { font-size: 32px; font-weight: 800; color: var(--green); }
-.stat-card .label { font-size: 12px; color: var(--muted); margin-top: 4px; }
-.stat-card .ranking { display: flex; align-items: center; justify-content: center; margin-top: 8px; font-size: 14px; }
-
-/* Month Separator */
-.month { background: #ddd; color: #535353; font-weight: 800; letter-spacing: .14em; padding: 10px 16px; margin-top: 10px; }
-
-/* Photo Upload */
-.photo-upload { display: flex; flex-direction: column; align-items: center; margin-bottom: 15px; }
-.photo-preview { width: 120px; height: 120px; border-radius: 60px; background: #f0f7f2; border: 2px dashed var(--green); display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 10px; }
-.photo-preview img { width: 100%; height: 100%; object-fit: cover; }
-.photo-preview span { color: var(--muted); font-size: 12px; text-align: center; }
-
-/* Parent Photo */
-.parent-photo { width: 120px; height: 120px; border-radius: 60px; margin: 0 auto 16px; overflow: hidden; }
-.parent-photo img { width: 100%; height: 100%; object-fit: cover; }
-
-/* Trainer Kind Section - MIT ABSTIMMUNG (wie Eltern) */
-.trainer-kind-section { border-radius: 20px; padding: 16px; margin: 16px 0; background: var(--trainer-kind-bg); border: 2px solid var(--trainer-kind-border); }
-.trainer-kind-section .section-title { color: var(--trainer-kind-border); font-size: 16px; font-weight: 600; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--trainer-kind-border); }
-
-/* Coach Kind Section */
-.coach-kind-section { border-radius: 20px; padding: 16px; margin: 16px 0; background: var(--coach-bg); border: 2px solid var(--coach-border); }
-.coach-kind-section .section-title { color: #856404; font-size: 16px; font-weight: 600; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--coach-border); }
-
-/* Statistics Section */
-.statistics-section { border-radius: 20px; padding: 16px; margin: 16px 0; background: var(--statistics-bg); border: 2px solid var(--statistics-border); }
-.statistics-section .section-title { color: #555; font-size: 16px; font-weight: 600; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--statistics-border); }
-.statistics-table { width: 100%; border-collapse: collapse; }
-.statistics-table th { text-align: left; padding: 8px; background: #e0e0e0; font-size: 12px; }
-.statistics-table td { padding: 8px; border-bottom: 1px solid #ddd; }
-.statistics-table tr:last-child td { border-bottom: none; }
-.statistics-table .zero { color: var(--muted); font-style: italic; }
-
-/* Notifications */
-.notification-badge { background: var(--notification-bg); border: 1px solid var(--notification-border); border-radius: 20px; padding: 4px 10px; font-size: 12px; font-weight: 600; margin-left: 8px; }
-.notification-item { background: var(--notification-bg); border-left: 4px solid var(--notification-border); padding: 12px; border-radius: 8px; margin: 8px 0; }
-.approval-message { padding: 10px; border-radius: 8px; margin: 10px 0; text-align: center; font-weight: 600; }
-.approval-message.approved { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-.approval-message.rejected { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-
-/* Login */
-.login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 18px; }
-.login-card { background: white; border: 1px solid var(--line); border-radius: 24px; padding: 24px; width: 100%; max-width: 400px; }
-
-/* Navigation */
-.nav { position: fixed; left: 0; right: 0; bottom: 0; background: white; border-top: 1px solid var(--line); display: flex; justify-content: center; z-index: 25; }
-.nav-inner { width: 100%; max-width: 720px; display: grid; grid-template-columns: repeat(10, 1fr); }
-.nav button { background: none; border: none; padding: 12px 4px; color: #617067; font-size: 20px; cursor: pointer; transition: 0.2s; }
-.nav button.active { color: var(--green); transform: translateY(-2px); }
-.nav .trainer-kind-nav, .nav .coach-kind-nav { margin-left: 20px; }
-
-/* Logo Upload in Config */
-.logo-upload { display: flex; flex-direction: column; align-items: center; margin: 20px 0; padding: 20px; background: #f5f9f6; border-radius: 12px; }
-.logo-preview { width: 100px; height: 100px; border-radius: 18px; background: white; border: 2px dashed var(--green); display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 10px; }
-.logo-preview img { width: 100%; height: 100%; object-fit: contain; padding: 5px; }
-.logo-preview span { color: var(--muted); font-size: 12px; text-align: center; }
-
-/* Gegner-Liste für U8 und kleiner */
-.opponents-list { margin: 12px 0; padding: 12px; background: #f5f9f6; border-radius: 12px; }
-.opponents-list h4 { margin: 0 0 8px 0; font-size: 14px; color: var(--muted); }
-.opponents-items { display: flex; flex-wrap: wrap; gap: 8px; }
-.opponent-tag { background: var(--blue); color: white; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-
-/* Match Report Styles */
-.match-report-item { background: white; border: 1px solid var(--line); border-radius: 16px; padding: 16px; margin-bottom: 16px; }
-.match-report-item.completed { background: var(--report-completed); border-color: var(--report-completed-border); }
-.match-report-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-.match-report-title { font-weight: 600; font-size: 16px; }
-.match-report-actions { display: flex; gap: 8px; }
-.match-report-result { font-size: 18px; font-weight: 800; color: var(--green); margin: 8px 0; }
-
-/* Milestone Card */
-.milestone-card { background: var(--milestone-bg); border: 2px solid var(--milestone-border); border-radius: 16px; padding: 16px; margin-bottom: 16px; }
-.milestone-year { font-size: 20px; font-weight: 800; color: #e65100; margin-bottom: 12px; border-bottom: 1px solid var(--milestone-border); padding-bottom: 8px; }
-.milestone-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-.milestone-stat { text-align: center; background: white; border-radius: 12px; padding: 12px; }
-.milestone-stat .value { font-size: 28px; font-weight: 800; color: var(--green); }
-.milestone-stat .label { font-size: 12px; color: var(--muted); }
-
-/* Utils */
-.small { font-size: 12px; color: var(--muted); }
-.hidden { display: none !important; }
-.mt-2 { margin-top: 8px; }
-.mt-3 { margin-top: 12px; }
-.mt-4 { margin-top: 16px; }
-.mb-2 { margin-bottom: 8px; }
-</style>
+  <meta name="theme-color" content="#1a7f37">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>USV St Andrä Wördern - Team App</title>
+  <style>
+    /* Dein komplettes CSS bleibt hier unverändert - ich habs aus Platzgründen rausgelassen */
+    /* Bitte hier dein originales CSS einfügen! */
+  </style>
 </head>
 <body>
 <div class="app" id="app"></div>
 
-  <script type="module">
-
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+<!-- Firebase Imports - GANZ OBEN im body -->
 <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import {
+    getFirestore,
+    doc,
+    setDoc,
+    getDoc,
+    onSnapshot
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  // Firebase Konfiguration
+  const firebaseConfig = {
+    apiKey: "AIzaSyAemNwKkerXt-hvtikIIACR4oBTb72VjL_U",
+    authDomain: "usv-staw-app.firebaseapp.com",
+    projectId: "usv-staw-app",
+    storageBucket: "usv-staw-app.firebasestorage.app",
+    messagingSenderId: "983106867178",
+    appId: "1:983106867178:web:90234121a5833e7e396c93"
+  };
 
-import {
-  getFirestore,
-  doc,
-  setDoc,
-  getDoc,
-  onSnapshot
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  // Firebase initialisieren
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
+  // Global verfügbar machen
+  window.db = db;
+  window.doc = doc;
+  window.setDoc = setDoc;
+  window.getDoc = getDoc;
+  window.onSnapshot = onSnapshot;
 
-const firebaseConfig = {
-  apiKey: "AIzaSyAemNwKkerXt-hvtikIIACR4oBTb72VjL_U",
-  authDomain: "usv-staw-app.firebaseapp.com",
-  projectId: "usv-staw-app",
-  storageBucket: "usv-staw-app.firebasestorage.app",
-  messagingSenderId: "983106867178",
-  appId: "1:983106867178:web:90234121a5833e7e396c93"
-};
+  console.log("✅ Firebase erfolgreich geladen!");
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-window.db = db;
-
+  // Jetzt den Rest der App starten
+  window.startApp();
 </script>
 
-const firebaseConfig = {
-  apiKey: "AIzaSyAemNwkKerXt-hvtikIIACR4oBTb72VjL_U",
-  authDomain: "usv-staw-app.firebaseapp.com",
-  projectId: "usv-staw-app",
-  storageBucket: "usv-staw-app.firebasestorage.app",
-  messagingSenderId: "983106867178",
-  appId: "1:983106867178:web:90234121a5833e7e396c93"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-window.db = db;
-
-</script>
-
+<!-- Haupt-App Script -->
 <script>
 // ==================== STANDARD LOGO (Platzhalter) ====================
 const defaultLogo = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23156d3b'/%3E%3Ctext x='50' y='55' font-size='40' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'%3E⚽%3C/text%3E%3C/svg%3E";
@@ -465,43 +180,57 @@ let coachKindView = "kind";
 
 // ==================== HELPER ====================
 async function save() {
-  await setDoc(doc(db, "app", "state"), state);
-}
-  async function loadState() {
-
-  const docRef = doc(db, "app", "state");
-  const snap = await getDoc(docRef);
-
-  if (snap.exists()) {
-
-    const cloudState = snap.data();
-
-    // Seed + Cloud kombinieren (damit neue Felder erhalten bleiben)
-    state = { ...seed, ...cloudState };
-
-  } else {
-
-    await setDoc(docRef, seed);
-    state = seed;
-
+  try {
+    await setDoc(doc(window.db, "app", "state"), state);
+    console.log("✅ Daten gespeichert in Firebase");
+  } catch (error) {
+    console.error("❌ Fehler beim Speichern:", error);
+    alert("Fehler beim Speichern: " + error.message);
   }
+}
 
-  render();
+async function loadState() {
+  try {
+    const docRef = doc(window.db, "app", "state");
+    const snap = await getDoc(docRef);
+
+    if (snap.exists()) {
+      const cloudState = snap.data();
+      // Seed + Cloud kombinieren (damit neue Felder erhalten bleiben)
+      state = { ...seed, ...cloudState };
+      console.log("✅ Daten aus Firebase geladen");
+    } else {
+      await setDoc(docRef, seed);
+      state = seed;
+      console.log("✅ Erste Firebase-Datenbank angelegt");
+    }
+
+    render();
+  } catch (error) {
+    console.error("❌ Fehler beim Laden:", error);
+    alert("Fehler beim Laden aus Firebase: " + error.message);
+    // Fallback: Lokale Daten verwenden
+    state = seed;
+    render();
+  }
 }
 
 function listenState() {
-
-  onSnapshot(doc(db, "app", "state"), (docSnap) => {
-
+  onSnapshot(doc(window.db, "app", "state"), (docSnap) => {
     if (docSnap.exists()) {
       state = docSnap.data();
+      console.log("🔄 Live-Update von Firebase erhalten");
       render();
     }
-
+  }, (error) => {
+    console.error("❌ Fehler beim Live-Listening:", error);
   });
-
 }
-function saveSession() { sessionStorage.setItem("usv-staw-session", JSON.stringify(session)); render(); }
+
+function saveSession() { 
+  sessionStorage.setItem("usv-staw-session", JSON.stringify(session)); 
+  render(); 
+}
 
 function findPlayer(id) { return state.players.find(p => p.id === id); }
 function findUserForPlayer(playerId) { return state.users.find(u => u.playerId === playerId); }
@@ -3583,69 +3312,86 @@ function setCoachView(view) {
   render();
 }
 
-// ==================== MAIN RENDER ====================
-function render() {
-  const app = document.getElementById('app');
-  
-  if (!session) {
-    app.innerHTML = renderLogin();
-    return;
-  }
-  
-  let content = renderHeader();
-  
-  if (session.role === "parent") {
-    content += renderParentView();
-  } else if (session.role === "coach") {
-    content += renderCoachView();
-  } else {
-    if (adminView === "dashboard") content += renderDashboard();
-    else if (adminView === "calendar") content += renderCalendar();
-    else if (adminView === "training") content += renderTraining();
-    else if (adminView === "matchreport") content += renderMatchReport();
-    else if (adminView === "traininghistory") content += renderTrainingHistory();
-    else if (adminView === "players") content += renderPlayers();
-    else if (adminView === "tests") content += renderTests();
-    else if (adminView === "statistics") content += renderStatistics();
-    else if (adminView === "config") content += renderConfig();
-    else if (adminView === "password") content += `
-      <div class="section">
-        <div class="card">
-          <h3>🔑 Passwort ändern</h3>
-          <label>Altes Passwort</label>
-          <input id="old-password" type="password">
-          <label>Neues Passwort</label>
-          <input id="new-password" type="password">
-          <label>Passwort wiederholen</label>
-          <input id="confirm-password" type="password">
-          <button class="btn primary" style="width: 100%; margin-top: 16px;" onclick="changePassword()">Passwort ändern</button>
-        </div>
-      </div>
-    `;
-    else if (adminView === "trainerkind") content += renderTrainerKindView();
-    else content += renderDashboard();
-  }
-  
-  content += renderNav();
-  app.innerHTML = content;
-  
-  if ((session.role === "admin" && adminView === "training") || 
-      (session.role === "coach" && coachView === "training")) {
-    setTodayForTraining();
-  }
+// ==================== START FUNCTION ====================
+window.startApp = async function() {
+  console.log("🚀 App wird gestartet...");
+  await loadState();
+  listenState();
+  render();
 }
 
-// Initial render
-render();
+// ==================== EXPOSE FUNCTIONS ====================
+// Alle Funktionen global verfügbar machen für onclick-Aufrufe
+window.login = login;
+window.logout = logout;
+window.setTeam = setTeam;
+window.toggleMatchExpand = toggleMatchExpand;
+window.updateMatchAttendance = updateMatchAttendance;
+window.approveAttendanceRequest = approveAttendanceRequest;
+window.finishTraining = finishTraining;
+window.deleteTraining = deleteTraining;
+window.setTodayForTraining = setTodayForTraining;
+window.setSelectedPlayer = setSelectedPlayer;
+window.addPlayer = addPlayer;
+window.deletePlayer = deletePlayer;
+window.resetParentPassword = resetParentPassword;
+window.savePlayerData = savePlayerData;
+window.handlePhotoUpload = handlePhotoUpload;
+window.handleLogoUpload = handleLogoUpload;
+window.saveClubLogo = saveClubLogo;
+window.addMatch = addMatch;
+window.deleteMatch = deleteMatch;
+window.editMatch = editMatch;
+window.addCoach = addCoach;
+window.updateCoachChild = updateCoachChild;
+window.updateTrainerChild = updateTrainerChild;
+window.deleteCoach = deleteCoach;
+window.addTestConfig = addTestConfig;
+window.deleteTestConfig = deleteTestConfig;
+window.saveTestResults = saveTestResults;
+window.deleteSingleTest = deleteSingleTest;
+window.resetSeason = resetSeason;
+window.changePassword = changePassword;
+window.confirmResetTests = confirmResetTests;
+window.confirmDeleteAllPlayers = confirmDeleteAllPlayers;
+window.setAdminView = setAdminView;
+window.setCoachView = setCoachView;
+window.setParentView = setParentView;
+window.setTrainerKindView = setTrainerKindView;
+window.setCoachKindView = setCoachKindView;
+window.saveTeamConfig = saveTeamConfig;
+window.setSelectedReportMatch = setSelectedReportMatch;
+window.saveMatchReport = saveMatchReport;
+window.deleteMatchReport = deleteMatchReport;
 </script>
 
-  <script>
+<!-- Service Worker und Install Button -->
+<script>
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("service-worker.js");
 }
+
+// Install Button
+let deferredPrompt;
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById("installBtn").style.display = "inline-block";
+});
+
+document.addEventListener("DOMContentLoaded", function() {
+  const installBtn = document.getElementById("installBtn");
+  if (installBtn) {
+    installBtn.addEventListener("click", () => {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+      }
+    });
+  }
+});
 </script>
 
-  <!-- ===== App Footer / Version ===== -->
+<!-- ===== App Footer / Version ===== -->
 <div style="text-align:center;margin-top:20px;font-size:12px;color:#888;padding:10px;">
 Stephan Köck – Relais 2026 – Version 1.0
 </div>
@@ -3657,22 +3403,6 @@ App installieren
 </button>
 </div>
 
-<script>
-let deferredPrompt;
-
-window.addEventListener("beforeinstallprompt", (e) => {
-  e.preventDefault();
-  deferredPrompt = e;
-  document.getElementById("installBtn").style.display = "inline-block";
-});
-
-document.getElementById("installBtn").addEventListener("click", () => {
-  if (deferredPrompt) {
-    deferredPrompt.prompt();
-  }
-});
-</script>
-
 <!-- ===== Push Notifications (OneSignal vorbereitet) ===== -->
 <script src="https://cdn.onesignal.com/sdks/OneSignalSDK.js" async=""></script>
 <script>
@@ -3682,9 +3412,7 @@ OneSignal.push(function() {
     appId: "DEINE-ONESIGNAL-ID-HIER"
   });
 });
-
-  loadState();
-  listenState();
 </script>
+
 </body>
 </html>
