@@ -443,7 +443,7 @@ async function save() {
 async function loadState() {
   try {
     const doc = await db.collection("app").doc("state").get();
-    if (doc.exists()) {
+    if (doc.exists) {
       state = doc.data();
       console.log("✅ Daten aus Firebase geladen");
     } else {
