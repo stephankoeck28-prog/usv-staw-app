@@ -42,6 +42,7 @@
   --report-completed-border: #a5d6a7;
   --milestone-bg: #fff3e0;
   --milestone-border: #ffb74d;
+  
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -3552,57 +3553,6 @@ function setCoachView(view) {
   render();
 }
 
-// ==================== MAIN RENDER ====================
-function render() {
-  const app = document.getElementById('app');
-  
-  if (!session) {
-    app.innerHTML = renderLogin();
-    return;
-  }
-  
-  let content = renderHeader();
-  
-  if (session.role === "parent") {
-    content += renderParentView();
-  } else if (session.role === "coach") {
-    content += renderCoachView();
-  } else {
-    if (adminView === "dashboard") content += renderDashboard();
-    else if (adminView === "calendar") content += renderCalendar();
-    else if (adminView === "training") content += renderTraining();
-    else if (adminView === "matchreport") content += renderMatchReport();
-    else if (adminView === "traininghistory") content += renderTrainingHistory();
-    else if (adminView === "players") content += renderPlayers();
-    else if (adminView === "tests") content += renderTests();
-    else if (adminView === "statistics") content += renderStatistics();
-    else if (adminView === "config") content += renderConfig();
-    else if (adminView === "password") content += `
-      <div class="section">
-        <div class="card">
-          <h3>🔑 Passwort ändern</h3>
-          <label>Altes Passwort</label>
-          <input id="old-password" type="password">
-          <label>Neues Passwort</label>
-          <input id="new-password" type="password">
-          <label>Passwort wiederholen</label>
-          <input id="confirm-password" type="password">
-          <button class="btn primary" style="width: 100%; margin-top: 16px;" onclick="changePassword()">Passwort ändern</button>
-        </div>
-      </div>
-    `;
-    else if (adminView === "trainerkind") content += renderTrainerKindView();
-    else content += renderDashboard();
-  }
-  
-  content += renderNav();
-  app.innerHTML = content;
-  
-  if ((session.role === "admin" && adminView === "training") || 
-      (session.role === "coach" && coachView === "training")) {
-    setTodayForTraining();
-  }
-}
 
 // ==================== START ====================
 async function startApp() {
@@ -3777,6 +3727,8 @@ function render() {
 
 // InstallApp global verfügbar machen
 window.installApp = installApp;
+
+  
 
 // App starten
 startApp();
