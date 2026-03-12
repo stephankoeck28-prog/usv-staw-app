@@ -103,6 +103,7 @@ input, select, textarea { width: 100%; padding: 12px; border: 1px solid #dce6de;
 .btn.approve { background: var(--approval-green); color: white; }
 .btn.reject { background: var(--approval-red); color: white; }
 .btn.request { background: var(--notification-border); color: #856404; }
+  .btn.install { background: var(--blue); color: white; margin-top: 10px; }
 
 /* Player List */
 .player-list { max-height: 300px; overflow-y: auto; border: 1px solid var(--line); border-radius: 14px; padding: 8px; margin-bottom: 20px; background: white; }
@@ -3653,6 +3654,129 @@ window.saveTeamConfig = saveTeamConfig;
 window.setSelectedReportMatch = setSelectedReportMatch;
 window.saveMatchReport = saveMatchReport;
 window.deleteMatchReport = deleteMatchReport;
+
+// ==================== INSTALL BUTTON & FOOTER ====================
+let deferredPrompt;
+
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  render();
+});
+
+function installApp() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(() => {
+      deferredPrompt = null;
+      render();
+    });
+  }
+}
+
+function renderFooter() {
+  return `
+    <div class="app-footer">
+      <span class="trainer-name">Trainer Stephan Köck</span>, Release 2026 Version 1.0
+    </div>
+  `;
+}
+
+// Die NEUE renderLogin Funktion (ersetze deine alte damit):
+function renderLogin() {
+  setTimeout(loadSavedLogin, 100);
+  
+  const showInstallButton = deferredPrompt !== undefined;
+  
+  return `
+    <div class="login-wrap">
+      <div class="login-card">
+        <div style="text-align: center; margin-bottom: 24px;">
+          <div class="logo" style="margin: 0 auto 16px; width: 100px; height: 100px;">
+            ${state.clubLogo ? `<img src="${state.clubLogo}" alt="Vereinslogo">` : '<span>⚽</span>'}
+          </div>
+          <h2>USV St Andrä Wördern</h2>
+          <p style="color: var(--muted);">Trainer-App</p>
+        </div>
+        
+        <label>Benutzername</label>
+        <input id="login-username" type="text" placeholder="z.B. fabian-mustermann" value="">
+        
+        <label>Passwort</label>
+        <input id="login-password" type="password" placeholder="Passwort" value="">
+        
+        <button class="btn primary" style="width: 100%; padding: 14px; margin-top: 16px;" onclick="login()">Einloggen</button>
+        
+        ${showInstallButton ? `
+          <button class="btn install" style="width: 100%; padding: 14px; margin-top: 10px;" onclick="installApp()">
+            📱 App installieren
+          </button>
+        ` : ''}
+        
+        <div style="margin-top: 24px; padding: 16px; background: #f5f9f6; border-radius: 12px; font-size: 13px; text-align: center;">
+          <strong>Erstlogin-Passwort: 1234 - bitte ändern!</strong>
+        </div>
+      </div>
+      ${renderFooter()}
+    </div>
+  `;
+}
+
+// Die NEUE render Funktion (ersetze deine alte damit):
+function render() {
+  const app = document.getElementById('app');
+  
+  if (!session) {
+    app.innerHTML = renderLogin();
+    return;
+  }
+  
+  let content = renderHeader();
+  
+  if (session.role === "parent") {
+    content += renderParentView();
+  } else if (session.role === "coach") {
+    content += renderCoachView();
+  } else {
+    if (adminView === "dashboard") content += renderDashboard();
+    else if (adminView === "calendar") content += renderCalendar();
+    else if (adminView === "training") content += renderTraining();
+    else if (adminView === "matchreport") content += renderMatchReport();
+    else if (adminView === "traininghistory") content += renderTrainingHistory();
+    else if (adminView === "players") content += renderPlayers();
+    else if (adminView === "tests") content += renderTests();
+    else if (adminView === "statistics") content += renderStatistics();
+    else if (adminView === "config") content += renderConfig();
+    else if (adminView === "password") content += `
+      <div class="section">
+        <div class="card">
+          <h3>🔑 Passwort ändern</h3>
+          <label>Altes Passwort</label>
+          <input id="old-password" type="password">
+          <label>Neues Passwort</label>
+          <input id="new-password" type="password">
+          <label>Passwort wiederholen</label>
+          <input id="confirm-password" type="password">
+          <button class="btn primary" style="width: 100%; margin-top: 16px;" onclick="changePassword()">Passwort ändern</button>
+        </div>
+      </div>
+    `;
+    else if (adminView === "trainerkind") content += renderTrainerKindView();
+    else content += renderDashboard();
+  }
+  
+  content += renderNav();
+  content += renderFooter();
+  app.innerHTML = content;
+  
+  if ((session.role === "admin" && adminView === "training") || 
+      (session.role === "coach" && coachView === "training")) {
+    setTodayForTraining();
+  }
+}
+
+// InstallApp global verfügbar machen
+window.installApp = installApp;
 
 // App starten
 startApp();
