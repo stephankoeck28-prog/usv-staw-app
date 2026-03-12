@@ -462,7 +462,7 @@ async function loadState() {
 
 function listenState() {
   db.collection("app").doc("state").onSnapshot((doc) => {
-    if (doc.exists()) {
+    if (doc.exists) {
       state = doc.data();
       console.log("🔄 Live-Update von Firebase");
       render();
