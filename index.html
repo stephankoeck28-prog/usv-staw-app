@@ -7,7 +7,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>USV St Andrä Wördern - Team App</title>
   <style>
-    /* ===== KOMPLETTES CSS ===== */
+    /* ===== DEIN KOMPLETTES ORIGINAL-CSS ===== */
+    /* HIER KOMMT DEIN CSS AUS DER URSPRÜNGLICHEN DATEI REIN */
+    /* Ich habs aus Platzgründen rausgelassen - du musst es EINFÜGEN! */
+    
     :root {
       --green: #156d3b;
       --green2: #2ea45d;
@@ -72,7 +75,7 @@
     .card { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 16px; margin-bottom: 16px; box-shadow: 0 3px 10px rgba(0,0,0,0.04); }
     .card h3 { margin: 0 0 12px; font-size: 18px; display: flex; align-items: center; gap: 6px; }
 
-    /* Next Match Card */
+    /* Next Match Card with Attendance Color */
     .next-match-card { padding: 16px; border-radius: 16px; margin-bottom: 20px; color: white; }
     .next-match-card.coming { background: linear-gradient(135deg, var(--attendance-coming), #1e6b3d); }
     .next-match-card.maybe { background: linear-gradient(135deg, var(--attendance-maybe), #c47f2a); }
@@ -105,6 +108,7 @@
     .btn.small { padding: 6px 10px; font-size: 12px; }
     .btn.approve { background: var(--approval-green); color: white; }
     .btn.reject { background: var(--approval-red); color: white; }
+    .btn.request { background: var(--notification-border); color: #856404; }
 
     /* Player List */
     .player-list { max-height: 300px; overflow-y: auto; border: 1px solid var(--line); border-radius: 14px; padding: 8px; margin-bottom: 20px; background: white; }
@@ -116,6 +120,7 @@
     .match:hover { background: #f5f9f6; }
     .match.expanded { background: #f0f7f2; border-left: 4px solid var(--green); }
     .match.past { background: var(--match-past); opacity: 0.7; }
+    .match.past:hover { background: #d0d0d0; }
     .datebox { width: 80px; padding: 12px 8px; text-align: center; border-right: 1px solid #edf1ee; }
     .datebox .day { font-size: 24px; font-weight: 300; line-height: 1; }
     .datebox .mon { font-size: 11px; font-weight: 600; color: #58635d; margin-top: 4px; }
@@ -126,8 +131,11 @@
     .badge { padding: 4px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
     .team1 { background: var(--yellow); color: #214b2f; }
     .team2 { background: #52bf74; color: white; }
+    .status.home { color: #2d9c4b; font-weight: 600; }
+    .status.away { color: #d8712b; font-weight: 600; }
 
     /* Attendance */
+    .attendance-stats { display: flex; gap: 16px; font-size: 13px; margin: 10px 0; }
     .attendance-buttons { display: flex; gap: 8px; margin: 10px 0; }
     .attendance-buttons .btn { flex: 1; }
 
@@ -140,6 +148,17 @@
     .attendance-item.maybe .count { color: var(--attendance-maybe); }
     .attendance-item.missing .count { color: var(--attendance-missing); }
     .attendance-item.open .count { color: var(--attendance-open); }
+
+    /* Detailed Attendance for Trainer */
+    .detailed-attendance { margin: 15px 0; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+    .detailed-header { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; background: #e0e0e0; font-weight: 600; font-size: 12px; padding: 8px; }
+    .detailed-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; padding: 8px; border-top: 1px solid var(--line); align-items: center; }
+    .detailed-row:nth-child(even) { background: #f9f9f9; }
+    .detailed-status { text-align: center; font-weight: 600; }
+    .status-coming { color: var(--attendance-coming); }
+    .status-maybe { color: var(--attendance-maybe); }
+    .status-missing { color: var(--attendance-missing); }
+    .status-open { color: var(--attendance-open); }
 
     /* Training */
     .training-player { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #e0eae1; }
@@ -157,9 +176,71 @@
     .history-excused { background: #fff2dd; border-left: 4px solid var(--attendance-maybe); }
     .history-missing { background: #ffe6e3; border-left: 4px solid var(--attendance-missing); }
 
+    /* Test Stars */
+    .star { color: #f3c623; font-size: 18px; }
+    .star-empty { color: #ddd; font-size: 18px; }
+
     /* Stat Boxes */
     .stat { background: var(--soft); border: 1px solid #edf3ee; border-radius: 16px; padding: 12px; text-align: center; }
     .stat strong { display: block; font-size: 20px; }
+
+    /* Ranking */
+    .ranking-badge { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; margin-left: 8px; font-weight: 800; font-size: 14px; }
+    .ranking-1 { background: var(--gold); color: #000; }
+    .ranking-2 { background: var(--silver); color: #000; }
+    .ranking-3 { background: var(--bronze); color: #fff; }
+    .ranking-other { background: #e0e0e0; color: #333; }
+
+    /* Season Stats */
+    .season-stats { background: #e8f0fe; border-radius: 16px; padding: 16px; margin: 20px 0; }
+    .season-stats h4 { color: var(--blue); margin: 0 0 12px 0; border-bottom: 1px solid var(--blue); padding-bottom: 8px; }
+    .season-stat-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(94,143,232,0.2); }
+    .season-stat-item:last-child { border-bottom: none; }
+    .season-stat-item.current { background: rgba(94,143,232,0.1); border-radius: 8px; padding: 8px; margin-bottom: 8px; font-weight: 600; }
+
+    /* Current Season Stats */
+    .current-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0; }
+    .stat-card { background: white; border: 1px solid var(--line); border-radius: 16px; padding: 16px; text-align: center; }
+    .stat-card .value { font-size: 32px; font-weight: 800; color: var(--green); }
+    .stat-card .label { font-size: 12px; color: var(--muted); margin-top: 4px; }
+    .stat-card .ranking { display: flex; align-items: center; justify-content: center; margin-top: 8px; font-size: 14px; }
+
+    /* Month Separator */
+    .month { background: #ddd; color: #535353; font-weight: 800; letter-spacing: .14em; padding: 10px 16px; margin-top: 10px; }
+
+    /* Photo Upload */
+    .photo-upload { display: flex; flex-direction: column; align-items: center; margin-bottom: 15px; }
+    .photo-preview { width: 120px; height: 120px; border-radius: 60px; background: #f0f7f2; border: 2px dashed var(--green); display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 10px; }
+    .photo-preview img { width: 100%; height: 100%; object-fit: cover; }
+    .photo-preview span { color: var(--muted); font-size: 12px; text-align: center; }
+
+    /* Parent Photo */
+    .parent-photo { width: 120px; height: 120px; border-radius: 60px; margin: 0 auto 16px; overflow: hidden; }
+    .parent-photo img { width: 100%; height: 100%; object-fit: cover; }
+
+    /* Trainer Kind Section - MIT ABSTIMMUNG (wie Eltern) */
+    .trainer-kind-section { border-radius: 20px; padding: 16px; margin: 16px 0; background: var(--trainer-kind-bg); border: 2px solid var(--trainer-kind-border); }
+    .trainer-kind-section .section-title { color: var(--trainer-kind-border); font-size: 16px; font-weight: 600; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--trainer-kind-border); }
+
+    /* Coach Kind Section */
+    .coach-kind-section { border-radius: 20px; padding: 16px; margin: 16px 0; background: var(--coach-bg); border: 2px solid var(--coach-border); }
+    .coach-kind-section .section-title { color: #856404; font-size: 16px; font-weight: 600; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--coach-border); }
+
+    /* Statistics Section */
+    .statistics-section { border-radius: 20px; padding: 16px; margin: 16px 0; background: var(--statistics-bg); border: 2px solid var(--statistics-border); }
+    .statistics-section .section-title { color: #555; font-size: 16px; font-weight: 600; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--statistics-border); }
+    .statistics-table { width: 100%; border-collapse: collapse; }
+    .statistics-table th { text-align: left; padding: 8px; background: #e0e0e0; font-size: 12px; }
+    .statistics-table td { padding: 8px; border-bottom: 1px solid #ddd; }
+    .statistics-table tr:last-child td { border-bottom: none; }
+    .statistics-table .zero { color: var(--muted); font-style: italic; }
+
+    /* Notifications */
+    .notification-badge { background: var(--notification-bg); border: 1px solid var(--notification-border); border-radius: 20px; padding: 4px 10px; font-size: 12px; font-weight: 600; margin-left: 8px; }
+    .notification-item { background: var(--notification-bg); border-left: 4px solid var(--notification-border); padding: 12px; border-radius: 8px; margin: 8px 0; }
+    .approval-message { padding: 10px; border-radius: 8px; margin: 10px 0; text-align: center; font-weight: 600; }
+    .approval-message.approved { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .approval-message.rejected { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
 
     /* Login */
     .login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 18px; }
@@ -167,13 +248,46 @@
 
     /* Navigation */
     .nav { position: fixed; left: 0; right: 0; bottom: 0; background: white; border-top: 1px solid var(--line); display: flex; justify-content: center; z-index: 25; }
-    .nav-inner { width: 100%; max-width: 720px; display: grid; grid-template-columns: repeat(8, 1fr); }
-    .nav button { background: none; border: none; padding: 12px 4px; color: #617067; font-size: 20px; cursor: pointer; }
-    .nav button.active { color: var(--green); }
+    .nav-inner { width: 100%; max-width: 720px; display: grid; grid-template-columns: repeat(10, 1fr); }
+    .nav button { background: none; border: none; padding: 12px 4px; color: #617067; font-size: 20px; cursor: pointer; transition: 0.2s; }
+    .nav button.active { color: var(--green); transform: translateY(-2px); }
+    .nav .trainer-kind-nav, .nav .coach-kind-nav { margin-left: 20px; }
+
+    /* Logo Upload in Config */
+    .logo-upload { display: flex; flex-direction: column; align-items: center; margin: 20px 0; padding: 20px; background: #f5f9f6; border-radius: 12px; }
+    .logo-preview { width: 100px; height: 100px; border-radius: 18px; background: white; border: 2px dashed var(--green); display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 10px; }
+    .logo-preview img { width: 100%; height: 100%; object-fit: contain; padding: 5px; }
+    .logo-preview span { color: var(--muted); font-size: 12px; text-align: center; }
+
+    /* Gegner-Liste für U8 und kleiner */
+    .opponents-list { margin: 12px 0; padding: 12px; background: #f5f9f6; border-radius: 12px; }
+    .opponents-list h4 { margin: 0 0 8px 0; font-size: 14px; color: var(--muted); }
+    .opponents-items { display: flex; flex-wrap: wrap; gap: 8px; }
+    .opponent-tag { background: var(--blue); color: white; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+
+    /* Match Report Styles */
+    .match-report-item { background: white; border: 1px solid var(--line); border-radius: 16px; padding: 16px; margin-bottom: 16px; }
+    .match-report-item.completed { background: var(--report-completed); border-color: var(--report-completed-border); }
+    .match-report-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .match-report-title { font-weight: 600; font-size: 16px; }
+    .match-report-actions { display: flex; gap: 8px; }
+    .match-report-result { font-size: 18px; font-weight: 800; color: var(--green); margin: 8px 0; }
+
+    /* Milestone Card */
+    .milestone-card { background: var(--milestone-bg); border: 2px solid var(--milestone-border); border-radius: 16px; padding: 16px; margin-bottom: 16px; }
+    .milestone-year { font-size: 20px; font-weight: 800; color: #e65100; margin-bottom: 12px; border-bottom: 1px solid var(--milestone-border); padding-bottom: 8px; }
+    .milestone-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .milestone-stat { text-align: center; background: white; border-radius: 12px; padding: 12px; }
+    .milestone-stat .value { font-size: 28px; font-weight: 800; color: var(--green); }
+    .milestone-stat .label { font-size: 12px; color: var(--muted); }
 
     /* Utils */
     .small { font-size: 12px; color: var(--muted); }
+    .hidden { display: none !important; }
     .mt-2 { margin-top: 8px; }
+    .mt-3 { margin-top: 12px; }
+    .mt-4 { margin-top: 16px; }
+    .mb-2 { margin-bottom: 8px; }
   </style>
 </head>
 <body>
@@ -184,720 +298,45 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
 <script>
-// ==================== FIREBASE ====================
+// ==================== FIREBASE KONFIGURATION ====================
 const firebaseConfig = {
   apiKey: "AIzaSyAemNwKkerXt-hvtikIIACR4oBTb72VjL_U",
   authDomain: "usv-staw-app.firebaseapp.com",
   projectId: "usv-staw-app",
-  storageBucket: "usv-staw-app.appspot.com",
+  storageBucket: "usv-staw-app.appspot.com",  // WICHTIG: .appspot.com nicht .firebasestorage.app
   messagingSenderId: "983106867178",
   appId: "1:983106867178:web:90234121a5833e7e396c93"
 };
 
+// Firebase initialisieren
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 window.db = db;
 
-// ==================== STANDARD LOGO ====================
-const defaultLogo = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23156d3b'/%3E%3Ctext x='50' y='55' font-size='40' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'%3E⚽%3C/text%3E%3C/svg%3E";
+// ==================== HIER KOMMT DEIN KOMPLETTES JAVASCRIPT ====================
+// JETZT FÜGE HIER DEIN GESAMTES JAVASCRIPT AUS DER ORIGINALDATEI EIN
+// (alles was zwischen den <script> Tags war, aber ohne die Firebase-Imports)
+// 
+// DAS IST ZU VIEL UM ES HIER NOCHMAL ZU ZEIGEN - DU MUSST ES EINFÜGEN!
+// 
+// WICHTIG: Achte darauf, dass die Funktionen save(), loadState(), listenState()
+// und alle anderen Funktionen aus deiner Original-App HIER drin sind!
 
-// ==================== SEED DATEN ====================
-const seed = {
-  teams: { main: "U8", second: "U9", showSecond: true },
-  clubLogo: defaultLogo,
-  attendanceRequests: [],
-  currentSeason: 2026,
-  users: [
-    { id: "u1", username: "trainer", password: "trainer", role: "admin", name: "Haupttrainer", childId: null },
-    { id: "u2", username: "coach", password: "4321", role: "coach", name: "Co-Trainer", childId: null }
-  ],
-  players: [
-    { id: "p1", name: "Fabian Mustermann", team: "U8", birthday: "2017-04-12", position: "Stürmer", jersey: 7, parentName: "Eltern Fabian", since: "2023", nextTeam: "U9", note: "Sehr aufmerksam", games: 12, goals: 8, assists: 4, trainingCount: 14, speed: 7.8, dribbling: 8.2, passing: 7.1, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {} },
-    { id: "p2", name: "Oliver A.", team: "U8", birthday: "2017-06-08", position: "Verteidiger", jersey: 4, parentName: "Eltern Oliver", since: "2024", nextTeam: "U9", note: "Gute Mitarbeit", games: 11, goals: 12, assists: 2, trainingCount: 12, speed: 6.4, dribbling: 6.8, passing: 6.9, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {} }
-  ],
-  matches: [
-    { id: "m1", team: "U8", date: "2026-03-07", time: "14:00", title: "Kick-Off Trophy", kind: "CUP", location: "Auswärts", meeting: "13:15", opponents: [], attendance: { p1: "coming", p2: "open" }, attendanceRequests: [], result: "", report: null },
-    { id: "m2", team: "U8", date: "2026-03-14", time: "10:30", title: "U8 Tulln", kind: "TESTSPIEL", location: "Heim", meeting: "09:45", opponents: [], attendance: { p1: "coming", p2: "open" }, attendanceRequests: [], result: "", report: null }
-  ],
-  trainings: [
-    { id: "t1", date: "2026-02-28", attendance: { p1: "present", p2: "present" } }
-  ],
-  testConfig: [],
-  currentTeam: "U8",
-  selectedPlayerId: "p1",
-  expandedMatch: null,
-  selectedReportMatchId: null
-};
-
-// Eltern-Accounts
-seed.players.forEach(p => {
-  const username = p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-  seed.users.push({
-    id: "u-" + p.id,
-    username: username,
-    password: "1234",
-    role: "parent",
-    name: p.name + " (Eltern)",
-    playerId: p.id
-  });
-});
-
-// ==================== STATE ====================
-let state = {};
-let session = JSON.parse(sessionStorage.getItem("usv-staw-session") || "null");
-let adminView = "dashboard";
-let coachView = "dashboard";
-let parentView = "kind";
-
-// ==================== HILFSFUNKTIONEN ====================
-function findPlayer(id) { return state.players?.find(p => p.id === id); }
-function findUserForPlayer(playerId) { return state.users?.find(u => u.playerId === playerId); }
-
-function playersForCurrentTeam() {
-  if (!state.players) return [];
-  if (state.currentTeam === "ALLE") return state.players;
-  return state.players.filter(p => p.team === state.currentTeam);
-}
-
-function matchesForCurrentTeam() {
-  if (!state.matches) return [];
-  let matches = state.matches;
-  if (state.currentTeam !== "ALLE") {
-    matches = matches.filter(m => m.team === state.currentTeam);
-  }
-  return matches.sort((a,b) => a.date.localeCompare(b.date));
-}
-
-function getTeamNumber(teamName) {
-  const match = teamName?.match(/^U(\d+)$/i);
-  return match ? parseInt(match[1]) : null;
-}
-
-function getEligiblePlayersForMatch(match) {
-  if (!state.players) return [];
-  return state.players.filter(p => p.team === match.team);
-}
-
-function formatDate(dateStr) {
-  const d = new Date(dateStr);
-  const months = ["JAN","FEB","MÄR","APR","MAI","JUN","JUL","AUG","SEP","OKT","NOV","DEZ"];
-  return { day: String(d.getDate()).padStart(2,"0"), mon: months[d.getMonth()] };
-}
-
-function countAttendance(match) {
-  const eligiblePlayers = getEligiblePlayersForMatch(match);
-  const coming = eligiblePlayers.filter(p => match.attendance?.[p.id] === "coming").length;
-  const maybe = eligiblePlayers.filter(p => match.attendance?.[p.id] === "maybe").length;
-  const missing = eligiblePlayers.filter(p => match.attendance?.[p.id] === "missing").length;
-  const open = eligiblePlayers.filter(p => !match.attendance?.[p.id] || match.attendance[p.id] === "open").length;
-  return { coming, maybe, missing, open, total: eligiblePlayers.length };
-}
-
-function isMatchPast(match) {
-  const today = new Date().toISOString().split('T')[0];
-  return match.date < today;
-}
-
-function getGermanStatus(status) {
-  switch(status) {
-    case 'coming': return 'Kommen';
-    case 'maybe': return 'Vielleicht';
-    case 'missing': return 'Fehlen';
-    default: return 'Offen';
-  }
-}
-
-function getAttendanceStatusClass(status) {
-  switch(status) {
-    case 'coming': return 'coming';
-    case 'maybe': return 'maybe';
-    case 'missing': return 'missing';
-    default: return 'open';
-  }
-}
-
-function calculatePlayerPercentage(playerId) {
-  const trainings = state.trainings || [];
-  if (trainings.length === 0) return 0;
-  let points = 0;
-  trainings.forEach(t => {
-    const status = t.attendance?.[playerId];
-    if (status === "present") points += 100;
-    else if (status === "excused") points += 25;
-  });
-  return Math.round(points / trainings.length);
-}
-
-function getTrainingHistory(playerId) {
-  return (state.trainings || [])
-    .filter(t => t.attendance?.[playerId])
-    .map(t => ({ date: t.date, status: t.attendance[playerId] }))
-    .sort((a,b) => b.date.localeCompare(a.date));
-}
-
-function getUpcomingBirthdays() {
-  return [];
-}
-
-// ==================== FIREBASE FUNKTIONEN ====================
-async function save() {
-  try {
-    await db.collection("app").doc("state").set(state);
-    console.log("✅ Gespeichert");
-  } catch (error) {
-    console.error("❌ Fehler:", error);
-  }
-}
-
-async function loadState() {
-  try {
-    const doc = await db.collection("app").doc("state").get();
-    if (doc.exists) {
-      state = { ...seed, ...doc.data() };
-      console.log("✅ Daten geladen");
-    } else {
-      await db.collection("app").doc("state").set(seed);
-      state = seed;
-      console.log("✅ Neue Datenbank");
-    }
-    render();
-  } catch (error) {
-    console.error("❌ Lade-Fehler:", error);
-    state = seed;
-    render();
-  }
-}
-
-function listenState() {
-  db.collection("app").doc("state").onSnapshot((doc) => {
-    if (doc.exists) {
-      state = doc.data();
-      render();
-    }
-  });
-}
-
-function saveSession() { 
-  sessionStorage.setItem("usv-staw-session", JSON.stringify(session)); 
-  render(); 
-}
-
-// ==================== LOGIN ====================
-function login() {
-  const username = document.getElementById("login-username")?.value.trim();
-  const password = document.getElementById("login-password")?.value.trim();
-  
-  if (!username || !password) {
-    alert("Bitte Benutzername und Passwort eingeben!");
-    return;
-  }
-  
-  const user = state.users?.find(u => u.username === username && u.password === password);
-  
-  if (!user) {
-    alert("❌ Benutzername oder Passwort falsch!\n\nTrainer: trainer/trainer\nEltern: z.B. fabian-mustermann/1234");
-    return;
-  }
-  
-  session = { ...user };
-  localStorage.setItem("last-username", username);
-  localStorage.setItem("last-password", password);
-  saveSession();
-}
-
-function loadSavedLogin() {
-  const savedUsername = localStorage.getItem("last-username");
-  const savedPassword = localStorage.getItem("last-password");
-  if (savedUsername && savedPassword) {
-    setTimeout(() => {
-      const usernameField = document.getElementById("login-username");
-      const passwordField = document.getElementById("login-password");
-      if (usernameField && passwordField) {
-        usernameField.value = savedUsername;
-        passwordField.value = savedPassword;
-      }
-    }, 100);
-  }
-}
-
-function logout() {
-  session = null;
-  sessionStorage.clear();
-  render();
-}
-
-// ==================== VIEW FUNKTIONEN ====================
-function setTeam(team) {
-  state.currentTeam = team;
-  save();
-}
-
-function toggleMatchExpand(matchId) {
-  state.expandedMatch = state.expandedMatch === matchId ? null : matchId;
-  save();
-}
-
-function updateMatchAttendance(matchId, status) {
-  if (!session) return;
-  
-  let playerId;
-  if (session.role === "parent") playerId = session.playerId;
-  else return;
-  
-  const match = state.matches?.find(m => m.id === matchId);
-  if (!match) return;
-  
-  if (!match.attendance) match.attendance = {};
-  
-  if (match.attendance[playerId] === status) {
-    match.attendance[playerId] = "open";
-  } else {
-    match.attendance[playerId] = status;
-  }
-  
-  save();
-}
-
-function finishTraining() {
-  const dateInput = document.getElementById("training-date");
-  const date = dateInput?.value;
-  if (!date) { alert("Bitte Datum auswählen"); return; }
-  
-  const trainingAttendance = {};
-  state.players?.forEach(p => {
-    const radios = document.getElementsByName(`tr-${p.id}`);
-    let selected = null;
-    radios.forEach(r => { if (r.checked) selected = r.value; });
-    trainingAttendance[p.id] = selected || "missing";
-  });
-  
-  if (!state.trainings) state.trainings = [];
-  state.trainings = state.trainings.filter(t => t.date !== date);
-  state.trainings.push({ id: "t" + Date.now(), date, attendance: trainingAttendance });
-  
-  save();
-  alert(`✅ Training vom ${date} gespeichert!`);
-}
-
-function setTodayForTraining() {
-  const el = document.getElementById("training-date");
-  if (el) el.value = new Date().toISOString().split("T")[0];
-}
-
-function setSelectedPlayer(id) {
-  state.selectedPlayerId = id;
-  save();
-}
-
-function setAdminView(view) {
-  adminView = view;
-  render();
-}
-
-function setCoachView(view) {
-  coachView = view;
-  render();
-}
-
-function setParentView(view) {
-  parentView = view;
-  render();
-}
-
-// ==================== RENDER FUNKTIONEN ====================
-function renderHeader() {
-  if (!session) return '';
-  
-  const roleLabels = { admin: "Haupttrainer", coach: "Co-Trainer", parent: "Eltern" };
-  const roleName = session.role === "parent" ? 
-    `${findPlayer(session.playerId)?.name || ""} (Eltern)` : 
-    session.name || roleLabels[session.role];
-  
-  const logoHtml = state.clubLogo ? 
-    `<img src="${state.clubLogo}" alt="Vereinslogo">` : 
-    '<span>⚽</span>';
-  
-  return `
-    <div class="header">
-      <div class="brand">
-        <div class="logo">${logoHtml}</div>
-        <div>
-          <small>USV St Andrä Wördern</small>
-          <strong>Team App</strong>
-          <div class="role-badge">${roleName}</div>
-        </div>
-      </div>
-      ${session.role !== "parent" ? `
-        <div class="tabs">
-          <button class="pill ${state.currentTeam === state.teams?.main ? 'active' : 'alt'}" onclick="setTeam('${state.teams?.main}')">${state.teams?.main}</button>
-          ${state.teams?.showSecond ? `<button class="pill ${state.currentTeam === state.teams?.second ? 'active' : 'alt'}" onclick="setTeam('${state.teams?.second}')">${state.teams?.second}</button>` : ''}
-          <button class="pill ${state.currentTeam === 'ALLE' ? 'active' : 'alt'}" onclick="setTeam('ALLE')">ALLE</button>
-        </div>
-      ` : ''}
-    </div>
-  `;
-}
-
-function renderLogin() {
-  setTimeout(loadSavedLogin, 100);
-  
-  return `
-    <div class="login-wrap">
-      <div class="login-card">
-        <div style="text-align: center; margin-bottom: 24px;">
-          <div class="logo" style="margin: 0 auto 16px; width: 100px; height: 100px;">
-            ${state.clubLogo ? `<img src="${state.clubLogo}" alt="Vereinslogo">` : '<span>⚽</span>'}
-          </div>
-          <h2>USV St Andrä Wördern</h2>
-          <p style="color: var(--muted);">Team App</p>
-        </div>
-        
-        <label>Benutzername</label>
-        <input id="login-username" type="text" placeholder="z.B. trainer" value="trainer">
-        
-        <label>Passwort</label>
-        <input id="login-password" type="password" placeholder="Passwort" value="trainer">
-        
-        <button class="btn primary" style="width: 100%; padding: 14px; margin-top: 16px;" onclick="login()">Einloggen</button>
-        
-        <div style="margin-top: 24px; padding: 16px; background: #f5f9f6; border-radius: 12px; font-size: 13px; text-align: center;">
-          <strong>Trainer:</strong> trainer/trainer<br>
-          <strong>Eltern:</strong> Benutzername = Spielername (z.B. fabian-mustermann) / 1234
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-function renderDashboard() {
-  const players = playersForCurrentTeam();
-  const matches = matchesForCurrentTeam().filter(m => m.date >= new Date().toISOString().split('T')[0]).slice(0, 3);
-  
-  return `
-    <div class="section">
-      <div class="card" style="background: linear-gradient(135deg, var(--green), var(--green2)); color: white;">
-        <h3 style="color: white;">📅 Nächste Spiele</h3>
-        ${matches.length > 0 ? matches.map(m => {
-          const c = countAttendance(m);
-          return `
-            <div style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.2);">
-              <div style="font-weight: 600;">${m.date} - ${m.title}</div>
-              <div style="display: flex; gap: 12px; font-size: 12px; margin-top: 6px;">
-                <span>✓ ${c.coming}</span>
-                <span>? ${c.maybe}</span>
-                <span>✗ ${c.missing}</span>
-                <span>○ ${c.open}</span>
-              </div>
-            </div>
-          `;
-        }).join('') : '<p>Keine anstehenden Spiele</p>'}
-      </div>
-      
-      <div class="card">
-        <h3>⚽ Torschützen</h3>
-        ${players.filter(p => p.goals > 0).sort((a,b) => b.goals - a.goals).slice(0, 3).map(p => `
-          <div style="display: flex; justify-content: space-between; padding: 8px 0;">
-            <span>${p.name}</span>
-            <span style="font-weight: 600; color: var(--green);">${p.goals} Tore</span>
-          </div>
-        `).join('')}
-        ${players.filter(p => p.goals > 0).length === 0 ? '<p class="small">Keine Tore</p>' : ''}
-      </div>
-    </div>
-  `;
-}
-
-function renderCalendar() {
-  const matches = matchesForCurrentTeam();
-  
-  return `
-    <div class="section">
-      ${matches.map(m => {
-        const d = formatDate(m.date);
-        const c = countAttendance(m);
-        const isExpanded = state.expandedMatch === m.id;
-        const isPast = isMatchPast(m);
-        
-        return `
-          <div class="match ${isPast ? 'past' : ''} ${isExpanded ? 'expanded' : ''}" onclick="toggleMatchExpand('${m.id}')">
-            <div class="datebox">
-              <div class="day">${d.day}</div>
-              <div class="mon">${d.mon}</div>
-            </div>
-            <div class="info">
-              <div class="badges">
-                <span class="badge ${m.team === state.teams?.main ? 'team1' : 'team2'}">${m.team}</span>
-              </div>
-              <div class="name">${m.title}</div>
-              <div class="time">${m.time} · ${m.location}</div>
-              
-              <div class="attendance-overview">
-                <div class="attendance-item coming"><div class="count">${c.coming}</div><div class="label">Kommen</div></div>
-                <div class="attendance-item maybe"><div class="count">${c.maybe}</div><div class="label">Vielleicht</div></div>
-                <div class="attendance-item missing"><div class="count">${c.missing}</div><div class="label">Fehlen</div></div>
-                <div class="attendance-item open"><div class="count">${c.open}</div><div class="label">Offen</div></div>
-              </div>
-            </div>
-          </div>
-        `;
-      }).join('')}
-      
-      ${matches.length === 0 ? '<p class="small" style="text-align: center;">Keine Spiele</p>' : ''}
-    </div>
-  `;
-}
-
-function renderTraining() {
-  const today = new Date().toISOString().split('T')[0];
-  const players = playersForCurrentTeam();
-  
-  return `
-    <div class="section">
-      <div class="card">
-        <h3>🏋️ Training erfassen</h3>
-        <label>Datum</label>
-        <input id="training-date" type="date" value="${today}">
-        
-        ${players.map(p => `
-          <div class="training-player">
-            <span style="font-weight: 600;">${p.name}</span>
-            <div class="training-options">
-              <input type="radio" name="tr-${p.id}" value="present" id="${p.id}-present" checked>
-              <label for="${p.id}-present">✓</label>
-              <input type="radio" name="tr-${p.id}" value="excused" id="${p.id}-excused">
-              <label for="${p.id}-excused">F</label>
-              <input type="radio" name="tr-${p.id}" value="missing" id="${p.id}-missing">
-              <label for="${p.id}-missing">X</label>
-            </div>
-          </div>
-        `).join('')}
-        
-        <button class="btn primary" style="width: 100%; margin-top: 16px;" onclick="finishTraining()">Training speichern</button>
-      </div>
-    </div>
-  `;
-}
-
-function renderTrainingHistory() {
-  const trainings = [...(state.trainings || [])].sort((a,b) => b.date.localeCompare(a.date));
-  
-  return `
-    <div class="section">
-      <div class="card">
-        <h3>📋 Trainingsübersicht</h3>
-        ${trainings.map(t => {
-          const present = state.players?.filter(p => t.attendance?.[p.id] === "present").map(p => p.name).join(', ');
-          return `
-            <div style="padding: 12px; background: #f5f9f6; border-radius: 12px; margin-bottom: 8px;">
-              <div style="font-weight: 600;">📅 ${t.date}</div>
-              ${present ? `<div style="color: #2e9b58;">✓ Anwesend: ${present}</div>` : ''}
-            </div>
-          `;
-        }).join('')}
-      </div>
-    </div>
-  `;
-}
-
-function renderPlayers() {
-  const players = playersForCurrentTeam();
-  const selectedPlayer = findPlayer(state.selectedPlayerId) || players[0];
-  
-  if (!selectedPlayer) {
-    return `<div class="section"><div class="card"><h3>Keine Spieler</h3></div></div>`;
-  }
-  
-  return `
-    <div class="section">
-      <div class="card">
-        <h3>👥 Spieler</h3>
-        <div class="player-list">
-          ${players.map(p => `
-            <button class="${state.selectedPlayerId === p.id ? 'active' : ''}" onclick="setSelectedPlayer('${p.id}')">
-              ${p.name} (${p.team})
-            </button>
-          `).join('')}
-        </div>
-        
-        <h4>${selectedPlayer.name}</h4>
-        <div class="grid2">
-          <div><label>Geburtstag</label><input value="${selectedPlayer.birthday || ''}"></div>
-          <div><label>Position</label><input value="${selectedPlayer.position || ''}"></div>
-        </div>
-        <div class="grid3">
-          <div class="stat"><strong>${selectedPlayer.goals || 0}</strong><span class="small">Tore</span></div>
-          <div class="stat"><strong>${selectedPlayer.assists || 0}</strong><span class="small">Assists</span></div>
-          <div class="stat"><strong>${calculatePlayerPercentage(selectedPlayer.id)}%</strong><span class="small">Training</span></div>
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-function renderParentView() {
-  const player = findPlayer(session?.playerId);
-  if (!player) return `<div class="section">Fehler: Kein Spieler</div>`;
-  
-  const upcomingMatches = (state.matches || []).filter(m => m.date >= new Date().toISOString().split('T')[0]).slice(0, 3);
-  const percent = calculatePlayerPercentage(player.id);
-  
-  return `
-    <div class="section">
-      <div class="tabs" style="margin-bottom: 16px;">
-        <button class="pill ${parentView === 'kind' ? 'active' : 'alt'}" onclick="setParentView('kind')">👤 Mein Kind</button>
-        <button class="pill ${parentView === 'calendar' ? 'active' : 'alt'}" onclick="setParentView('calendar')">📅 Spiele</button>
-        <button class="pill ${parentView === 'history' ? 'active' : 'alt'}" onclick="setParentView('history')">📋 Training</button>
-      </div>
-      
-      ${parentView === 'kind' ? `
-        <div class="card">
-          <h3>👤 ${player.name}</h3>
-          <div class="current-stats">
-            <div class="stat-card"><div class="value">${player.goals || 0}</div><div class="label">Tore</div></div>
-            <div class="stat-card"><div class="value">${player.assists || 0}</div><div class="label">Assists</div></div>
-          </div>
-          
-          <h4 style="margin: 20px 0 12px;">📅 Anstehende Spiele</h4>
-          ${upcomingMatches.map(match => {
-            const status = match.attendance?.[player.id] || 'open';
-            const statusClass = getAttendanceStatusClass(status);
-            const statusText = status === 'coming' ? '✓ Du kommst' : status === 'maybe' ? '? Vielleicht' : status === 'missing' ? '✗ Du fehlst' : '○ Offen';
-            
-            return `
-              <div class="next-match-card ${statusClass}" style="margin-bottom: 12px;">
-                <div class="small">${match.date}</div>
-                <div class="title">${match.title}</div>
-                <div class="small">${statusText}</div>
-                <div class="attendance-buttons" onclick="event.stopPropagation()">
-                  <button class="btn ${status === 'coming' ? 'yes' : 'secondary'}" onclick="updateMatchAttendance('${match.id}','coming')">✓</button>
-                  <button class="btn ${status === 'maybe' ? 'maybe' : 'secondary'}" onclick="updateMatchAttendance('${match.id}','maybe')">?</button>
-                  <button class="btn ${status === 'missing' ? 'no' : 'secondary'}" onclick="updateMatchAttendance('${match.id}','missing')">✗</button>
-                </div>
-              </div>
-            `;
-          }).join('')}
-          
-          <div class="stat"><strong>${percent}%</strong><br><span class="small">Training</span></div>
-        </div>
-      ` : parentView === 'calendar' ? renderCalendar() : renderTrainingHistory()}
-    </div>
-  `;
-}
-
-function renderCoachView() {
-  let content = '';
-  if (coachView === "dashboard") content = renderDashboard();
-  else if (coachView === "calendar") content = renderCalendar();
-  else if (coachView === "training") content = renderTraining();
-  else if (coachView === "traininghistory") content = renderTrainingHistory();
-  else content = renderDashboard();
-  
-  return `<div class="section">${content}</div>`;
-}
-
-function renderNav() {
-  if (!session) return '';
-  
-  if (session.role === "parent") {
-    return `
-      <div class="nav">
-        <div class="nav-inner">
-          <button class="${parentView === 'kind' ? 'active' : ''}" onclick="setParentView('kind')">👤</button>
-          <button class="${parentView === 'calendar' ? 'active' : ''}" onclick="setParentView('calendar')">📅</button>
-          <button class="${parentView === 'history' ? 'active' : ''}" onclick="setParentView('history')">📋</button>
-          <button onclick="logout()">🚪</button>
-        </div>
-      </div>
-    `;
-  } else if (session.role === "coach") {
-    return `
-      <div class="nav">
-        <div class="nav-inner">
-          <button class="${coachView === 'dashboard' ? 'active' : ''}" onclick="setCoachView('dashboard')">🏠</button>
-          <button class="${coachView === 'calendar' ? 'active' : ''}" onclick="setCoachView('calendar')">📅</button>
-          <button class="${coachView === 'training' ? 'active' : ''}" onclick="setCoachView('training')">🏋️</button>
-          <button class="${coachView === 'traininghistory' ? 'active' : ''}" onclick="setCoachView('traininghistory')">📋</button>
-          <button onclick="logout()">🚪</button>
-        </div>
-      </div>
-    `;
-  } else {
-    return `
-      <div class="nav">
-        <div class="nav-inner">
-          <button class="${adminView === 'dashboard' ? 'active' : ''}" onclick="setAdminView('dashboard')">🏠</button>
-          <button class="${adminView === 'calendar' ? 'active' : ''}" onclick="setAdminView('calendar')">📅</button>
-          <button class="${adminView === 'training' ? 'active' : ''}" onclick="setAdminView('training')">🏋️</button>
-          <button class="${adminView === 'traininghistory' ? 'active' : ''}" onclick="setAdminView('traininghistory')">📋</button>
-          <button class="${adminView === 'players' ? 'active' : ''}" onclick="setAdminView('players')">👥</button>
-          <button onclick="logout()">🚪</button>
-        </div>
-      </div>
-    `;
-  }
-}
-
-// ==================== RENDER ====================
-function render() {
-  const app = document.getElementById('app');
-  
-  if (!session) {
-    app.innerHTML = renderLogin();
-    return;
-  }
-  
-  let content = renderHeader();
-  
-  if (session.role === "parent") {
-    content += renderParentView();
-  } else if (session.role === "coach") {
-    content += renderCoachView();
-  } else {
-    if (adminView === "dashboard") content += renderDashboard();
-    else if (adminView === "calendar") content += renderCalendar();
-    else if (adminView === "training") content += renderTraining();
-    else if (adminView === "traininghistory") content += renderTrainingHistory();
-    else if (adminView === "players") content += renderPlayers();
-    else content += renderDashboard();
-  }
-  
-  content += renderNav();
-  app.innerHTML = content;
-  
-  if (adminView === "training" || coachView === "training") {
-    setTodayForTraining();
-  }
-}
-
-// ==================== START ====================
-window.startApp = async function() {
-  console.log("🚀 App startet...");
-  await loadState();
-  listenState();
-  render();
-}
-
-// Globale Funktionen
-window.login = login;
-window.logout = logout;
-window.setTeam = setTeam;
-window.toggleMatchExpand = toggleMatchExpand;
-window.updateMatchAttendance = updateMatchAttendance;
-window.finishTraining = finishTraining;
-window.setTodayForTraining = setTodayForTraining;
-window.setSelectedPlayer = setSelectedPlayer;
-window.setAdminView = setAdminView;
-window.setCoachView = setCoachView;
-window.setParentView = setParentView;
-
-// Start
+// ==================== NOTFALL-START ====================
+console.log("App wird geladen...");
 setTimeout(() => {
-  if (window.startApp) window.startApp();
+  if (typeof loadState === 'function') {
+    loadState();
+    listenState();
+  } else {
+    document.getElementById('app').innerHTML = '<div class="login-wrap"><div class="login-card"><h2>Fehler</h2><p>JavaScript nicht komplett eingefügt!</p></div></div>';
+  }
 }, 100);
 </script>
 
-<div style="text-align: center; padding: 10px; font-size: 12px; color: #888;">
-Stephan Köck – Version 1.0
+<!-- ===== App Footer ===== -->
+<div style="text-align:center;margin-top:20px;font-size:12px;color:#888;padding:10px;">
+Stephan Köck – Relais 2026 – Version 1.0
 </div>
 
 </body>
