@@ -508,13 +508,6 @@ async function getAccessToken() {
 }
 
 async function initPushNotifications() {
-  // 🔥 VERHINDERE MEHRFACHE INITIALISIERUNG
-  if (window._pushInitialized) {
-    console.log('⏭️ Push bereits initialisiert');
-    return;
-  }
-  window._pushInitialized = true;
-  
   try {
     if (!firebase.messaging) {
       console.log('⚠️ Firebase Messaging nicht verfügbar');
@@ -523,54 +516,29 @@ async function initPushNotifications() {
     
     messaging = firebase.messaging();
     
-    // 🔥 AUTO-BEREINIGUNG: ALLE ALTEN SERVICE WORKER LÖSCHEN
-    try {
-      const registrations = await navigator.serviceWorker.getRegistrations();
-      console.log(`📋 ${registrations.length} Service Worker gefunden`);
-      
-      for (const reg of registrations) {
-        // Nur den aktuellen nicht löschen
-        if (!reg.scope.includes(window.location.pathname)) {
-          await reg.unregister();
-          console.log('✅ Gelöscht:', reg.scope);
-        }
-      }
-    } catch (e) {
-      console.log('⚠️ Bereinigung fehlgeschlagen:', e);
-    }
-    
-    pushSupported = true;
-    
     const permission = await Notification.requestPermission();
     if (permission === 'granted') {
-      console.log('✅ Push-Benachrichtigungen erlaubt');
+      console.log('✅ Push erlaubt');
       
       try {
         const token = await messaging.getToken({
           vapidKey: 'BNff0vnOXCeYPyLxqkCIDRAhaXhC06Xt1Fj6DduVFStn5xQNHdSbXzQHPriwpYySHdx1kQyywdVyTtY4_6TIcvI'
         });
-        console.log('📱 Push-Token erhalten:', token);
-        
+        console.log('📱 Token:', token);
         await savePushToken(token);
-        showToast('✅ Push-Benachrichtigungen aktiviert', 'success');
-      } catch (tokenError) {
-        console.log('⚠️ Kein Push-Token verfügbar:', tokenError);
-        showToast('Push-Token konnte nicht erstellt werden', 'error');
+        showToast('✅ Push aktiviert', 'success');
+      } catch (e) {
+        console.log('❌ Token Fehler:', e);
+        showToast('Push-Token Fehler', 'error');
       }
       
-      // 🔥 NUR Toast, wenn App offen (Service Worker macht den Rest)
       messaging.onMessage((payload) => {
-        console.log('📨 Push-Nachricht erhalten:', payload);
-        const body = payload.notification?.body || 'Neue Nachricht';
-        showToast(body, 'info', 5000);
+        console.log('📨 Push:', payload?.notification?.body);
+        showToast(payload?.notification?.body || 'Neue Nachricht', 'info', 5000);
       });
-    } else {
-      console.log('❌ Push-Benachrichtigungen nicht erlaubt');
-      showToast('Bitte Benachrichtigungen erlauben', 'warning');
     }
   } catch (error) {
-    console.log('⚠️ Push-Benachrichtigungen nicht verfügbar:', error.message);
-    pushSupported = false;
+    console.log('⚠️ Push Fehler:', error);
   }
 }
 
