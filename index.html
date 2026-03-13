@@ -441,8 +441,8 @@ let pushSupported = false;
 
 async function getAccessToken() {
   try {
-    // 🔥 HIER deine Cloud Function URL einsetzen!
-    const response = await fetch('https://us-central1-usv-staw-app.cloudfunctions.net/getFcmToken', {
+    // 🔥 NEUE URL der Cloud Function!
+    const response = await fetch('https://getfcmtoken-xri47ejggq-uc.a.run.app', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
