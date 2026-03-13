@@ -435,11 +435,7 @@ function closeToast(toastId) {
   }
 }
 
-// ==================== PUSH BENACHRICHTIGUNGEN & INSTALLATION ====================
-let messaging = null;
-let pushSupported = false;
-let deferredPrompt;
-
+// ==================== HELPER FUNKTIONEN FÜR INSTALLATION ====================
 // Prüfen ob iOS Gerät
 function isIOS() {
   return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
@@ -450,6 +446,11 @@ function isAppInstalled() {
   return window.matchMedia('(display-mode: standalone)').matches || 
          window.navigator.standalone === true;
 }
+
+// ==================== PUSH BENACHRICHTIGUNGEN & INSTALLATION ====================
+let messaging = null;
+let pushSupported = false;
+let deferredPrompt;
 
 // iOS "Zum Home-Bildschirm" Anleitung zeigen
 function showIOSInstructions() {
@@ -687,43 +688,18 @@ window.db = db;
 const defaultLogo = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23156d3b'/%3E%3Ctext x='50' y='55' font-size='40' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'%3E⚽%3C/text%3E%3C/svg%3E";
 
 // ==================== PWA INSTALLATION ====================
-let deferredPrompt;
-let isAppInstalled = false;
+let isAppInstalledFlag = false;
 
 if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
-  isAppInstalled = true;
+  isAppInstalledFlag = true;
   console.log('✅ App läuft im installierten Modus');
 }
 
 window.addEventListener('appinstalled', (evt) => {
-  isAppInstalled = true;
+  isAppInstalledFlag = true;
   console.log('✅ App wurde installiert');
   render();
 });
-
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  deferredPrompt = e;
-  console.log('✅ beforeinstallprompt Event ausgelöst');
-});
-
-function installApp() {
-  if (!deferredPrompt) {
-    showToast('Die App kann nicht installiert werden', 'error');
-    return;
-  }
-  
-  deferredPrompt.prompt();
-  
-  deferredPrompt.userChoice.then((choiceResult) => {
-    if (choiceResult.outcome === 'accepted') {
-      showToast('Installation gestartet', 'success');
-    } else {
-      showToast('Installation abgebrochen', 'warning');
-    }
-    deferredPrompt = null;
-  });
-}
 
 // ==================== DATEN ====================
 const seed = {
@@ -2126,13 +2102,13 @@ function renderLogin() {
         
         <button class="btn primary" style="width: 100%; padding: 14px; margin-top: 16px;" onclick="login()">Einloggen</button>
         
-<!-- Install-Button - angepasst für iOS -->
-<div id="install-button-container" style="${isAppInstalled() ? 'display: none;' : 'margin-top: 16px;'}">
-  <button class="btn secondary" style="width: 100%;" onclick="installApp()">
-    ${typeof isIOS === 'function' && isIOS() ? '📱 Zum Home-Bildschirm' : '📲 App installieren'}
-  </button>
-  ${typeof isIOS === 'function' && isIOS() ? '<p class="small" style="margin-top: 8px; text-align: center;">Auf iPhone: Teilen-Button → "Zum Home-Bildschirm"</p>' : ''}
-</div>
+        <!-- Install-Button - angepasst für iOS -->
+        <div id="install-button-container" style="${isAppInstalled() ? 'display: none;' : 'margin-top: 16px;'}">
+          <button class="btn secondary" style="width: 100%;" onclick="installApp()">
+            ${isIOS() ? '📱 Zum Home-Bildschirm' : '📲 App installieren'}
+          </button>
+          ${isIOS() ? '<p class="small" style="margin-top: 8px; text-align: center;">Auf iPhone: Teilen-Button → "Zum Home-Bildschirm"</p>' : ''}
+        </div>
         
         <div style="margin-top: 24px; padding: 16px; background: #f5f9f6; border-radius: 12px; font-size: 13px; text-align: center;">
           <strong>Erstlogin-Passwort: 1234</strong>
