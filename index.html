@@ -552,14 +552,13 @@ async function initPushNotifications() {
 messaging.onMessage((payload) => {
   console.log('📨 Push-Nachricht erhalten:', payload);
   
-  const title = payload.notification?.title || 'USV StAW';
   const body = payload.notification?.body || 'Neue Nachricht';
   
-  // 🔥 WICHTIG: Nur Toast anzeigen, KEINE Benachrichtigung!
+  // 🔥 NUR Toast anzeigen, KEINE System-Benachrichtigung!
   showToast(body, 'info', 5000);
   
-  // Den Service Worker nicht nochmal triggern
-  // Alles weitere macht der Service Worker automatisch
+  // Der Service Worker macht automatisch die System-Benachrichtigung
+  // wenn die App im Hintergrund ist
 });
     } else {
       console.log('❌ Push-Benachrichtigungen nicht erlaubt');
