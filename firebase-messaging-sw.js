@@ -38,6 +38,37 @@ self.addEventListener('notificationclick', (event) => {
   console.log('Notification clicked:', event.notification);
   event.notification.close();
   
-  // Open the app
-  event.waitUntil(clients.openWindow('/'));
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      // Wenn ein Fenster bereits offen ist, dieses fokussieren
+      if (clientList.length > 0) {
+        let client = clientList[0];
+        for (let i = 0; i < clientList.length; i++) {
+          if (clientList[i].focused) {
+            client = clientList[i];
+          }
+        }
+        return client.focus();
+      }
+      // Sonst neues Fenster öffnen
+      return clients.openWindow('/');
+    })
+  );
+});
+
+// WICHTIG: Fetch Handler hinzufügen (damit die Warnung weg geht)
+self.addEventListener('fetch', (event) => {
+  event.respondWith(fetch(event.request));
+});
+
+// Service Worker Installation
+self.addEventListener('install', (event) => {
+  console.log('Service Worker installed');
+  self.skipWaiting();
+});
+
+// Service Worker Aktivierung
+self.addEventListener('activate', (event) => {
+  console.log('Service Worker activated');
+  event.waitUntil(clients.claim());
 });
