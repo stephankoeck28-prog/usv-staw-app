@@ -549,15 +549,18 @@ async function initPushNotifications() {
         showToast('Push-Token konnte nicht erstellt werden', 'error');
       }
       
-      messaging.onMessage((payload) => {
-        console.log('📨 Push-Nachricht erhalten:', payload);
-        
-        const title = payload.notification?.title || 'USV StAW';
-        const body = payload.notification?.body || 'Neue Nachricht';
-        
-        // Nur Toast anzeigen, die System-Benachrichtigung kommt vom Service Worker
-        showToast(body, 'info', 5000);
-      });
+messaging.onMessage((payload) => {
+  console.log('📨 Push-Nachricht erhalten:', payload);
+  
+  const title = payload.notification?.title || 'USV StAW';
+  const body = payload.notification?.body || 'Neue Nachricht';
+  
+  // 🔥 WICHTIG: Nur Toast anzeigen, KEINE Benachrichtigung!
+  showToast(body, 'info', 5000);
+  
+  // Den Service Worker nicht nochmal triggern
+  // Alles weitere macht der Service Worker automatisch
+});
     } else {
       console.log('❌ Push-Benachrichtigungen nicht erlaubt');
       showToast('Bitte Benachrichtigungen erlauben', 'warning');
