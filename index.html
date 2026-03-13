@@ -508,27 +508,16 @@ async function getAccessToken() {
 }
 
 async function initPushNotifications() {
-  // 🔥 VERHINDERE MEHRFACHE INITIALISIERUNG MIT FLAG
-  if (window._pushInitDone) {
-    console.log('⏭️ Push bereits initialisiert');
-    return;
-  }
-  window._pushInitDone = true;
-  
   try {
     if (!firebase.messaging) {
       console.log('⚠️ Firebase Messaging nicht verfügbar');
       return;
     }
     
-    // 🔥 BESTEHENDE LISTENER ENTFERNEN
-    if (window._messageListener) {
-      window._messageListener();
-      window._messageListener = null;
-    }
+    // 🔥 KEINE Service Worker Registrierung!
+    // 🔥 KEINE bestehenden Listener!
     
     messaging = firebase.messaging();
-    pushSupported = true;
     
     const permission = await Notification.requestPermission();
     if (permission === 'granted') {
@@ -544,21 +533,16 @@ async function initPushNotifications() {
         console.log('❌ Token Fehler:', e);
       }
       
-      // 🔥 LISTENER SPEICHERN ZUM SPÄTEREN ENTFERNEN
-      window._messageListener = messaging.onMessage((payload) => {
+      // 🔥 NUR Toast - keine Benachrichtigung!
+      messaging.onMessage((payload) => {
         console.log('📨 Push erhalten:', payload?.notification?.body);
-        const body = payload?.notification?.body || 'Neue Nachricht';
-        showToast(body, 'info', 5000);
+        showToast(payload?.notification?.body || 'Neue Nachricht', 'info', 5000);
       });
-      
-    } else {
-      console.log('❌ Push nicht erlaubt');
     }
   } catch (error) {
     console.log('⚠️ Push Fehler:', error);
   }
 }
-
 async function savePushToken(token) {
   try {
     if (!session || !session.id) return;
