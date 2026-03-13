@@ -470,21 +470,9 @@ function isAppInstalled() {
 }
 
 // ==================== PUSH BENACHRICHTIGUNGEN ====================
-// ==================== PUSH BENACHRICHTIGUNGEN ====================
 let messaging = null;
 let pushSupported = false;
 let deferredPrompt;
-
-// Prüfen ob iOS Gerät
-function isIOS() {
-  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-}
-
-// Prüfen ob App bereits installiert ist
-function isAppInstalled() {
-  return window.matchMedia('(display-mode: standalone)').matches || 
-         window.navigator.standalone === true;
-}
 
 // iOS "Zum Home-Bildschirm" Anleitung zeigen
 function showIOSInstructions() {
@@ -522,7 +510,7 @@ async function getAccessToken() {
 async function initPushNotifications() {
   // 🔥 VERHINDERE MEHRFACHE INITIALISIERUNG
   if (window._pushInitialized) {
-    console.log('⏭️ Push bereits initialisiert, überspringe...');
+    console.log('⏭️ Push bereits initialisiert');
     return;
   }
   window._pushInitialized = true;
@@ -533,26 +521,24 @@ async function initPushNotifications() {
       return;
     }
     
-    // 🔥🔥🔥 AUTO-BEREINIGUNG: ALLE ALTEN SERVICE WORKER LÖSCHEN
+    messaging = firebase.messaging();
+    
+    // 🔥 AUTO-BEREINIGUNG: ALLE ALTEN SERVICE WORKER LÖSCHEN
     try {
       const registrations = await navigator.serviceWorker.getRegistrations();
-      if (registrations.length > 1) {
-        console.log(`🧹 ${registrations.length} Service Worker gefunden - bereinige...`);
-        for (const reg of registrations) {
-          // Nur den aktuellen nicht löschen (falls schon einer da ist)
-          if (!reg.scope.includes(window.location.pathname)) {
-            await reg.unregister();
-            console.log('✅ Alter Service Worker gelöscht:', reg.scope);
-          }
+      console.log(`📋 ${registrations.length} Service Worker gefunden`);
+      
+      for (const reg of registrations) {
+        // Nur den aktuellen nicht löschen
+        if (!reg.scope.includes(window.location.pathname)) {
+          await reg.unregister();
+          console.log('✅ Gelöscht:', reg.scope);
         }
-      } else {
-        console.log('✅ Keine alten Service Worker gefunden');
       }
     } catch (e) {
       console.log('⚠️ Bereinigung fehlgeschlagen:', e);
     }
     
-    messaging = firebase.messaging();
     pushSupported = true;
     
     const permission = await Notification.requestPermission();
@@ -2145,7 +2131,7 @@ function renderFooter() {
   return `
     <div class="footer">
       <div class="copyright">
-        © Trainer Stephan Köck, Release 2026 Version 1.1
+        © Trainer Stephan Köck, Release 2026 Version 1.2
       </div>
     </div>
   `;
@@ -2186,7 +2172,7 @@ function renderLogin() {
         </div>
         
         <div style="margin-top: 30px; text-align: center; color: #888; font-size: 11px; border-top: 1px solid #eee; padding-top: 15px;">
-          © Trainer Stephan Köck, Release 2026 Version 1.1
+          © Trainer Stephan Köck, Release 2026 Version 1.2
         </div>
       </div>
     </div>
