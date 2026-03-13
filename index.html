@@ -45,11 +45,97 @@
   --report-completed-border: #a5d6a7;
   --milestone-bg: #fff3e0;
   --milestone-border: #ffb74d;
+  --toast-success: #2e9b58;
+  --toast-error: #d45d4a;
+  --toast-info: #5e8fe8;
+  --toast-warning: #f3a43b;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.4; }
-.app { max-width: 720px; margin: 0 auto; min-height: 100vh; background: var(--bg); }
+.app { max-width: 720px; margin: 0 auto; min-height: 100vh; background: var(--bg); position: relative; }
+
+/* Toast Container */
+.toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 350px;
+}
+
+.toast {
+  background: white;
+  border-radius: 12px;
+  padding: 16px 20px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15), 0 2px 5px rgba(0,0,0,0.1);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  animation: slideIn 0.3s ease forwards;
+  border-left: 5px solid;
+  transition: all 0.3s ease;
+  pointer-events: auto;
+}
+
+.toast.success { border-left-color: var(--toast-success); }
+.toast.error { border-left-color: var(--toast-error); }
+.toast.info { border-left-color: var(--toast-info); }
+.toast.warning { border-left-color: var(--toast-warning); }
+
+.toast-icon {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.toast-content {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.toast-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: var(--muted);
+  padding: 0 5px;
+}
+
+.toast-close:hover {
+  color: var(--text);
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOut {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+.toast.closing {
+  animation: slideOut 0.3s ease forwards;
+}
 
 /* Header */
 .header { background: linear-gradient(180deg, var(--green), #1f7f47); color: white; padding: 16px; border-bottom-left-radius: 24px; border-bottom-right-radius: 24px; position: sticky; top: 0; z-index: 20; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
@@ -294,17 +380,152 @@ input, select, textarea { width: 100%; padding: 12px; border: 1px solid #dce6de;
 <body>
 <div class="app" id="app"></div>
 
+<!-- Toast Container für moderne Alerts -->
+<div id="toast-container" class="toast-container"></div>
+
 <!-- Firebase Imports -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js"></script>
 
 <script>
+// ==================== MODERNE ALERT FUNKTION ====================
+function showToast(message, type = 'success', duration = 3000) {
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+  
+  const toastId = 'toast-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+  
+  const icons = {
+    success: '✅',
+    error: '❌',
+    info: 'ℹ️',
+    warning: '⚠️'
+  };
+  
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.id = toastId;
+  toast.innerHTML = `
+    <span class="toast-icon">${icons[type] || '📱'}</span>
+    <span class="toast-content">${message}</span>
+    <button class="toast-close" onclick="closeToast('${toastId}')">✕</button>
+  `;
+  
+  container.appendChild(toast);
+  
+  if (duration > 0) {
+    setTimeout(() => {
+      closeToast(toastId);
+    }, duration);
+  }
+  
+  return toastId;
+}
+
+function closeToast(toastId) {
+  const toast = document.getElementById(toastId);
+  if (toast) {
+    toast.classList.add('closing');
+    setTimeout(() => {
+      if (toast && toast.parentNode) {
+        toast.parentNode.removeChild(toast);
+      }
+    }, 300);
+  }
+}
+
+// ==================== PUSH BENACHRICHTIGUNGEN ====================
+let messaging = null;
+let pushSupported = false;
+
+async function initPushNotifications() {
+  try {
+    if (!firebase.messaging) {
+      console.log('⚠️ Firebase Messaging nicht verfügbar');
+      return;
+    }
+    
+    messaging = firebase.messaging();
+    pushSupported = true;
+    
+    const permission = await Notification.requestPermission();
+    if (permission === 'granted') {
+      console.log('✅ Push-Benachrichtigungen erlaubt');
+      
+      try {
+        const token = await messaging.getToken();
+        console.log('📱 Push-Token erhalten:', token);
+        
+        await savePushToken(token);
+      } catch (tokenError) {
+        console.log('⚠️ Kein Push-Token verfügbar (Service Worker?)', tokenError);
+      }
+      
+      messaging.onMessage((payload) => {
+        console.log('📨 Push-Nachricht erhalten:', payload);
+        
+        const title = payload.notification?.title || 'USV StAW';
+        const body = payload.notification?.body || 'Neue Nachricht';
+        
+        showToast(body, 'info', 5000);
+        
+        if (document.visibilityState !== 'visible') {
+          if (Notification.permission === 'granted') {
+            new Notification(title, {
+              body: body,
+              icon: '/logo192.png',
+              badge: '/logo192.png'
+            });
+          }
+        }
+      });
+    } else {
+      console.log('❌ Push-Benachrichtigungen nicht erlaubt');
+    }
+  } catch (error) {
+    console.log('⚠️ Push-Benachrichtigungen nicht verfügbar:', error.message);
+    pushSupported = false;
+  }
+}
+
+async function savePushToken(token) {
+  try {
+    if (!session || !session.id) return;
+    
+    if (!state.pushTokens) state.pushTokens = {};
+    if (!state.pushTokens[session.id]) state.pushTokens[session.id] = [];
+    
+    if (!state.pushTokens[session.id].includes(token)) {
+      state.pushTokens[session.id].push(token);
+      await save();
+    }
+  } catch (error) {
+    console.log('⚠️ Token konnte nicht gespeichert werden:', error);
+  }
+}
+
+async function sendPushNotification(userId, title, body) {
+  try {
+    if (!state.pushTokens || !state.pushTokens[userId]) {
+      console.log('⚠️ Keine Push-Tokens für User', userId);
+      return;
+    }
+    
+    console.log('📨 Push würde gesendet werden an:', userId, title, body);
+    
+    showToast(`Push-Benachrichtigung: ${body}`, 'info', 3000);
+  } catch (error) {
+    console.log('⚠️ Push konnte nicht gesendet werden:', error);
+  }
+}
+
 // ==================== FIREBASE INIT ====================
 const firebaseConfig = {
   apiKey: "AIzaSyAemNwKkerXt-hvtikIIACR4oBTb72VjL_U",
   authDomain: "usv-staw-app.firebaseapp.com",
   projectId: "usv-staw-app",
-  storageBucket: "usv-staw-app.appspot.com",  // WICHTIG: .appspot.com statt .firebasestorage.app
+  storageBucket: "usv-staw-app.appspot.com",
   messagingSenderId: "983106867178",
   appId: "1:983106867178:web:90234121a5833e7e396c93"
 };
@@ -313,14 +534,13 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 window.db = db;
 
-// ==================== STANDARD LOGO (Platzhalter) ====================
+// ==================== STANDARD LOGO ====================
 const defaultLogo = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23156d3b'/%3E%3Ctext x='50' y='55' font-size='40' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'%3E⚽%3C/text%3E%3C/svg%3E";
 
 // ==================== PWA INSTALLATION ====================
 let deferredPrompt;
 let isAppInstalled = false;
 
-// Prüfen ob App bereits installiert ist
 if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
   isAppInstalled = true;
   console.log('✅ App läuft im installierten Modus');
@@ -340,7 +560,7 @@ window.addEventListener('beforeinstallprompt', (e) => {
 
 function installApp() {
   if (!deferredPrompt) {
-    alert('Die App kann nicht installiert werden. Eventuell ist sie bereits installiert oder dein Browser unterstützt dies nicht.');
+    showToast('Die App kann nicht installiert werden', 'error');
     return;
   }
   
@@ -348,9 +568,9 @@ function installApp() {
   
   deferredPrompt.userChoice.then((choiceResult) => {
     if (choiceResult.outcome === 'accepted') {
-      console.log('✅ Installation gestartet');
+      showToast('Installation gestartet', 'success');
     } else {
-      console.log('❌ Installation abgebrochen');
+      showToast('Installation abgebrochen', 'warning');
     }
     deferredPrompt = null;
   });
@@ -365,12 +585,9 @@ const seed = {
   },
   
   clubLogo: defaultLogo,
-  
-  // Änderungsanfragen für Abstimmungen
   attendanceRequests: [],
-  
-  // Aktuelle Saison
   currentSeason: 2026,
+  pushTokens: {},
   
   users: [
     { id: "u1", username: "trainer", password: "trainer", role: "admin", name: "Haupttrainer", childId: null },
@@ -390,9 +607,9 @@ const seed = {
       nextTeam: "U9", 
       note: "Sehr aufmerksam", 
       games: 12, 
-      goals: 8,        // Aktuelle Saison 2026
-      assists: 4,       // Aktuelle Saison 2026
-      trainingCount: 14, // Aktuelle Saison 2026
+      goals: 8,        
+      assists: 4,      
+      trainingCount: 14, 
       speed: 7.8, 
       dribbling: 8.2, 
       passing: 7.1, 
@@ -400,8 +617,6 @@ const seed = {
       trainingScore: 0, 
       tests: [], 
       matchReports: [], 
-      
-      // Saison-Historie - MIT BEISPIELDATEN
       seasonHistory: {
         2025: { goals: 12, assists: 8, trainings: 24, percentage: 95 },
         2024: { goals: 5, assists: 3, trainings: 18, percentage: 82 },
@@ -483,7 +698,7 @@ async function save() {
     console.log("✅ Gespeichert in Firebase");
   } catch (error) {
     console.error("❌ Fehler beim Speichern:", error);
-    alert("Fehler beim Speichern: " + error.message);
+    showToast("Fehler beim Speichern: " + error.message, "error");
   }
 }
 
@@ -501,7 +716,7 @@ async function loadState() {
     render();
   } catch (error) {
     console.error("❌ Fehler beim Laden:", error);
-    alert("Fehler beim Laden: " + error.message + " - Verwende Seed-Daten");
+    showToast("Fehler beim Laden: " + error.message + " - Verwende Seed-Daten", "error");
     state = seed;
     render();
   }
@@ -842,7 +1057,7 @@ function deleteMatchReport(matchId) {
   match.report = null;
   
   save();
-  alert("✅ Spielbericht gelöscht!");
+  showToast("✅ Spielbericht gelöscht!", "success");
 }
 
 function saveMatchReport(matchId) {
@@ -850,7 +1065,7 @@ function saveMatchReport(matchId) {
   if (!match) return;
   
   const result = document.getElementById(`match-result-${matchId}`).value;
-  if (!result) { alert("Bitte Ergebnis eintragen"); return; }
+  if (!result) { showToast("Bitte Ergebnis eintragen", "warning"); return; }
   
   const hadPreviousReport = match.report !== null;
   
@@ -926,7 +1141,7 @@ function saveMatchReport(matchId) {
     state.selectedReportMatchId = null;
   }
   
-  alert(`✅ Spielbericht gespeichert!`);
+  showToast("✅ Spielbericht gespeichert!", "success");
 }
 
 // ==================== LOGIN / LOGOUT ====================
@@ -936,7 +1151,7 @@ function login() {
   const user = state.users?.find(u => u.username === username && u.password === password);
   
   if (!user) {
-    alert("❌ Benutzername oder Passwort falsch!\n\nTrainer: trainer/trainer\nCo-Trainer: coach/4321\nEltern: Benutzername = Spielername / 1234");
+    showToast("❌ Benutzername oder Passwort falsch!", "error");
     return;
   }
   
@@ -946,6 +1161,11 @@ function login() {
   localStorage.setItem("last-password", password);
   
   saveSession();
+  showToast(`✅ Willkommen zurück, ${user.name}!`, "success");
+  
+  setTimeout(() => {
+    initPushNotifications();
+  }, 1000);
 }
 
 function loadSavedLogin() {
@@ -968,6 +1188,7 @@ function logout() {
   session = null;
   sessionStorage.clear();
   render();
+  showToast("👋 Auf Wiedersehen!", "info");
 }
 
 // ==================== TEAM ====================
@@ -1038,7 +1259,10 @@ function requestAttendanceChange(matchId, newStatus) {
   state.attendanceRequests.push(request);
   save();
   
-  alert("✅ Änderungsantrag wurde an den Trainer gesendet!");
+  showToast("✅ Änderungsantrag wurde an den Trainer gesendet!", "success");
+  
+  sendPushNotification("u1", "Neuer Änderungsantrag", `${player.name} möchte Status ändern`);
+  
   return true;
 }
 
@@ -1051,7 +1275,7 @@ function updateMatchAttendance(matchId, status) {
     (session.role === "coach" && coachView === "coachkind");
   
   if (!canVote) {
-    alert("Nur im Elternbereich kannst du abstimmen!");
+    showToast("Nur im Elternbereich kannst du abstimmen!", "warning");
     return;
   }
   
@@ -1074,7 +1298,7 @@ function updateMatchAttendance(matchId, status) {
   const matchTeamNumber = getTeamNumber(match.team);
   
   if (matchTeamNumber < playerTeamNumber) {
-    alert("Dieses Spiel steht dir nicht zur Verfügung!");
+    showToast("Dieses Spiel steht dir nicht zur Verfügung!", "error");
     return;
   }
   
@@ -1087,9 +1311,13 @@ function updateMatchAttendance(matchId, status) {
   
   if (match.attendance?.[playerId] === status) {
     match.attendance[playerId] = "open";
+    showToast(`Status zurückgesetzt auf "Offen"`, "info");
   } else {
     if (!match.attendance) match.attendance = {};
     match.attendance[playerId] = status;
+    
+    const statusText = status === 'coming' ? '✓ Kommen' : status === 'maybe' ? '? Vielleicht' : '✗ Fehlen';
+    showToast(`Status geändert auf "${statusText}"`, "success");
   }
   
   save();
@@ -1106,11 +1334,21 @@ function approveAttendanceRequest(requestId, approved) {
     if (match) {
       match.attendance[request.playerId] = request.requestedStatus;
       request.status = 'approved';
-      alert(`✅ Änderungsantrag von ${request.playerName} wurde genehmigt!`);
+      showToast(`✅ Änderungsantrag von ${request.playerName} genehmigt!`, "success");
+      
+      const parentUser = findUserForPlayer(request.playerId);
+      if (parentUser) {
+        sendPushNotification(parentUser.id, "Antrag genehmigt", `Deine Änderung für ${request.matchTitle} wurde genehmigt!`);
+      }
     }
   } else {
     request.status = 'rejected';
-    alert(`❌ Änderungsantrag von ${request.playerName} wurde abgelehnt!`);
+    showToast(`❌ Änderungsantrag von ${request.playerName} abgelehnt!`, "error");
+    
+    const parentUser = findUserForPlayer(request.playerId);
+    if (parentUser) {
+      sendPushNotification(parentUser.id, "Antrag abgelehnt", `Deine Änderung für ${request.matchTitle} wurde leider abgelehnt.`);
+    }
   }
   
   save();
@@ -1120,7 +1358,7 @@ function approveAttendanceRequest(requestId, approved) {
 function finishTraining() {
   const dateInput = document.getElementById("training-date");
   const date = dateInput.value;
-  if (!date) { alert("Bitte Datum auswählen"); return; }
+  if (!date) { showToast("Bitte Datum auswählen", "warning"); return; }
   
   const existingTraining = state.trainings?.find(t => t.date === date);
   if (existingTraining && !confirm(`Für den ${date} gibt es bereits ein Training. Überschreiben?`)) {
@@ -1139,7 +1377,7 @@ function finishTraining() {
   state.trainings.push({ id: "t" + Date.now(), date, attendance: trainingAttendance });
   
   save();
-  alert(`✅ Training vom ${date} gespeichert!`);
+  showToast(`✅ Training vom ${date} gespeichert!`, "success");
 }
 
 function deleteTraining(trainingId) {
@@ -1150,7 +1388,7 @@ function deleteTraining(trainingId) {
   
   const admin = state.users?.find(u => u.role === "admin");
   if (password !== admin.password) {
-    alert("❌ Falsches Passwort!");
+    showToast("❌ Falsches Passwort!", "error");
     return;
   }
   
@@ -1158,7 +1396,7 @@ function deleteTraining(trainingId) {
   
   state.trainings = state.trainings?.filter(t => t.id !== trainingId) || [];
   save();
-  alert("✅ Training wurde gelöscht!");
+  showToast("✅ Training wurde gelöscht!", "success");
 }
 
 function setTodayForTraining() {
@@ -1175,7 +1413,7 @@ function setSelectedPlayer(id) {
 function addPlayer() {
   const name = document.getElementById("new-player-name").value.trim();
   const team = document.getElementById("new-player-team").value;
-  if (!name) { alert("Name fehlt"); return; }
+  if (!name) { showToast("Name fehlt", "warning"); return; }
   
   const id = "p" + Date.now();
   if (!state.players) state.players = [];
@@ -1195,7 +1433,7 @@ function addPlayer() {
   
   save();
   document.getElementById("new-player-name").value = "";
-  alert(`✅ Spieler ${name} angelegt! Eltern-Login: ${username} / 1234 (Bitte ändern!)`);
+  showToast(`✅ Spieler ${name} angelegt! Eltern-Login: ${username} / 1234`, "success");
 }
 
 function deletePlayer(playerId) {
@@ -1206,24 +1444,25 @@ function deletePlayer(playerId) {
     state.selectedPlayerId = state.players?.[0]?.id || null;
   }
   save();
+  showToast("✅ Spieler gelöscht!", "success");
 }
 
 function resetParentPassword(playerId) {
   if (session?.role !== "admin") return;
   const user = findUserForPlayer(playerId);
-  if (!user) return alert("Kein Eltern-Account gefunden!");
+  if (!user) return showToast("Kein Eltern-Account gefunden!", "error");
   user.password = "1234";
   save();
-  alert(`✅ Passwort für ${user.username} zurückgesetzt auf "1234" (Bitte ändern!)`);
+  showToast(`✅ Passwort für ${user.username} zurückgesetzt auf "1234"`, "success");
 }
 
 function resetCoachPassword(coachId) {
   if (session?.role !== "admin") return;
   const coach = state.users?.find(u => u.id === coachId && u.role === "coach");
-  if (!coach) return alert("Kein Co-Trainer gefunden!");
+  if (!coach) return showToast("Kein Co-Trainer gefunden!", "error");
   coach.password = "4321";
   save();
-  alert(`✅ Passwort für ${coach.name} zurückgesetzt auf "4321" (Bitte ändern!)`);
+  showToast(`✅ Passwort für ${coach.name} zurückgesetzt auf "4321"`, "success");
 }
 
 function savePlayerData() {
@@ -1248,7 +1487,7 @@ function savePlayerData() {
   if (photoInput) player.photo = photoInput.value;
   
   save();
-  alert("✅ Spielerdaten gespeichert!");
+  showToast("✅ Spielerdaten gespeichert!", "success");
 }
 
 function handlePhotoUpload(event) {
@@ -1258,6 +1497,7 @@ function handlePhotoUpload(event) {
     reader.onload = function(e) {
       document.getElementById('player-photo').value = e.target.result;
       document.getElementById('photo-preview').innerHTML = `<img src="${e.target.result}" alt="Foto">`;
+      showToast("📷 Foto bereit zum Speichern", "info");
     };
     reader.readAsDataURL(file);
   }
@@ -1271,6 +1511,7 @@ function handleLogoUpload(event) {
     reader.onload = function(e) {
       document.getElementById('club-logo').value = e.target.result;
       document.getElementById('logo-preview').innerHTML = `<img src="${e.target.result}" alt="Vereinslogo">`;
+      showToast("📷 Logo bereit zum Speichern", "info");
     };
     reader.readAsDataURL(file);
   }
@@ -1281,7 +1522,7 @@ function saveClubLogo() {
   if (logoInput && logoInput.value) {
     state.clubLogo = logoInput.value;
     save();
-    alert("✅ Vereinslogo gespeichert!");
+    showToast("✅ Vereinslogo gespeichert!", "success");
   }
 }
 
@@ -1303,7 +1544,7 @@ function addMatch() {
     }
   }
   
-  if (!title || !date || !time) { alert("Bitte alle Pflichtfelder ausfüllen"); return; }
+  if (!title || !date || !time) { showToast("Bitte alle Pflichtfelder ausfüllen", "warning"); return; }
   
   const months = ["JANUAR","FEBRUAR","MÄRZ","APRIL","MAI","JUNI","JULI","AUGUST","SEPTEMBER","OKTOBER","NOVEMBER","DEZEMBER"];
   const d = new Date(date);
@@ -1319,7 +1560,7 @@ function addMatch() {
   });
   
   save();
-  alert("✅ Spiel angelegt!");
+  showToast("✅ Spiel angelegt!", "success");
   
   document.getElementById("match-title").value = "";
   document.getElementById("match-date").value = "";
@@ -1334,6 +1575,7 @@ function deleteMatch(matchId) {
   if (!confirm("Spiel wirklich löschen?")) return;
   state.matches = state.matches?.filter(m => m.id !== matchId) || [];
   save();
+  showToast("✅ Spiel gelöscht!", "success");
 }
 
 function editMatch(matchId) {
@@ -1367,13 +1609,14 @@ function editMatch(matchId) {
   match.month = months[d.getMonth()] + " " + d.getFullYear();
   
   save();
+  showToast("✅ Spiel aktualisiert!", "success");
 }
 
 // ==================== COACH MANAGEMENT ====================
 function addCoach() {
   if (session?.role !== "admin") return;
   const name = document.getElementById("coach-name").value.trim();
-  if (!name) { alert("Bitte Namen eingeben!"); return; }
+  if (!name) { showToast("Bitte Namen eingeben!", "warning"); return; }
   
   const username = name.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-coach";
   const id = "c" + Date.now();
@@ -1383,7 +1626,7 @@ function addCoach() {
   });
   
   save();
-  alert(`✅ Co-Trainer "${name}" angelegt! Username: ${username}, Passwort: 4321 (Bitte ändern!)`);
+  showToast(`✅ Co-Trainer "${name}" angelegt! Username: ${username}, Passwort: 4321`, "success");
   document.getElementById("coach-name").value = "";
 }
 
@@ -1392,7 +1635,7 @@ function updateCoachChild(coachId, childId) {
   if (!coach) return;
   coach.childId = childId || null;
   save();
-  alert("✅ Kind-Zuweisung aktualisiert!");
+  showToast("✅ Kind-Zuweisung aktualisiert!", "success");
 }
 
 function updateTrainerChild(childId) {
@@ -1400,13 +1643,14 @@ function updateTrainerChild(childId) {
   if (!trainer) return;
   trainer.childId = childId || null;
   save();
-  alert("✅ Trainer-Kind aktualisiert!");
+  showToast("✅ Trainer-Kind aktualisiert!", "success");
 }
 
 function deleteCoach(coachId) {
   if (!confirm("Co-Trainer wirklich löschen?")) return;
   state.users = state.users?.filter(u => u.id !== coachId) || [];
   save();
+  showToast("✅ Co-Trainer gelöscht!", "success");
 }
 
 // ==================== TEST MANAGEMENT ====================
@@ -1416,7 +1660,7 @@ function addTestConfig() {
   const target = parseFloat(document.getElementById("test-target").value);
   const better = document.getElementById("test-better").value;
   
-  if (!name || !unit || isNaN(target)) { alert("Bitte alle Felder ausfüllen!"); return; }
+  if (!name || !unit || isNaN(target)) { showToast("Bitte alle Felder ausfüllen!", "warning"); return; }
   
   state.testConfig.push({ id: "tc" + Date.now(), name, unit, target, better });
   save();
@@ -1424,12 +1668,15 @@ function addTestConfig() {
   document.getElementById("test-name").value = "";
   document.getElementById("test-unit").value = "";
   document.getElementById("test-target").value = "";
+  
+  showToast("✅ Test-Kategorie angelegt!", "success");
 }
 
 function deleteTestConfig(id) {
   if (!confirm("Test löschen?")) return;
   state.testConfig = state.testConfig?.filter(t => t.id !== id) || [];
   save();
+  showToast("✅ Test gelöscht!", "success");
 }
 
 function saveTestResults(playerId) {
@@ -1437,7 +1684,7 @@ function saveTestResults(playerId) {
   if (!player) return;
   
   const date = document.getElementById(`test-date-${playerId}`).value;
-  if (!date) { alert("Datum fehlt!"); return; }
+  if (!date) { showToast("Datum fehlt!", "warning"); return; }
   
   const results = {};
   state.testConfig?.forEach(t => {
@@ -1449,7 +1696,7 @@ function saveTestResults(playerId) {
   player.tests.push({ date, results });
   
   save();
-  alert("✅ Testergebnisse gespeichert!");
+  showToast("✅ Testergebnisse gespeichert!", "success");
 }
 
 function deleteSingleTest(playerId, testIndex) {
@@ -1460,7 +1707,7 @@ function deleteSingleTest(playerId, testIndex) {
   
   const admin = state.users?.find(u => u.role === "admin");
   if (password !== admin.password) {
-    alert("❌ Falsches Passwort!");
+    showToast("❌ Falsches Passwort!", "error");
     return;
   }
   
@@ -1473,7 +1720,7 @@ function deleteSingleTest(playerId, testIndex) {
   
   player.tests.splice(testIndex, 1);
   save();
-  alert("✅ Test wurde gelöscht!");
+  showToast("✅ Test wurde gelöscht!", "success");
 }
 
 // ==================== SEASON RESET ====================
@@ -1485,13 +1732,12 @@ function resetSeason() {
   
   const admin = state.users?.find(u => u.role === "admin");
   if (password !== admin.password) {
-    alert("❌ Falsches Passwort!");
+    showToast("❌ Falsches Passwort!", "error");
     return;
   }
   
   if (!confirm("WIRKLICH neue Saison starten? ALLE Spiele, Trainings, Tore und Assists werden gelöscht!")) return;
   
-  // Aktuelle Saison in Historie verschieben
   state.players?.forEach(p => {
     if (!p.seasonHistory) p.seasonHistory = {};
     p.seasonHistory[state.currentSeason] = {
@@ -1502,10 +1748,8 @@ function resetSeason() {
     };
   });
   
-  // Neue Saison
   state.currentSeason++;
   
-  // Daten zurücksetzen
   state.matches = [];
   state.trainings = [];
   state.attendanceRequests = [];
@@ -1520,7 +1764,7 @@ function resetSeason() {
   });
   
   save();
-  alert("✅ Neue Saison gestartet! Die alten Statistiken sind in der Historie einsehbar.");
+  showToast("✅ Neue Saison gestartet! Die alten Statistiken sind in der Historie einsehbar.", "success");
 }
 
 // ==================== PASSWORD CHANGE ====================
@@ -1529,9 +1773,9 @@ function changePassword() {
   const newPw = document.getElementById("new-password").value;
   const confirmPw = document.getElementById("confirm-password").value;
   
-  if (session.password !== oldPw) { alert("Altes Passwort ist falsch!"); return; }
-  if (newPw.length < 4) { alert("Passwort muss mindestens 4 Zeichen lang sein!"); return; }
-  if (newPw !== confirmPw) { alert("Neue Passwörter stimmen nicht überein!"); return; }
+  if (session.password !== oldPw) { showToast("Altes Passwort ist falsch!", "error"); return; }
+  if (newPw.length < 4) { showToast("Passwort muss mindestens 4 Zeichen lang sein!", "warning"); return; }
+  if (newPw !== confirmPw) { showToast("Neue Passwörter stimmen nicht überein!", "error"); return; }
   
   session.password = newPw;
   const user = state.users?.find(u => u.id === session.id);
@@ -1543,7 +1787,7 @@ function changePassword() {
   
   save();
   saveSession();
-  alert("✅ Passwort wurde geändert!");
+  showToast("✅ Passwort wurde geändert!", "success");
 }
 
 // ==================== LÖSCHFUNKTIONEN ====================
@@ -1555,7 +1799,7 @@ function confirmResetTests() {
   
   const admin = state.users?.find(u => u.role === "admin");
   if (password !== admin.password) {
-    alert("❌ Falsches Passwort!");
+    showToast("❌ Falsches Passwort!", "error");
     return;
   }
   
@@ -1572,7 +1816,7 @@ function confirmResetTests() {
   });
   
   save();
-  alert(`✅ ${deletedCount} Testergebnisse wurden gelöscht!`);
+  showToast(`✅ ${deletedCount} Testergebnisse wurden gelöscht!`, "success");
 }
 
 function confirmDeleteAllPlayers() {
@@ -1583,13 +1827,13 @@ function confirmDeleteAllPlayers() {
   
   const admin = state.users?.find(u => u.role === "admin");
   if (password !== admin.password) {
-    alert("❌ Falsches Passwort!");
+    showToast("❌ Falsches Passwort!", "error");
     return;
   }
   
   const playerCount = state.players?.length || 0;
   if (playerCount === 0) {
-    alert("Es sind keine Spieler vorhanden.");
+    showToast("Es sind keine Spieler vorhanden.", "info");
     return;
   }
   
@@ -1599,7 +1843,7 @@ function confirmDeleteAllPlayers() {
   
   const confirmText = prompt("❗ZUR BESTÄTIGUNG: Bitte 'LÖSCHEN' eingeben:");
   if (confirmText !== "LÖSCHEN") {
-    alert("❌ Löschvorgang abgebrochen.");
+    showToast("❌ Löschvorgang abgebrochen.", "error");
     return;
   }
   
@@ -1625,7 +1869,7 @@ function confirmDeleteAllPlayers() {
   state.selectedPlayerId = null;
   
   save();
-  alert(`✅ Alle ${playerCount} Spieler wurden gelöscht!`);
+  showToast(`✅ Alle ${playerCount} Spieler wurden gelöscht!`, "success");
 }
 
 // ==================== VIEW RENDERING ====================
@@ -1708,10 +1952,9 @@ function renderLogin() {
         </div>
         
         <div style="margin-top: 24px; padding: 16px; background: #f5f9f6; border-radius: 12px; font-size: 13px; text-align: center;">
-          <strong>Erstlogin-Passwort: 1234 - bitte ändern!</strong>
+          <strong>Erstlogin-Passwort: 1234</strong>
         </div>
         
-        <!-- FOOTER AUCH AUF LOGIN-SEITE -->
         <div style="margin-top: 30px; text-align: center; color: #888; font-size: 11px; border-top: 1px solid #eee; padding-top: 15px;">
           © Trainer Stephan Köck, Release 2026 Version 1.0
         </div>
@@ -1876,21 +2119,18 @@ function renderDashboard() {
 function renderStatistics() {
   const players = state.players || [];
   
-  // Normale Team-Gruppierung für die erste Tabelle
   const playersByTeam = {};
   players.forEach(p => {
     if (!playersByTeam[p.team]) playersByTeam[p.team] = [];
     playersByTeam[p.team].push(p);
   });
   
-  // Funktion zur Berechnung der durchschnittlichen Sterne eines Spielers über ALLE Tests
   function getAverageStars(player) {
     if (!player.tests || player.tests.length === 0) return 0;
     
     let totalStarsAllTests = 0;
     let totalTestCount = 0;
     
-    // Über alle Tests des Spielers iterieren
     player.tests.forEach(test => {
       Object.entries(test.results).forEach(([testId, value]) => {
         const testConfig = state.testConfig?.find(t => t.id === testId);
@@ -1905,31 +2145,26 @@ function renderStatistics() {
     return totalTestCount > 0 ? totalStarsAllTests / totalTestCount : 0;
   }
   
-  // Spieler NUR für Test-Statistik nach durchschnittlichen Sternen sortieren (absteigend)
   const sortedPlayersForTests = [...players].sort((a, b) => {
     const starsA = getAverageStars(a);
     const starsB = getAverageStars(b);
     return starsB - starsA;
   });
   
-  // Nach Teams gruppieren für die Test-Statistik
   const playersByTeamForTests = {};
   sortedPlayersForTests.forEach(p => {
     if (!playersByTeamForTests[p.team]) playersByTeamForTests[p.team] = [];
     playersByTeamForTests[p.team].push(p);
   });
   
-  // Aktuell ausgewählten Spieler für Test-Details
   const selectedTestPlayer = state.selectedPlayerId ? findPlayer(state.selectedPlayerId) : null;
   
   return `
     <div class="section">
-      <!-- Erste Karte: Normale Gesamtstatistik (unverändert) -->
       <div class="card">
         <h3>📊 Gesamtstatistik aller Spieler</h3>
         
         ${Object.keys(playersByTeam).sort().map(team => {
-          // Hier die normale unsortierte Team-Anzeige
           const teamPlayers = players.filter(p => p.team === team);
           return `
             <div style="margin-top: 20px;">
@@ -1972,7 +2207,6 @@ function renderStatistics() {
         </div>
       </div>
       
-      <!-- Zweite Karte: SEPARATE Leistungstest-Statistik (sortiert nach Sternen) -->
       <div class="card" style="margin-top: 20px; background: linear-gradient(135deg, #f5f9f6, #e8f0fe);">
         <h3>⭐ Leistungstest-Ranking</h3>
         <p class="small" style="margin-bottom: 16px; text-align: center;">Sortiert nach ⌀ Sternen (beste zuerst) - Klick auf Namen für Details</p>
@@ -1994,7 +2228,6 @@ function renderStatistics() {
                   const avgStars = getAverageStars(p);
                   const testCount = p.tests?.length || 0;
                   
-                  // Sterne als Text
                   let starsDisplay = '';
                   if (avgStars > 0) {
                     const fullStars = Math.round(avgStars);
@@ -2024,7 +2257,6 @@ function renderStatistics() {
           </div>
         `).join('')}
         
-        <!-- Detailansicht für ausgewählten Spieler -->
         ${selectedTestPlayer && selectedTestPlayer.tests && selectedTestPlayer.tests.length > 0 ? `
           <div style="margin-top: 30px; padding: 16px; background: white; border-radius: 12px; border: 2px solid var(--trainer-kind-border);">
             <h4 style="color: var(--trainer-kind-border); margin-bottom: 16px;">📋 Test-Historie: ${selectedTestPlayer.name}</h4>
@@ -2394,9 +2626,7 @@ function renderMatchReport() {
         <h4 style="margin: 30px 0 16px 0;">📋 Erstellte Berichte</h4>
         
         ${matchesWithReport.length > 0 ? matchesWithReport.map(m => {
-          // NUR Spieler mit Toren > 0 anzeigen
           const playersWithGoals = Object.entries(m.report?.goals || {}).filter(([_, count]) => count > 0);
-          // NUR Spieler mit Assists > 0 anzeigen
           const playersWithAssists = Object.entries(m.report?.assists || {}).filter(([_, count]) => count > 0);
           
           return `
@@ -2896,17 +3126,15 @@ function saveTeamConfig() {
   state.teams.second = document.getElementById("config-team2").value;
   state.teams.showSecond = document.getElementById("config-show2").checked;
   save();
-  alert("✅ Team-Konfiguration gespeichert!");
+  showToast("✅ Team-Konfiguration gespeichert!", "success");
 }
 
 // ==================== MILESTONE-FUNKTION ====================
 function renderMilestones(player) {
   if (!player) return '<div class="section">Fehler: Kein Spieler gefunden</div>';
   
-  // Alle Saisons aus der Historie sammeln
   const seasons = player.seasonHistory || {};
   
-  // Aktuelle Saison auch anzeigen (noch nicht in Historie)
   const currentSeasonData = {
     goals: player.goals || 0,
     assists: player.assists || 0,
@@ -2914,17 +3142,14 @@ function renderMilestones(player) {
     percentage: calculatePlayerPercentage(player.id)
   };
   
-  // Funktion zur Umrechnung von Jahreszahl in Saison-Format (z.B. 2026 -> 2026/2027)
   function formatSeason(year) {
     const startYear = parseInt(year);
     const endYear = startYear + 1;
     return `${startYear}/${endYear}`;
   }
   
-  // Aktuelle Saison im Format JJJJ/JJJJ
   const currentSeasonFormatted = formatSeason(state.currentSeason);
   
-  // Vergangene Saisons nach Jahren sortieren (neueste zuerst)
   const sortedSeasons = Object.keys(seasons).sort((a, b) => b - a);
   
   return `
@@ -2933,7 +3158,6 @@ function renderMilestones(player) {
         <h3>🏆 Meilensteine - ${player.name}</h3>
         <p class="small" style="margin-bottom: 16px; text-align: center;">Alle Saison-Statistiken auf einen Blick</p>
         
-        <!-- Aktuelle Saison (hervorgehoben) mit korrektem Saison-Format -->
         <div class="milestone-card" style="background: linear-gradient(135deg, #e8f0fe, #d4e3ff); border-color: var(--blue);">
           <div class="milestone-year">⚡ Aktuelle Saison ${currentSeasonFormatted}</div>
           <div class="milestone-stats">
@@ -2954,7 +3178,6 @@ function renderMilestones(player) {
         
         ${sortedSeasons.length > 0 ? sortedSeasons.map(year => {
           const data = seasons[year];
-          // Vergangene Saison im Format JJJJ/JJJJ
           const seasonFormatted = formatSeason(year);
           return `
             <div class="milestone-card">
@@ -3663,10 +3886,8 @@ function render() {
     else content += renderDashboard();
   }
   
-  // WICHTIG: Erst Navigation, dann Footer!
-  content += renderNav();     // Navigation zuerst (fixed am unteren Rand)
- // content += renderFooter();  // Footer danach (kommt unter die Navigation)
   content = renderFooter() + content; 
+  content += renderNav();
   
   app.innerHTML = content;
   
@@ -3682,11 +3903,19 @@ async function startApp() {
   await loadState();
   listenState();
   render();
+  
+  setTimeout(() => {
+    if (session) {
+      initPushNotifications();
+    }
+  }, 2000);
 }
 
 // Alle Funktionen global verfügbar machen
 window.login = login;
 window.logout = logout;
+window.showToast = showToast;
+window.closeToast = closeToast;
 window.setTeam = setTeam;
 window.toggleMatchExpand = toggleMatchExpand;
 window.updateMatchAttendance = updateMatchAttendance;
