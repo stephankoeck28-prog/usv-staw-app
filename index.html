@@ -453,14 +453,16 @@ async function initPushNotifications() {
     if (permission === 'granted') {
       console.log('✅ Push-Benachrichtigungen erlaubt');
       
-      try {
-        const token = await messaging.getToken();
-        console.log('📱 Push-Token erhalten:', token);
-        
-        await savePushToken(token);
-      } catch (tokenError) {
-        console.log('⚠️ Kein Push-Token verfügbar (Service Worker?)', tokenError);
-      }
+   try {
+  const token = await messaging.getToken({
+    vapidKey: 'BNff0vnOXCeYPyLxqkCIDRAhaXhC06Xt1Fj6DduVFStn5xQNHdSbXzQHPriwpYySHdx1kQyywdVyTtY4_6TIcvI'
+  });
+  console.log('📱 Push-Token erhalten:', token);
+  
+  await savePushToken(token);
+} catch (tokenError) {
+  console.log('⚠️ Kein Push-Token verfügbar (Service Worker?)', tokenError);
+}
       
       messaging.onMessage((payload) => {
         console.log('📨 Push-Nachricht erhalten:', payload);
