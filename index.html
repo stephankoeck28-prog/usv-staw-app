@@ -448,7 +448,7 @@ async function initPushNotifications() {
     
     // 🔧 Service Worker manuell registrieren mit korrektem Pfad
     try {
-      const registration = await navigator.serviceWorker.register('/usv-staw-app/firebase-messaging-sw.js');
+      const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
       console.log('✅ Service Worker registriert:', registration.scope);
     } catch (swError) {
       console.log('❌ Service Worker Registration fehlgeschlagen:', swError);
