@@ -509,17 +509,52 @@ async function getAccessToken() {
 }
 
 async function initPushNotifications() {
+  // 🔥 VERHINDERE MEHRFACHE INITIALISIERUNG
+  if (window._pushInitialized) {
+    console.log('⏭️ Push bereits initialisiert, überspringe...');
+    return;
+  }
+  window._pushInitialized = true;
+  
   try {
     if (!firebase.messaging) {
       console.log('⚠️ Firebase Messaging nicht verfügbar');
       return;
     }
     
-    // Service Worker nur registrieren wenn nicht iOS (iOS unterstützt keine Service Worker für Push)
+    // 🔥 BESTEHENDE SERVICE WORKER LÖSCHEN
+    try {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      console.log(`📋 Gefundene Service Worker: ${registrations.length}`);
+      
+      for (const reg of registrations) {
+        // Nur die Firebase Service Worker löschen, nicht alle
+        if (reg.scope.includes('firebase') || reg.scope.includes('push')) {
+          await reg.unregister();
+          console.log('🗑️ Alter Service Worker gelöscht:', reg.scope);
+        }
+      }
+    } catch (e) {
+      console.log('⚠️ Fehler beim Löschen:', e);
+    }
+    
+    // Service Worker nur registrieren wenn nicht iOS
     if (!isIOS()) {
       try {
-        const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-        console.log('✅ Service Worker registriert:', registration.scope);
+        // 🔥 Prüfen ob schon einer existiert
+        let registration = await navigator.serviceWorker.getRegistration('/firebase-messaging-sw.js');
+        
+        if (!registration) {
+          registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+            scope: '/'  // Wichtig: Scope auf Root setzen
+          });
+          console.log('✅ Neuer Service Worker registriert:', registration.scope);
+        } else {
+          console.log('✅ Service Worker bereits vorhanden:', registration.scope);
+        }
+        
+        // Warten bis er aktiv ist
+        await navigator.serviceWorker.ready;
       } catch (swError) {
         console.log('❌ Service Worker Registration fehlgeschlagen:', swError);
         showToast('Service Worker Fehler - Push funktioniert nicht', 'error');
@@ -529,7 +564,10 @@ async function initPushNotifications() {
       console.log('ℹ️ iOS erkannt - Service Worker wird nicht registriert');
     }
     
-    messaging = firebase.messaging();
+    // 🔥 NUR EINMAL messaging INSTANZIEREN
+    if (!messaging) {
+      messaging = firebase.messaging();
+    }
     pushSupported = true;
     
     const permission = await Notification.requestPermission();
@@ -549,17 +587,16 @@ async function initPushNotifications() {
         showToast('Push-Token konnte nicht erstellt werden', 'error');
       }
       
-messaging.onMessage((payload) => {
-  console.log('📨 Push-Nachricht erhalten:', payload);
-  
-  const body = payload.notification?.body || 'Neue Nachricht';
-  
-  // 🔥 NUR Toast anzeigen, KEINE System-Benachrichtigung!
-  showToast(body, 'info', 5000);
-  
-  // Der Service Worker macht automatisch die System-Benachrichtigung
-  // wenn die App im Hintergrund ist
-});
+      // 🔥 ALTEN LISTENER ENTFERNEN (falls vorhanden)
+      if (messaging._onMessage) {
+        delete messaging._onMessage;
+      }
+      
+      messaging.onMessage((payload) => {
+        console.log('📨 Push-Nachricht erhalten:', payload);
+        const body = payload.notification?.body || 'Neue Nachricht';
+        showToast(body, 'info', 5000);
+      });
     } else {
       console.log('❌ Push-Benachrichtigungen nicht erlaubt');
       showToast('Bitte Benachrichtigungen erlauben', 'warning');
