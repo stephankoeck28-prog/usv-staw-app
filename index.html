@@ -446,6 +446,16 @@ async function initPushNotifications() {
       return;
     }
     
+    // 🔧 Service Worker manuell registrieren mit korrektem Pfad
+    try {
+      const registration = await navigator.serviceWorker.register('/usv-staw-app/firebase-messaging-sw.js');
+      console.log('✅ Service Worker registriert:', registration.scope);
+    } catch (swError) {
+      console.log('❌ Service Worker Registration fehlgeschlagen:', swError);
+      showToast('Service Worker Fehler - Push funktioniert nicht', 'error');
+      return;
+    }
+    
     messaging = firebase.messaging();
     pushSupported = true;
     
@@ -453,16 +463,18 @@ async function initPushNotifications() {
     if (permission === 'granted') {
       console.log('✅ Push-Benachrichtigungen erlaubt');
       
-   try {
-  const token = await messaging.getToken({
-    vapidKey: 'BNff0vnOXCeYPyLxqkCIDRAhaXhC06Xt1Fj6DduVFStn5xQNHdSbXzQHPriwpYySHdx1kQyywdVyTtY4_6TIcvI'
-  });
-  console.log('📱 Push-Token erhalten:', token);
-  
-  await savePushToken(token);
-} catch (tokenError) {
-  console.log('⚠️ Kein Push-Token verfügbar (Service Worker?)', tokenError);
-}
+      try {
+        const token = await messaging.getToken({
+          vapidKey: 'BNff0vnOXCeYPyLxqkCIDRAhaXhC06Xt1Fj6DduVFStn5xQNHdSbXzQHPriwpYySHdx1kQyywdVyTtY4_6TIcvI'
+        });
+        console.log('📱 Push-Token erhalten:', token);
+        
+        await savePushToken(token);
+        showToast('✅ Push-Benachrichtigungen aktiviert', 'success');
+      } catch (tokenError) {
+        console.log('⚠️ Kein Push-Token verfügbar:', tokenError);
+        showToast('Push-Token konnte nicht erstellt werden', 'error');
+      }
       
       messaging.onMessage((payload) => {
         console.log('📨 Push-Nachricht erhalten:', payload);
@@ -484,6 +496,7 @@ async function initPushNotifications() {
       });
     } else {
       console.log('❌ Push-Benachrichtigungen nicht erlaubt');
+      showToast('Bitte Benachrichtigungen erlauben', 'warning');
     }
   } catch (error) {
     console.log('⚠️ Push-Benachrichtigungen nicht verfügbar:', error.message);
