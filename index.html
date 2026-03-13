@@ -1562,6 +1562,39 @@ function addMatch() {
   });
   
   save();
+  
+  // 🔥 Push-Benachrichtigungen an Eltern mit korrekter Sichtbarkeits-Logik
+  if (state.users && state.players) {
+    const parentUsers = state.users.filter(u => u.role === "parent");
+    const matchTeamNumber = getTeamNumber(team);
+    
+    parentUsers.forEach(parent => {
+      if (!parent.playerId) return;
+      
+      const player = findPlayer(parent.playerId);
+      if (!player) return;
+      
+      const playerTeamNumber = getTeamNumber(player.team);
+      
+      let canSeeMatch = false;
+      if (playerTeamNumber <= 8) {
+        // U8 und jünger: Dürfen alle Spiele ab ihrer Altersstufe aufwärts sehen
+        canSeeMatch = matchTeamNumber >= playerTeamNumber;
+      } else {
+        // U9 und älter: Dürfen NUR Spiele in ihrer eigenen Altersstufe sehen
+        canSeeMatch = matchTeamNumber === playerTeamNumber;
+      }
+      
+      if (canSeeMatch) {
+        sendPushNotification(
+          parent.id, 
+          "⚽ Neues Spiel", 
+          `${player.name}: ${title} am ${date}`
+        );
+      }
+    });
+  }
+  
   showToast("✅ Spiel angelegt!", "success");
   
   document.getElementById("match-title").value = "";
