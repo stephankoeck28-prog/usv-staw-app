@@ -470,9 +470,21 @@ function isAppInstalled() {
 }
 
 // ==================== PUSH BENACHRICHTIGUNGEN ====================
+// ==================== PUSH BENACHRICHTIGUNGEN ====================
 let messaging = null;
 let pushSupported = false;
 let deferredPrompt;
+
+// Prüfen ob iOS Gerät
+function isIOS() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+}
+
+// Prüfen ob App bereits installiert ist
+function isAppInstalled() {
+  return window.matchMedia('(display-mode: standalone)').matches || 
+         window.navigator.standalone === true;
+}
 
 // iOS "Zum Home-Bildschirm" Anleitung zeigen
 function showIOSInstructions() {
@@ -508,41 +520,55 @@ async function getAccessToken() {
 }
 
 async function initPushNotifications() {
+  // 🔥 VERHINDERE MEHRFACHE INITIALISIERUNG
+  if (window._pushInitialized) {
+    console.log('⏭️ Push bereits initialisiert, überspringe...');
+    return;
+  }
+  window._pushInitialized = true;
+  
   try {
     if (!firebase.messaging) {
       console.log('⚠️ Firebase Messaging nicht verfügbar');
       return;
     }
     
-    // 🔥 KEINE Service Worker Registrierung!
-    // 🔥 KEINE bestehenden Listener!
-    
     messaging = firebase.messaging();
+    pushSupported = true;
     
     const permission = await Notification.requestPermission();
     if (permission === 'granted') {
-      console.log('✅ Push erlaubt');
+      console.log('✅ Push-Benachrichtigungen erlaubt');
       
       try {
         const token = await messaging.getToken({
           vapidKey: 'BNff0vnOXCeYPyLxqkCIDRAhaXhC06Xt1Fj6DduVFStn5xQNHdSbXzQHPriwpYySHdx1kQyywdVyTtY4_6TIcvI'
         });
-        console.log('📱 Token:', token);
+        console.log('📱 Push-Token erhalten:', token);
+        
         await savePushToken(token);
-      } catch (e) {
-        console.log('❌ Token Fehler:', e);
+        showToast('✅ Push-Benachrichtigungen aktiviert', 'success');
+      } catch (tokenError) {
+        console.log('⚠️ Kein Push-Token verfügbar:', tokenError);
+        showToast('Push-Token konnte nicht erstellt werden', 'error');
       }
       
-      // 🔥 NUR Toast - keine Benachrichtigung!
+      // 🔥 NUR Toast, wenn App offen (Service Worker macht den Rest)
       messaging.onMessage((payload) => {
-        console.log('📨 Push erhalten:', payload?.notification?.body);
-        showToast(payload?.notification?.body || 'Neue Nachricht', 'info', 5000);
+        console.log('📨 Push-Nachricht erhalten:', payload);
+        const body = payload.notification?.body || 'Neue Nachricht';
+        showToast(body, 'info', 5000);
       });
+    } else {
+      console.log('❌ Push-Benachrichtigungen nicht erlaubt');
+      showToast('Bitte Benachrichtigungen erlauben', 'warning');
     }
   } catch (error) {
-    console.log('⚠️ Push Fehler:', error);
+    console.log('⚠️ Push-Benachrichtigungen nicht verfügbar:', error.message);
+    pushSupported = false;
   }
 }
+
 async function savePushToken(token) {
   try {
     if (!session || !session.id) return;
@@ -665,6 +691,7 @@ async function sendPushNotification(userId, title, body) {
     }, 5 * 60 * 1000);
   }
 }
+
 // PWA Installation
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
