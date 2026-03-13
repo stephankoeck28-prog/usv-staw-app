@@ -51,9 +51,31 @@
   --toast-warning: #f3a43b;
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.4; }
-.app { max-width: 720px; margin: 0 auto; min-height: 100vh; background: var(--bg); position: relative; }
+* { 
+  box-sizing: border-box; 
+  margin: 0; 
+  padding: 0; 
+}
+
+html, body { 
+  margin: 0; 
+  padding: 0; 
+  width: 100%; 
+  min-height: 100vh; 
+  background: var(--bg); 
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+  color: var(--text); 
+  line-height: 1.4; 
+}
+
+.app { 
+  max-width: 720px; 
+  margin: 0 auto; 
+  min-height: 100vh; 
+  background: var(--bg); 
+  position: relative; 
+  width: 100%; 
+}}
 
 /* Toast Container */
 .toast-container {
