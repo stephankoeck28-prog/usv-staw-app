@@ -560,27 +560,29 @@ async function savePushToken(token) {
   }
 }
 
-// 🔥 SPERRE GEGEN DOPPELTE PUSHES (5 Minuten)
+// 🔥 VERBESSERTE SPERRE GEGEN DOPPELTE PUSHES
 const _pushLock = {};
+const _pushInProgress = {};
 
 async function sendPushNotification(userId, title, body) {
   // Eindeutigen Schlüssel erstellen (User + Titel + Body)
   const key = `${userId}-${title}-${body}`;
   
-  // Prüfen ob gleicher Push in den letzten 5 Minuten schon gesendet
+  // 🔥 1. PRÜFEN OB GERADE EIN PUSH LÄUFT
+  if (_pushInProgress[key]) {
+    console.log('⏳ Push läuft bereits, überspringe:', key);
+    return;
+  }
+  
+  // 🔥 2. PRÜFEN OB IN DEN LETZTEN 5 MIN SCHON GESENDET
   if (_pushLock[key] && Date.now() - _pushLock[key] < 5 * 60 * 1000) {
     console.log('⏭️ Doppelten Push verhindert (5-Minuten-Sperre):', key);
     return;
   }
   
-  // Sperre setzen
+  // 🔥 3. SOFORT SPERREN
+  _pushInProgress[key] = true;
   _pushLock[key] = Date.now();
-  
-  // Automatische Aufräumung nach 5 Minuten
-  setTimeout(() => {
-    delete _pushLock[key];
-    console.log('🧹 Sperre aufgehoben für:', key);
-  }, 5 * 60 * 1000);
   
   try {
     if (!state.pushTokens || !state.pushTokens[userId]) {
@@ -652,9 +654,17 @@ async function sendPushNotification(userId, title, body) {
   } catch (error) {
     console.log('⚠️ Push konnte nicht gesendet werden:', error);
     showToast('Fehler beim Push-Versand', 'error');
+  } finally {
+    // 🔥 4. AUF JEDEN FALL AUFRÄUMEN
+    delete _pushInProgress[key];
+    
+    // Automatische Aufräumung nach 5 Minuten
+    setTimeout(() => {
+      delete _pushLock[key];
+      console.log('🧹 Sperre aufgehoben für:', key);
+    }, 5 * 60 * 1000);
   }
 }
-
 // PWA Installation
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
