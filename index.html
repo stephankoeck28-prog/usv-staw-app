@@ -560,7 +560,28 @@ async function savePushToken(token) {
   }
 }
 
+// 🔥 SPERRE GEGEN DOPPELTE PUSHES (5 Minuten)
+const _pushLock = {};
+
 async function sendPushNotification(userId, title, body) {
+  // Eindeutigen Schlüssel erstellen (User + Titel + Body)
+  const key = `${userId}-${title}-${body}`;
+  
+  // Prüfen ob gleicher Push in den letzten 5 Minuten schon gesendet
+  if (_pushLock[key] && Date.now() - _pushLock[key] < 5 * 60 * 1000) {
+    console.log('⏭️ Doppelten Push verhindert (5-Minuten-Sperre):', key);
+    return;
+  }
+  
+  // Sperre setzen
+  _pushLock[key] = Date.now();
+  
+  // Automatische Aufräumung nach 5 Minuten
+  setTimeout(() => {
+    delete _pushLock[key];
+    console.log('🧹 Sperre aufgehoben für:', key);
+  }, 5 * 60 * 1000);
+  
   try {
     if (!state.pushTokens || !state.pushTokens[userId]) {
       console.log('⚠️ Keine Push-Tokens für User', userId);
