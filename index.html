@@ -533,6 +533,25 @@ async function initPushNotifications() {
       return;
     }
     
+    // 🔥🔥🔥 AUTO-BEREINIGUNG: ALLE ALTEN SERVICE WORKER LÖSCHEN
+    try {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      if (registrations.length > 1) {
+        console.log(`🧹 ${registrations.length} Service Worker gefunden - bereinige...`);
+        for (const reg of registrations) {
+          // Nur den aktuellen nicht löschen (falls schon einer da ist)
+          if (!reg.scope.includes(window.location.pathname)) {
+            await reg.unregister();
+            console.log('✅ Alter Service Worker gelöscht:', reg.scope);
+          }
+        }
+      } else {
+        console.log('✅ Keine alten Service Worker gefunden');
+      }
+    } catch (e) {
+      console.log('⚠️ Bereinigung fehlgeschlagen:', e);
+    }
+    
     messaging = firebase.messaging();
     pushSupported = true;
     
