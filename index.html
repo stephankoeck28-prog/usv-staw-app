@@ -435,9 +435,30 @@ function closeToast(toastId) {
   }
 }
 
-// ==================== PUSH BENACHRICHTIGUNGEN ====================
+// ==================== PUSH BENACHRICHTIGUNGEN & INSTALLATION ====================
 let messaging = null;
 let pushSupported = false;
+let deferredPrompt;
+
+// Prüfen ob iOS Gerät
+function isIOS() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+}
+
+// Prüfen ob App bereits installiert ist
+function isAppInstalled() {
+  return window.matchMedia('(display-mode: standalone)').matches || 
+         window.navigator.standalone === true;
+}
+
+// iOS "Zum Home-Bildschirm" Anleitung zeigen
+function showIOSInstructions() {
+  showToast(
+    '📱 Tippe auf "Teilen" → "Zum Home-Bildschirm"', 
+    'info', 
+    5000
+  );
+}
 
 async function getAccessToken() {
   try {
@@ -471,14 +492,18 @@ async function initPushNotifications() {
       return;
     }
     
-    // 🔧 Service Worker manuell registrieren mit korrektem Pfad
-    try {
-      const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-      console.log('✅ Service Worker registriert:', registration.scope);
-    } catch (swError) {
-      console.log('❌ Service Worker Registration fehlgeschlagen:', swError);
-      showToast('Service Worker Fehler - Push funktioniert nicht', 'error');
-      return;
+    // Service Worker nur registrieren wenn nicht iOS (iOS unterstützt keine Service Worker für Push)
+    if (!isIOS()) {
+      try {
+        const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+        console.log('✅ Service Worker registriert:', registration.scope);
+      } catch (swError) {
+        console.log('❌ Service Worker Registration fehlgeschlagen:', swError);
+        showToast('Service Worker Fehler - Push funktioniert nicht', 'error');
+        return;
+      }
+    } else {
+      console.log('ℹ️ iOS erkannt - Service Worker wird nicht registriert');
     }
     
     messaging = firebase.messaging();
@@ -501,18 +526,15 @@ async function initPushNotifications() {
         showToast('Push-Token konnte nicht erstellt werden', 'error');
       }
       
-messaging.onMessage((payload) => {
-  console.log('📨 Push-Nachricht erhalten:', payload);
-  
-  const title = payload.notification?.title || 'USV StAW';
-  const body = payload.notification?.body || 'Neue Nachricht';
-  
-  // Nur Toast anzeigen, keine extra Notification
-  showToast(body, 'info', 5000);
-  
-  // Die System-Benachrichtigung kommt bereits vom Service Worker
-  // Deshalb entfernen wir den new Notification Teil hier
-});
+      messaging.onMessage((payload) => {
+        console.log('📨 Push-Nachricht erhalten:', payload);
+        
+        const title = payload.notification?.title || 'USV StAW';
+        const body = payload.notification?.body || 'Neue Nachricht';
+        
+        // Nur Toast anzeigen, die System-Benachrichtigung kommt vom Service Worker
+        showToast(body, 'info', 5000);
+      });
     } else {
       console.log('❌ Push-Benachrichtigungen nicht erlaubt');
       showToast('Bitte Benachrichtigungen erlauben', 'warning');
@@ -615,6 +637,36 @@ async function sendPushNotification(userId, title, body) {
     console.log('⚠️ Push konnte nicht gesendet werden:', error);
     showToast('Fehler beim Push-Versand', 'error');
   }
+}
+
+// PWA Installation
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  console.log('✅ beforeinstallprompt Event ausgelöst');
+});
+
+function installApp() {
+  if (isIOS()) {
+    showIOSInstructions();
+    return;
+  }
+  
+  if (!deferredPrompt) {
+    showToast('Die App kann nicht installiert werden', 'error');
+    return;
+  }
+  
+  deferredPrompt.prompt();
+  
+  deferredPrompt.userChoice.then((choiceResult) => {
+    if (choiceResult.outcome === 'accepted') {
+      showToast('Installation gestartet', 'success');
+    } else {
+      showToast('Installation abgebrochen', 'warning');
+    }
+    deferredPrompt = null;
+  });
 }
 
 // ==================== FIREBASE INIT ====================
@@ -2074,12 +2126,13 @@ function renderLogin() {
         
         <button class="btn primary" style="width: 100%; padding: 14px; margin-top: 16px;" onclick="login()">Einloggen</button>
         
-        <!-- Install-Button - nur sichtbar bis App installiert -->
-        <div id="install-button-container" style="${isAppInstalled ? 'display: none;' : 'margin-top: 16px;'}">
-          <button class="btn secondary" style="width: 100%;" onclick="installApp()">
-            📲 App installieren
-          </button>
-        </div>
+<!-- Install-Button - angepasst für iOS -->
+<div id="install-button-container" style="${isAppInstalled() ? 'display: none;' : 'margin-top: 16px;'}">
+  <button class="btn secondary" style="width: 100%;" onclick="installApp()">
+    ${typeof isIOS === 'function' && isIOS() ? '📱 Zum Home-Bildschirm' : '📲 App installieren'}
+  </button>
+  ${typeof isIOS === 'function' && isIOS() ? '<p class="small" style="margin-top: 8px; text-align: center;">Auf iPhone: Teilen-Button → "Zum Home-Bildschirm"</p>' : ''}
+</div>
         
         <div style="margin-top: 24px; padding: 16px; background: #f5f9f6; border-radius: 12px; font-size: 13px; text-align: center;">
           <strong>Erstlogin-Passwort: 1234</strong>
