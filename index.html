@@ -473,6 +473,7 @@ function isAppInstalled() {
 let messaging = null;
 let pushSupported = false;
 let deferredPrompt;
+let _pushInitialized = false;  // 🔥 NEU: Sperre gegen doppelte Initialisierung
 
 // iOS "Zum Home-Bildschirm" Anleitung zeigen
 function showIOSInstructions() {
@@ -508,6 +509,15 @@ async function getAccessToken() {
 }
 
 async function initPushNotifications() {
+  // 🔥 NEU: Prüfen ob schon initialisiert
+  if (_pushInitialized) {
+    console.log('⏭️ Push bereits initialisiert, überspringe...');
+    return;
+  }
+  
+  _pushInitialized = true;  // ← Als initialisiert markieren
+  console.log('📱 Initialisiere Push...');
+  
   try {
     if (!firebase.messaging) {
       console.log('⚠️ Firebase Messaging nicht verfügbar');
@@ -559,7 +569,6 @@ async function savePushToken(token) {
   }
 }
 
-// 🔥 VERBESSERTE SPERRE GEGEN DOPPELTE PUSHES
 // 🔥 VERBESSERTE SPERRE GEGEN DOPPELTE PUSHES - FIXED!
 const _pushLock = new Map();
 const _pushInProgress = new Map();
@@ -1326,9 +1335,10 @@ function login() {
   saveSession();
   showToast(`✅ Willkommen zurück, ${user.name}!`, "success");
   
-  setTimeout(() => {
-    initPushNotifications();
-  }, 1000);
+  // 🔥 Push NICHT mehr hier initialisieren - das macht jetzt startApp()
+  // setTimeout(() => {
+  //   initPushNotifications();
+  // }, 1000);
 }
 
 function loadSavedLogin() {
@@ -2112,7 +2122,7 @@ function renderFooter() {
   return `
     <div class="footer">
       <div class="copyright">
-        © Trainer Stephan Köck, Release 2026 Version 1.2
+        © Trainer Stephan Köck, Release 2026 Version 1.0
       </div>
     </div>
   `;
@@ -2153,7 +2163,7 @@ function renderLogin() {
         </div>
         
         <div style="margin-top: 30px; text-align: center; color: #888; font-size: 11px; border-top: 1px solid #eee; padding-top: 15px;">
-          © Trainer Stephan Köck, Release 2026 Version 1.2
+          © Trainer Stephan Köck, Release 2026 Version 1.0
         </div>
       </div>
     </div>
@@ -4103,7 +4113,7 @@ async function startApp() {
   
   setTimeout(() => {
     if (session) {
-      initPushNotifications();
+      initPushNotifications();  // 🔥 Jetzt NUR HIER!
     }
   }, 2000);
 }
@@ -4154,16 +4164,13 @@ window.saveMatchReport = saveMatchReport;
 window.deleteMatchReport = deleteMatchReport;
 window.installApp = installApp;
 
-  // 🔥 HIER kommt der NEUE Code für Service Worker Management rein!
+// 🔥 Service Worker Management
 if ('serviceWorker' in navigator) {
-  // Alte Service Worker bereinigen
+  // Vorhandene Service Worker auflisten
   navigator.serviceWorker.getRegistrations().then(function(registrations) {
-    if (registrations.length > 1) {
-      console.log('⚠️ Mehrere Service Worker gefunden:', registrations.length);
-      // Wir lassen sie erstmal, aber warnen
-    }
+    console.log(`📋 ${registrations.length} Service Worker(s) gefunden`);
     for(let registration of registrations) {
-      console.log('📋 Service Worker:', registration.active ? 'aktiv' : 'inaktiv');
+      console.log('   -', registration.active ? 'aktiv' : 'inaktiv');
     }
   });
   
@@ -4171,7 +4178,7 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
     navigator.serviceWorker.register('/usv-staw-app/firebase-messaging-sw.js')
       .then(function(registration) {
-        console.log('✅ Service Worker registriert:', registration);
+        console.log('✅ Service Worker registriert');
       })
       .catch(function(error) {
         console.log('❌ Service Worker Fehler:', error);
