@@ -754,6 +754,73 @@ async function sendPushNotification(userId, title, body) {
   }
 }
 
+// ==================== TÄGLICHE ERINNERUNGEN ====================
+async function checkAndSendReminders() {
+  console.log("⏰ Prüfe auf fällige Erinnerungen...");
+  
+  // Nur wenn Erinnerungen aktiviert sind
+  if (!state.reminderDays || state.reminderDays === 0) {
+    console.log("⏰ Erinnerungen sind aus");
+    return;
+  }
+  
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  // Alle anstehenden Spiele durchgehen
+  const upcomingMatches = state.matches?.filter(m => {
+    const matchDate = new Date(m.date);
+    matchDate.setHours(0, 0, 0, 0);
+    return matchDate >= today;
+  }) || [];
+  
+  console.log(`⏰ ${upcomingMatches.length} anstehende Spiele gefunden`);
+  
+  for (const match of upcomingMatches) {
+    const matchDate = new Date(match.date);
+    matchDate.setHours(0, 0, 0, 0);
+    
+    // Tage bis zum Match berechnen
+    const daysUntilMatch = Math.ceil((matchDate - today) / (1000 * 60 * 60 * 24));
+    
+    console.log(`⏰ Match ${match.title} in ${daysUntilMatch} Tagen, Erinnerung ab ${state.reminderDays} Tagen`);
+    
+    // Wenn Match innerhalb des Erinnerungszeitraums
+    if (daysUntilMatch <= state.reminderDays && daysUntilMatch > 0) {
+      console.log(`⏰ Erinnerung für Match ${match.title} fällig!`);
+      
+      // Alle Eltern finden, die NOCH NICHT abgestimmt haben
+      const eligiblePlayers = getEligiblePlayersForMatch(match);
+      
+      for (const player of eligiblePlayers) {
+        const status = match.attendance?.[player.id] || 'open';
+        
+        // Nur wenn Status "open" ist (noch nicht abgestimmt)
+        if (status === 'open') {
+          const parentUser = findUserForPlayer(player.id);
+          
+          if (parentUser && state.pushTokens?.[parentUser.id]) {
+            console.log(`⏰ Erinnere ${player.name} (${parentUser.username})`);
+            
+            // Push senden
+            await sendPushNotification(
+              parentUser.id,
+              "⚽ Bitte abstimmen!",
+              `${match.title} am ${match.date} - Bitte sag uns ob du kommst!`
+            );
+          }
+        }
+      }
+    }
+  }
+}
+
+function saveReminderDays(days) {
+  state.reminderDays = parseInt(days);
+  save();
+  showToast(`✅ Erinnerung auf ${days === 0 ? 'Aus' : days + ' Tage'} gesetzt`, 'success');
+}
+
 // PWA Installation
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
@@ -827,6 +894,7 @@ const seed = {
   attendanceRequests: [],
   currentSeason: 2026,
   pushTokens: {},
+  reminderDays: 0,  // 🔥 NEU: Standardmäßig aus
   
   users: [
     { id: "u1", username: "trainer", password: "trainer", role: "admin", name: "Haupttrainer", childId: null },
@@ -2200,7 +2268,6 @@ function renderHeader() {
   `;
 }
 
-// VERSION 1.0
 function renderFooter() {
   return `
     <div class="footer">
@@ -2211,7 +2278,6 @@ function renderFooter() {
   `;
 }
 
-// VERSION 1.0
 function renderLogin() {
   setTimeout(loadSavedLogin, 100);
   
@@ -3363,6 +3429,22 @@ function renderConfig() {
           </div>
         `).join('')}
         
+        <h4 style="margin-top: 30px;">⏰ Erinnerungen</h4>
+        <div style="background: #f5f9f6; padding: 16px; border-radius: 12px; margin-bottom: 24px;">
+          <label>Tage vor dem Match an Eltern erinnern (die noch nicht abgestimmt haben)</label>
+          <select id="reminder-days" onchange="saveReminderDays(this.value)" style="margin-bottom: 8px;">
+            <option value="0" ${!state.reminderDays || state.reminderDays == 0 ? 'selected' : ''}>Aus</option>
+            <option value="1" ${state.reminderDays == 1 ? 'selected' : ''}>1 Tag vorher</option>
+            <option value="2" ${state.reminderDays == 2 ? 'selected' : ''}>2 Tage vorher</option>
+            <option value="3" ${state.reminderDays == 3 ? 'selected' : ''}>3 Tage vorher</option>
+            <option value="4" ${state.reminderDays == 4 ? 'selected' : ''}>4 Tage vorher</option>
+            <option value="5" ${state.reminderDays == 5 ? 'selected' : ''}>5 Tage vorher</option>
+            <option value="6" ${state.reminderDays == 6 ? 'selected' : ''}>6 Tage vorher</option>
+            <option value="7" ${state.reminderDays == 7 ? 'selected' : ''}>7 Tage vorher</option>
+          </select>
+          <p class="small">Eltern die noch nicht abgestimmt haben, bekommen täglich eine Erinnerung.</p>
+        </div>
+        
         <h4 style="margin-top: 30px; color: var(--red);">⚠️ GEFAHRENZONE</h4>
         
         <div style="background: #ffe6e3; padding: 16px; border-radius: 12px; margin-bottom: 16px; border-left: 4px solid var(--red);">
@@ -4195,6 +4277,24 @@ async function startApp() {
   listenState();
   render();
   
+  // 🔥 NEU: Erinnerungen einmal täglich prüfen (um 8:00 Uhr)
+  const now = new Date();
+  const nextCheck = new Date();
+  nextCheck.setHours(8, 0, 0, 0); // Nächste Prüfung um 8:00
+  
+  if (now > nextCheck) {
+    nextCheck.setDate(nextCheck.getDate() + 1); // Wenn schon nach 8:00, dann morgen
+  }
+  
+  const timeUntilCheck = nextCheck - now;
+  console.log(`⏰ Erster Erinnerungs-Check in ${Math.round(timeUntilCheck / 1000 / 60)} Minuten`);
+  
+  setTimeout(() => {
+    checkAndSendReminders();
+    // Dann alle 24 Stunden wiederholen
+    setInterval(checkAndSendReminders, 24 * 60 * 60 * 1000);
+  }, timeUntilCheck);
+  
   setTimeout(() => {
     if (session) {
       initPushNotifications();
@@ -4246,6 +4346,7 @@ window.saveTeamConfig = saveTeamConfig;
 window.setSelectedReportMatch = setSelectedReportMatch;
 window.saveMatchReport = saveMatchReport;
 window.deleteMatchReport = deleteMatchReport;
+window.saveReminderDays = saveReminderDays;
 window.installApp = installApp;
 
 // App starten
