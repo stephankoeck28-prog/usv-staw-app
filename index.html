@@ -601,27 +601,25 @@ async function savePushToken(token) {
 const _pushLock = new Map();
 const _pushInProgress = new Map();
 
+// 🔥 GANZ EINFACHE LÖSUNG - KEINE MAPS, KEINE SETS
+let lastPushTime = 0;
+let lastPushKey = "";
+
 async function sendPushNotification(userId, title, body) {
-  // 🔥 Eindeutige ID für diese Nachricht generieren
-  const messageId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  // Einfachen Schlüssel erstellen
   const key = `${userId}-${title}-${body}`;
   
-  // 🔥 1. SOFORTIGE SYNCHRONE PRÜFUNG
-  if (_pushInProgress.has(key)) {
-    console.log('⏳ Push läuft bereits, überspringe:', key);
+  // Prüfen ob in den letzten 10 Sekunden der gleiche Push kam
+  if (key === lastPushKey && Date.now() - lastPushTime < 10000) {
+    console.log("⏭️ Doppelten Push verhindert:", key);
     return;
   }
   
-  // 🔥 2. PRÜFEN OB IN DEN LETZTEN 5 MIN SCHON GESENDET
-  const lastSent = _pushLock.get(key);
-  if (lastSent && Date.now() - lastSent < 5 * 60 * 1000) {
-    console.log('⏭️ Doppelten Push verhindert (5-Minuten-Sperre):', key);
-    return;
-  }
+  // Merken dass wir diesen Push jetzt senden
+  lastPushKey = key;
+  lastPushTime = Date.now();
   
-  // 🔥 3. SOFORT SPERREN
-  _pushInProgress.set(key, true);
-  _pushLock.set(key, Date.now());
+  console.log("📨 Sende Push:", {userId, title, body});
   
   try {
     if (!state.pushTokens || !state.pushTokens[userId]) {
@@ -630,7 +628,6 @@ async function sendPushNotification(userId, title, body) {
     }
     
     const tokens = state.pushTokens[userId];
-    console.log('📨 Sende Push an User', userId, 'mit Tokens:', tokens, 'ID:', messageId);
     
     for (const token of tokens) {
       try {
@@ -657,10 +654,7 @@ async function sendPushNotification(userId, title, body) {
               },
               data: {
                 click_action: 'FLUTTER_NOTIFICATION_CLICK',
-                screen: 'home',
-                message_id: messageId,  // 🔥 WICHTIG: Eindeutige ID mitgeben
-                title: title,
-                body: body
+                screen: 'home'
               },
               android: {
                 priority: 'high'
@@ -677,7 +671,7 @@ async function sendPushNotification(userId, title, body) {
         });
         
         if (response.ok) {
-          console.log('✅ Push gesendet an Token:', token, 'mit ID:', messageId);
+          console.log('✅ Push gesendet an Token:', token);
         } else {
           const error = await response.text();
           console.log('❌ Fehler beim Senden:', error);
@@ -696,15 +690,6 @@ async function sendPushNotification(userId, title, body) {
   } catch (error) {
     console.log('⚠️ Push konnte nicht gesendet werden:', error);
     showToast('Fehler beim Push-Versand', 'error');
-  } finally {
-    // 🔥 4. AUF JEDEN FALL AUFRÄUMEN
-    _pushInProgress.delete(key);
-    
-    // Automatische Aufräumung nach 5 Minuten
-    setTimeout(() => {
-      _pushLock.delete(key);
-      console.log('🧹 Sperre aufgehoben für:', key);
-    }, 5 * 60 * 1000);
   }
 }
 
