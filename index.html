@@ -159,11 +159,25 @@ html, body {
   animation: slideOut 0.3s ease forwards;
 }
 
-/* Header */
+/* Header - LOGO FIX */
 .header { background: linear-gradient(180deg, var(--green), #1f7f47); color: white; padding: 16px; border-bottom-left-radius: 24px; border-bottom-right-radius: 24px; position: sticky; top: 0; z-index: 20; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
 .brand { display: flex; align-items: center; gap: 14px; }
-.logo { width: 60px; height: 60px; border-radius: 18px; background: white; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-.logo img { width: 100%; height: 100%; object-fit: contain; padding: 5px; }
+.logo { 
+  width: 60px; 
+  height: 60px; 
+  border-radius: 18px; 
+  background: transparent; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  overflow: hidden; 
+}
+.logo img { 
+  width: 100%; 
+  height: 100%; 
+  object-fit: contain; 
+  padding: 0; 
+}
 .logo span { font-size: 24px; color: var(--green); font-weight: bold; }
 .brand small { display: block; opacity: 0.9; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; }
 .brand strong { display: block; font-size: 18px; }
@@ -362,10 +376,15 @@ input, select, textarea { width: 100%; padding: 12px; border: 1px solid #dce6de;
 .nav button.active { color: var(--green); transform: translateY(-2px); }
 .nav .trainer-kind-nav, .nav .coach-kind-nav { margin-left: 20px; }
 
-/* Logo Upload in Config */
+/* Logo Upload in Config - LOGO FIX */
 .logo-upload { display: flex; flex-direction: column; align-items: center; margin: 20px 0; padding: 20px; background: #f5f9f6; border-radius: 12px; }
 .logo-preview { width: 100px; height: 100px; border-radius: 18px; background: white; border: 2px dashed var(--green); display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 10px; }
-.logo-preview img { width: 100%; height: 100%; object-fit: contain; padding: 5px; }
+.logo-preview img { 
+  width: 100%; 
+  height: 100%; 
+  object-fit: contain; 
+  padding: 0; 
+}
 .logo-preview span { color: var(--muted); font-size: 12px; text-align: center; }
 
 /* Gegner-Liste für U8 und kleiner */
@@ -473,10 +492,54 @@ function isAppInstalled() {
 let messaging = null;
 let pushSupported = false;
 let deferredPrompt;
-let _pushInitialized = false;  // 🔥 Schutz gegen doppelte Initialisierung
+let _pushInitialized = false;
 
-  // 🔍 DEBUG-ZÄHLER für Push
+// 🔍 DEBUG-ZÄHLER für Push
 let pushCounter = 0;
+
+// 🔥 NEU: Persistent Alert statt Toast
+function showPersistentAlert(message) {
+  let alertBox = document.getElementById('persistent-alert');
+  
+  if (!alertBox) {
+    alertBox = document.createElement('div');
+    alertBox.id = 'persistent-alert';
+    alertBox.className = 'card';
+    alertBox.style.cssText = `
+      margin: 16px;
+      background: var(--notification-bg);
+      border-left: 8px solid var(--notification-border);
+      animation: none;
+      position: sticky;
+      top: 80px;
+      z-index: 999;
+    `;
+    
+    alertBox.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span style="font-size: 24px;">🔔</span>
+        <div style="flex: 1;">
+          <strong style="color: var(--text);">Neue Nachricht</strong>
+          <div id="alert-message" style="margin-top: 4px; color: var(--text);"></div>
+        </div>
+        <button onclick="this.parentElement.parentElement.remove()" 
+          style="background: none; border: none; font-size: 20px; cursor: pointer; color: var(--muted); padding: 5px 10px;">
+          ✕
+        </button>
+      </div>
+    `;
+    
+    const section = document.querySelector('.section');
+    if (section) {
+      document.querySelector('.app').insertBefore(alertBox, section);
+    } else {
+      document.querySelector('.app').appendChild(alertBox);
+    }
+  }
+  
+  const messageEl = document.getElementById('alert-message');
+  if (messageEl) messageEl.textContent = message;
+}
 
 // 🔥 NEU: ID-basierte De-Duplizierung für Vordergrund
 const _processedForegroundIds = new Set();
@@ -522,7 +585,6 @@ async function getAccessToken() {
 
 // 🔥 VERBESSERTE initPushNotifications mit ID-basierter De-Duplizierung
 async function initPushNotifications() {
-  // Prüfen ob schon initialisiert
   if (_pushInitialized) {
     console.log('⏭️ Push bereits initialisiert, überspringe...');
     return;
@@ -555,27 +617,24 @@ async function initPushNotifications() {
         showToast('Push-Token Fehler', 'error');
       }
       
-      // 🔥 Verbesserter onMessage Handler mit ID-basierter De-Duplizierung
+      // 🔥 Verbesserter onMessage Handler mit PERSISTENTEM ALERT
       messaging.onMessage((payload) => {
         console.log('📨 Push (Vordergrund):', payload);
         
-        // 🔥 Eindeutige ID aus den Daten holen
         const messageId = payload.data?.message_id || 
                           payload.messageId || 
                           `${payload.notification?.title}-${payload.notification?.body}`;
         
-        // Prüfen ob diese ID in den letzten 10 Sekunden schon verarbeitet wurde
         if (_processedForegroundIds.has(messageId)) {
           console.log('⏭️ Doppelten Toast verhindert (ID):', messageId);
           return;
         }
         
-        // Als verarbeitet markieren
         _processedForegroundIds.add(messageId);
-        console.log('✅ Toast wird angezeigt mit ID:', messageId);
+        console.log('✅ Persistent Alert wird angezeigt mit ID:', messageId);
         
         const body = payload.notification?.body || payload.data?.body || 'Neue Nachricht';
-        showToast(body, 'info', 5000);
+        showPersistentAlert(body);
       });
     }
   } catch (error) {
@@ -600,15 +659,7 @@ async function savePushToken(token) {
   }
 }
 
-// 🔥 VERBESSERTE SPERRE GEGEN DOPPELTE PUSHES mit eindeutiger ID
-//const _pushLock = new Map();
-//const _pushInProgress = new Map();
-
-// 🔥 GANZ EINFACHE LÖSUNG - KEINE MAPS, KEINE SETS
-let lastPushTime = 0;
-let lastPushKey = "";
-
-// 🔥 ALLERALLEREINFACHSTE LÖSUNG
+// 🔥 GANZ EINFACHE LÖSUNG FÜR DOPPELTE PUSHES
 let lastPush = null;
 
 async function sendPushNotification(userId, title, body) {
@@ -1653,38 +1704,56 @@ function resetCoachPassword(coachId) {
   showToast(`✅ Passwort für ${coach.name} zurückgesetzt auf "4321"`, "success");
 }
 
+// 🔥 VERBESSERTE savePlayerData MIT FOTO-FIX
 function savePlayerData() {
   const playerId = state.selectedPlayerId;
   const player = findPlayer(playerId);
   if (!player) return;
   
-  player.birthday = document.getElementById(`player-birthday`)?.value;
-  player.since = document.getElementById(`player-since`)?.value;
-  player.position = document.getElementById(`player-position`)?.value;
-  player.altPosition = document.getElementById(`player-altPosition`)?.value;
+  player.birthday = document.getElementById(`player-birthday`)?.value || '';
+  player.since = document.getElementById(`player-since`)?.value || '';
+  player.position = document.getElementById(`player-position`)?.value || '';
+  player.altPosition = document.getElementById(`player-altPosition`)?.value || '';
   player.jersey = parseInt(document.getElementById(`player-jersey`)?.value) || 0;
-  player.parentName = document.getElementById(`player-parent`)?.value;
-  player.phone = document.getElementById(`player-phone`)?.value;
-  player.note = document.getElementById(`player-note`)?.value;
-  player.speed = document.getElementById(`player-speed`)?.value;
-  player.dribbling = document.getElementById(`player-dribbling`)?.value;
-  player.passing = document.getElementById(`player-passing`)?.value;
-  player.nextTeam = document.getElementById(`player-nextTeam`)?.value;
+  player.parentName = document.getElementById(`player-parent`)?.value || '';
+  player.phone = document.getElementById(`player-phone`)?.value || '';
+  player.note = document.getElementById(`player-note`)?.value || '';
+  player.speed = document.getElementById(`player-speed`)?.value || '';
+  player.dribbling = document.getElementById(`player-dribbling`)?.value || '';
+  player.passing = document.getElementById(`player-passing`)?.value || '';
+  player.nextTeam = document.getElementById(`player-nextTeam`)?.value || '';
   
   const photoInput = document.getElementById(`player-photo`);
-  if (photoInput) player.photo = photoInput.value;
+  if (photoInput && photoInput.value) {
+    if (photoInput.value.startsWith('data:image')) {
+      player.photo = photoInput.value;
+    } else {
+      console.log('⚠️ Ungültiges Foto-Format');
+    }
+  }
+  
+  if (!player.tests) player.tests = [];
+  if (!player.matchReports) player.matchReports = [];
+  if (!player.seasonHistory) player.seasonHistory = {};
   
   save();
   showToast("✅ Spielerdaten gespeichert!", "success");
 }
 
+// 🔥 VERBESSERTE handlePhotoUpload MIT GRÖßENBEGRENZUNG
 function handlePhotoUpload(event) {
   const file = event.target.files[0];
   if (file) {
+    if (file.size > 500 * 1024) {
+      showToast("❌ Foto zu groß (max 500KB)", "error");
+      return;
+    }
+    
     const reader = new FileReader();
     reader.onload = function(e) {
-      document.getElementById('player-photo').value = e.target.result;
-      document.getElementById('photo-preview').innerHTML = `<img src="${e.target.result}" alt="Foto">`;
+      const base64String = e.target.result;
+      document.getElementById('player-photo').value = base64String;
+      document.getElementById('photo-preview').innerHTML = `<img src="${base64String}" alt="Foto" style="width: 100%; height: 100%; object-fit: cover;">`;
       showToast("📷 Foto bereit zum Speichern", "info");
     };
     reader.readAsDataURL(file);
@@ -1764,10 +1833,8 @@ function addMatch() {
       
       let canSeeMatch = false;
       if (playerTeamNumber <= 8) {
-        // U8 und jünger: Dürfen alle Spiele ab ihrer Altersstufe aufwärts sehen
         canSeeMatch = matchTeamNumber >= playerTeamNumber;
       } else {
-        // U9 und älter: Dürfen NUR Spiele in ihrer eigenen Altersstufe sehen
         canSeeMatch = matchTeamNumber === playerTeamNumber;
       }
       
@@ -2133,16 +2200,18 @@ function renderHeader() {
   `;
 }
 
+// VERSION 1.0
 function renderFooter() {
   return `
     <div class="footer">
       <div class="copyright">
-        © Trainer Stephan Köck, Release 2026 Version 1.2
+        © Trainer Stephan Köck, Release 2026 Version 1.0
       </div>
     </div>
   `;
 }
 
+// VERSION 1.0
 function renderLogin() {
   setTimeout(loadSavedLogin, 100);
   
@@ -2178,7 +2247,7 @@ function renderLogin() {
         </div>
         
         <div style="margin-top: 30px; text-align: center; color: #888; font-size: 11px; border-top: 1px solid #eee; padding-top: 15px;">
-          © Trainer Stephan Köck, Release 2026 Version 1.2
+          © Trainer Stephan Köck, Release 2026 Version 1.0
         </div>
       </div>
     </div>
@@ -2979,7 +3048,7 @@ function renderPlayers() {
   const tests = selectedPlayer.tests || [];
   const lastTest = tests.length > 0 ? tests.sort((a,b) => b.date.localeCompare(a.date))[0] : null;
   const photoHtml = selectedPlayer.photo ? 
-    `<img src="${selectedPlayer.photo}" alt="${selectedPlayer.name}">` : 
+    `<img src="${selectedPlayer.photo}" alt="${selectedPlayer.name}" style="width: 100%; height: 100%; object-fit: cover;">` : 
     '<span>📷 Foto hinzufügen</span>';
   
   return `
@@ -3449,7 +3518,7 @@ function renderParentView() {
   const lastTest = tests.length > 0 ? tests.sort((a,b) => b.date.localeCompare(a.date))[0] : null;
   
   const photoHtml = player.photo ? 
-    `<div class="parent-photo"><img src="${player.photo}" alt="${player.name}"></div>` : 
+    `<div class="parent-photo"><img src="${player.photo}" alt="${player.name}" style="width: 100%; height: 100%; object-fit: cover;"></div>` : 
     '';
   
   const goalRanking = getGoalRanking(player.team);
@@ -3625,7 +3694,7 @@ function renderTrainerKindView() {
   const assistRank = assistRanking[player.id] || '-';
   
   const photoHtml = player.photo ? 
-    `<div class="parent-photo"><img src="${player.photo}" alt="${player.name}"></div>` : 
+    `<div class="parent-photo"><img src="${player.photo}" alt="${player.name}" style="width: 100%; height: 100%; object-fit: cover;"></div>` : 
     '';
   
   let upcomingMatchesHtml = '';
@@ -3801,7 +3870,7 @@ function renderCoachKindView() {
   const assistRank = assistRanking[player.id] || '-';
   
   const photoHtml = player.photo ? 
-    `<div class="parent-photo"><img src="${player.photo}" alt="${player.name}"></div>` : 
+    `<div class="parent-photo"><img src="${player.photo}" alt="${player.name}" style="width: 100%; height: 100%; object-fit: cover;"></div>` : 
     '';
   
   let upcomingMatchesHtml = '';
