@@ -560,37 +560,50 @@ async function savePushToken(token) {
 }
 
 // 🔥 VERBESSERTE SPERRE GEGEN DOPPELTE PUSHES
-const _pushLock = {};
-const _pushInProgress = {};
+// 🔥 VERBESSERTE SPERRE GEGEN DOPPELTE PUSHES - FIXED!
+const _pushLock = new Map();
+const _pushInProgress = new Map();
 
 async function sendPushNotification(userId, title, body) {
-  // Eindeutigen Schlüssel erstellen (User + Titel + Body)
+  // Eindeutigen Schlüssel erstellen
   const key = `${userId}-${title}-${body}`;
   
-  // 🔥 1. PRÜFEN OB GERADE EIN PUSH LÄUFT
-  if (_pushInProgress[key]) {
+  // 🔥 1. SOFORTIGE SYNCHRONE PRÜFUNG (erster Schutz)
+  if (_pushInProgress.has(key)) {
     console.log('⏳ Push läuft bereits, überspringe:', key);
     return;
   }
   
-  // 🔥 2. PRÜFEN OB IN DEN LETZTEN 5 MIN SCHON GESENDET
-  if (_pushLock[key] && Date.now() - _pushLock[key] < 5 * 60 * 1000) {
-    console.log('⏭️ Doppelten Push verhindert (5-Minuten-Sperre):', key);
+  // 🔥 2. PRÜFEN OB IN DEN LETZTEN 10 SEKUNDEN SCHON GESENDET (kürzer für bessere UX)
+  const lastSent = _pushLock.get(key);
+  if (lastSent && Date.now() - lastSent < 10000) { // 10 Sekunden statt 5 Minuten
+    console.log('⏭️ Doppelten Push verhindert (10-Sekunden-Sperre):', key);
     return;
   }
   
-  // 🔥 3. SOFORT SPERREN
-  _pushInProgress[key] = true;
-  _pushLock[key] = Date.now();
+  // 🔥 3. SOFORTIGE MARKIERUNG
+  _pushInProgress.set(key, true);
+  _pushLock.set(key, Date.now());
   
+  // 🔥 4. GLEICHZEITIGEN AUFRUF VERHINDERN - Promise-basierte Sperre
   try {
+    // Kleine Verzögerung, um Race Conditions zu vermeiden
+    await new Promise(resolve => setTimeout(resolve, 50));
+    
+    // Nochmal prüfen, ob während der 50ms ein anderer Aufruf gestartet wurde
+    if (_pushInProgress.get(key) !== true) {
+      console.log('⏭️ Doppelten Push während Wartezeit erkannt:', key);
+      return;
+    }
+    
+    console.log('📨 Sende Push an User', userId);
+    
     if (!state.pushTokens || !state.pushTokens[userId]) {
       console.log('⚠️ Keine Push-Tokens für User', userId);
       return;
     }
     
     const tokens = state.pushTokens[userId];
-    console.log('📨 Sende Push an User', userId, 'mit Tokens:', tokens);
     
     for (const token of tokens) {
       try {
@@ -654,14 +667,14 @@ async function sendPushNotification(userId, title, body) {
     console.log('⚠️ Push konnte nicht gesendet werden:', error);
     showToast('Fehler beim Push-Versand', 'error');
   } finally {
-    // 🔥 4. AUF JEDEN FALL AUFRÄUMEN
-    delete _pushInProgress[key];
+    // 🔥 5. AUF JEDEN FALL AUFRÄUMEN
+    _pushInProgress.delete(key);
     
-    // Automatische Aufräumung nach 5 Minuten
+    // Automatische Aufräumung nach 10 Sekunden
     setTimeout(() => {
-      delete _pushLock[key];
+      _pushLock.delete(key);
       console.log('🧹 Sperre aufgehoben für:', key);
-    }, 5 * 60 * 1000);
+    }, 10000);
   }
 }
 
