@@ -473,6 +473,8 @@ function isAppInstalled() {
 let messaging = null;
 let pushSupported = false;
 let deferredPrompt;
+let _pushInitialized = false;  // 🔥 Schutz gegen doppelte Initialisierung
+let _lastToast = null;         // 🔥 Schutz gegen doppelte Toasts
 
 // iOS "Zum Home-Bildschirm" Anleitung zeigen
 function showIOSInstructions() {
@@ -508,6 +510,15 @@ async function getAccessToken() {
 }
 
 async function initPushNotifications() {
+  // 🔥 Prüfen ob schon initialisiert
+  if (_pushInitialized) {
+    console.log('⏭️ Push bereits initialisiert, überspringe...');
+    return;
+  }
+  
+  _pushInitialized = true;
+  console.log('📱 Initialisiere Push...');
+  
   try {
     if (!firebase.messaging) {
       console.log('⚠️ Firebase Messaging nicht verfügbar');
@@ -532,9 +543,29 @@ async function initPushNotifications() {
         showToast('Push-Token Fehler', 'error');
       }
       
+      // 🔥 Verbesserter onMessage Handler mit De-Duplizierung
       messaging.onMessage((payload) => {
-        console.log('📨 Push:', payload?.notification?.body);
-        showToast(payload?.notification?.body || 'Neue Nachricht', 'info', 5000);
+        console.log('📨 Push (Vordergrund):', payload);
+        
+        // Eindeutige ID erstellen
+        const title = payload.notification?.title || '';
+        const body = payload.notification?.body || 'Neue Nachricht';
+        const messageId = `${title}-${body}`;
+        
+        // Prüfen ob in den letzten 3 Sekunden schon gesehen
+        if (_lastToast && _lastToast.id === messageId && 
+            Date.now() - _lastToast.time < 3000) {
+          console.log('⏭️ Doppelten Toast verhindert');
+          return;
+        }
+        
+        // Als verarbeitet markieren
+        _lastToast = {
+          id: messageId,
+          time: Date.now()
+        };
+        
+        showToast(body, 'info', 5000);
       });
     }
   } catch (error) {
@@ -560,39 +591,29 @@ async function savePushToken(token) {
 }
 
 // 🔥 VERBESSERTE SPERRE GEGEN DOPPELTE PUSHES
-const _pushLock = {};
-const _pushInProgress = {};
-  const _pushAlreadySent = new Set();
+const _pushLock = new Map();
+const _pushInProgress = new Map();
 
 async function sendPushNotification(userId, title, body) {
-
-  const key = `${userId}-${title}-${body}`;
-
-  // 🔒 absolute Einmal-Sperre
-  if (_pushAlreadySent.has(key)) {
-    console.log("⛔ Push bereits gesendet:", key);
-    return;
-  }
-
-  _pushAlreadySent.add(key);
   // Eindeutigen Schlüssel erstellen (User + Titel + Body)
   const key = `${userId}-${title}-${body}`;
   
-  // 🔥 1. PRÜFEN OB GERADE EIN PUSH LÄUFT
-  if (_pushInProgress[key]) {
+  // 🔥 1. SOFORTIGE SYNCHRONE PRÜFUNG
+  if (_pushInProgress.has(key)) {
     console.log('⏳ Push läuft bereits, überspringe:', key);
     return;
   }
   
   // 🔥 2. PRÜFEN OB IN DEN LETZTEN 5 MIN SCHON GESENDET
-  if (_pushLock[key] && Date.now() - _pushLock[key] < 5 * 60 * 1000) {
+  const lastSent = _pushLock.get(key);
+  if (lastSent && Date.now() - lastSent < 5 * 60 * 1000) {
     console.log('⏭️ Doppelten Push verhindert (5-Minuten-Sperre):', key);
     return;
   }
   
   // 🔥 3. SOFORT SPERREN
-  _pushInProgress[key] = true;
-  _pushLock[key] = Date.now();
+  _pushInProgress.set(key, true);
+  _pushLock.set(key, Date.now());
   
   try {
     if (!state.pushTokens || !state.pushTokens[userId]) {
@@ -666,11 +687,11 @@ async function sendPushNotification(userId, title, body) {
     showToast('Fehler beim Push-Versand', 'error');
   } finally {
     // 🔥 4. AUF JEDEN FALL AUFRÄUMEN
-    delete _pushInProgress[key];
+    _pushInProgress.delete(key);
     
     // Automatische Aufräumung nach 5 Minuten
     setTimeout(() => {
-      delete _pushLock[key];
+      _pushLock.delete(key);
       console.log('🧹 Sperre aufgehoben für:', key);
     }, 5 * 60 * 1000);
   }
