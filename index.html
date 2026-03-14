@@ -474,7 +474,15 @@ let messaging = null;
 let pushSupported = false;
 let deferredPrompt;
 let _pushInitialized = false;  // 🔥 Schutz gegen doppelte Initialisierung
-let _lastToast = null;         // 🔥 Schutz gegen doppelte Toasts
+
+// 🔥 NEU: ID-basierte De-Duplizierung für Vordergrund
+const _processedForegroundIds = new Set();
+
+// Alle 10 Sekunden aufräumen
+setInterval(() => {
+  _processedForegroundIds.clear();
+  console.log("🧹 Vordergrund: processedForegroundIds geleert");
+}, 10000);
 
 // iOS "Zum Home-Bildschirm" Anleitung zeigen
 function showIOSInstructions() {
@@ -509,8 +517,9 @@ async function getAccessToken() {
   }
 }
 
+// 🔥 VERBESSERTE initPushNotifications mit ID-basierter De-Duplizierung
 async function initPushNotifications() {
-  // 🔥 Prüfen ob schon initialisiert
+  // Prüfen ob schon initialisiert
   if (_pushInitialized) {
     console.log('⏭️ Push bereits initialisiert, überspringe...');
     return;
@@ -543,28 +552,26 @@ async function initPushNotifications() {
         showToast('Push-Token Fehler', 'error');
       }
       
-      // 🔥 Verbesserter onMessage Handler mit De-Duplizierung
+      // 🔥 Verbesserter onMessage Handler mit ID-basierter De-Duplizierung
       messaging.onMessage((payload) => {
         console.log('📨 Push (Vordergrund):', payload);
         
-        // Eindeutige ID erstellen
-        const title = payload.notification?.title || '';
-        const body = payload.notification?.body || 'Neue Nachricht';
-        const messageId = `${title}-${body}`;
+        // 🔥 Eindeutige ID aus den Daten holen
+        const messageId = payload.data?.message_id || 
+                          payload.messageId || 
+                          `${payload.notification?.title}-${payload.notification?.body}`;
         
-        // Prüfen ob in den letzten 3 Sekunden schon gesehen
-        if (_lastToast && _lastToast.id === messageId && 
-            Date.now() - _lastToast.time < 3000) {
-          console.log('⏭️ Doppelten Toast verhindert');
+        // Prüfen ob diese ID in den letzten 10 Sekunden schon verarbeitet wurde
+        if (_processedForegroundIds.has(messageId)) {
+          console.log('⏭️ Doppelten Toast verhindert (ID):', messageId);
           return;
         }
         
         // Als verarbeitet markieren
-        _lastToast = {
-          id: messageId,
-          time: Date.now()
-        };
+        _processedForegroundIds.add(messageId);
+        console.log('✅ Toast wird angezeigt mit ID:', messageId);
         
+        const body = payload.notification?.body || payload.data?.body || 'Neue Nachricht';
         showToast(body, 'info', 5000);
       });
     }
@@ -590,12 +597,13 @@ async function savePushToken(token) {
   }
 }
 
-// 🔥 VERBESSERTE SPERRE GEGEN DOPPELTE PUSHES
+// 🔥 VERBESSERTE SPERRE GEGEN DOPPELTE PUSHES mit eindeutiger ID
 const _pushLock = new Map();
 const _pushInProgress = new Map();
 
 async function sendPushNotification(userId, title, body) {
-  // Eindeutigen Schlüssel erstellen (User + Titel + Body)
+  // 🔥 Eindeutige ID für diese Nachricht generieren
+  const messageId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   const key = `${userId}-${title}-${body}`;
   
   // 🔥 1. SOFORTIGE SYNCHRONE PRÜFUNG
@@ -622,7 +630,7 @@ async function sendPushNotification(userId, title, body) {
     }
     
     const tokens = state.pushTokens[userId];
-    console.log('📨 Sende Push an User', userId, 'mit Tokens:', tokens);
+    console.log('📨 Sende Push an User', userId, 'mit Tokens:', tokens, 'ID:', messageId);
     
     for (const token of tokens) {
       try {
@@ -649,7 +657,10 @@ async function sendPushNotification(userId, title, body) {
               },
               data: {
                 click_action: 'FLUTTER_NOTIFICATION_CLICK',
-                screen: 'home'
+                screen: 'home',
+                message_id: messageId,  // 🔥 WICHTIG: Eindeutige ID mitgeben
+                title: title,
+                body: body
               },
               android: {
                 priority: 'high'
@@ -666,7 +677,7 @@ async function sendPushNotification(userId, title, body) {
         });
         
         if (response.ok) {
-          console.log('✅ Push gesendet an Token:', token);
+          console.log('✅ Push gesendet an Token:', token, 'mit ID:', messageId);
         } else {
           const error = await response.text();
           console.log('❌ Fehler beim Senden:', error);
