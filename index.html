@@ -473,7 +473,6 @@ function isAppInstalled() {
 let messaging = null;
 let pushSupported = false;
 let deferredPrompt;
-let _pushInitialized = false;  // 🔥 NEU: Schutz gegen doppelte Initialisierung
 
 // iOS "Zum Home-Bildschirm" Anleitung zeigen
 function showIOSInstructions() {
@@ -509,15 +508,6 @@ async function getAccessToken() {
 }
 
 async function initPushNotifications() {
-  // 🔥 NEU: Prüfen ob schon initialisiert
-  if (_pushInitialized) {
-    console.log('⏭️ Push bereits initialisiert, überspringe...');
-    return;
-  }
-  
-  _pushInitialized = true;
-  console.log('📱 Initialisiere Push...');
-  
   try {
     if (!firebase.messaging) {
       console.log('⚠️ Firebase Messaging nicht verfügbar');
