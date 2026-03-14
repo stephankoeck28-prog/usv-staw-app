@@ -562,8 +562,19 @@ async function savePushToken(token) {
 // 🔥 VERBESSERTE SPERRE GEGEN DOPPELTE PUSHES
 const _pushLock = {};
 const _pushInProgress = {};
+  const _pushAlreadySent = new Set();
 
 async function sendPushNotification(userId, title, body) {
+
+  const key = `${userId}-${title}-${body}`;
+
+  // 🔒 absolute Einmal-Sperre
+  if (_pushAlreadySent.has(key)) {
+    console.log("⛔ Push bereits gesendet:", key);
+    return;
+  }
+
+  _pushAlreadySent.add(key);
   // Eindeutigen Schlüssel erstellen (User + Titel + Body)
   const key = `${userId}-${title}-${body}`;
   
