@@ -473,7 +473,7 @@ function isAppInstalled() {
 let messaging = null;
 let pushSupported = false;
 let deferredPrompt;
-let _pushInitialized = false;  // 🔥 NEU: Sperre gegen doppelte Initialisierung
+let _pushInitialized = false;  // 🔥 NEU: Schutz gegen doppelte Initialisierung
 
 // iOS "Zum Home-Bildschirm" Anleitung zeigen
 function showIOSInstructions() {
@@ -515,7 +515,7 @@ async function initPushNotifications() {
     return;
   }
   
-  _pushInitialized = true;  // ← Als initialisiert markieren
+  _pushInitialized = true;
   console.log('📱 Initialisiere Push...');
   
   try {
@@ -569,50 +569,38 @@ async function savePushToken(token) {
   }
 }
 
-// 🔥 VERBESSERTE SPERRE GEGEN DOPPELTE PUSHES - FIXED!
-const _pushLock = new Map();
-const _pushInProgress = new Map();
+// 🔥 VERBESSERTE SPERRE GEGEN DOPPELTE PUSHES
+const _pushLock = {};
+const _pushInProgress = {};
 
 async function sendPushNotification(userId, title, body) {
-  // Eindeutigen Schlüssel erstellen
+  // Eindeutigen Schlüssel erstellen (User + Titel + Body)
   const key = `${userId}-${title}-${body}`;
   
-  // 🔥 1. SOFORTIGE SYNCHRONE PRÜFUNG (erster Schutz)
-  if (_pushInProgress.has(key)) {
+  // 🔥 1. PRÜFEN OB GERADE EIN PUSH LÄUFT
+  if (_pushInProgress[key]) {
     console.log('⏳ Push läuft bereits, überspringe:', key);
     return;
   }
   
-  // 🔥 2. PRÜFEN OB IN DEN LETZTEN 10 SEKUNDEN SCHON GESENDET (kürzer für bessere UX)
-  const lastSent = _pushLock.get(key);
-  if (lastSent && Date.now() - lastSent < 10000) { // 10 Sekunden statt 5 Minuten
-    console.log('⏭️ Doppelten Push verhindert (10-Sekunden-Sperre):', key);
+  // 🔥 2. PRÜFEN OB IN DEN LETZTEN 5 MIN SCHON GESENDET
+  if (_pushLock[key] && Date.now() - _pushLock[key] < 5 * 60 * 1000) {
+    console.log('⏭️ Doppelten Push verhindert (5-Minuten-Sperre):', key);
     return;
   }
   
-  // 🔥 3. SOFORTIGE MARKIERUNG
-  _pushInProgress.set(key, true);
-  _pushLock.set(key, Date.now());
+  // 🔥 3. SOFORT SPERREN
+  _pushInProgress[key] = true;
+  _pushLock[key] = Date.now();
   
-  // 🔥 4. GLEICHZEITIGEN AUFRUF VERHINDERN - Promise-basierte Sperre
   try {
-    // Kleine Verzögerung, um Race Conditions zu vermeiden
-    await new Promise(resolve => setTimeout(resolve, 50));
-    
-    // Nochmal prüfen, ob während der 50ms ein anderer Aufruf gestartet wurde
-    if (_pushInProgress.get(key) !== true) {
-      console.log('⏭️ Doppelten Push während Wartezeit erkannt:', key);
-      return;
-    }
-    
-    console.log('📨 Sende Push an User', userId);
-    
     if (!state.pushTokens || !state.pushTokens[userId]) {
       console.log('⚠️ Keine Push-Tokens für User', userId);
       return;
     }
     
     const tokens = state.pushTokens[userId];
+    console.log('📨 Sende Push an User', userId, 'mit Tokens:', tokens);
     
     for (const token of tokens) {
       try {
@@ -676,14 +664,14 @@ async function sendPushNotification(userId, title, body) {
     console.log('⚠️ Push konnte nicht gesendet werden:', error);
     showToast('Fehler beim Push-Versand', 'error');
   } finally {
-    // 🔥 5. AUF JEDEN FALL AUFRÄUMEN
-    _pushInProgress.delete(key);
+    // 🔥 4. AUF JEDEN FALL AUFRÄUMEN
+    delete _pushInProgress[key];
     
-    // Automatische Aufräumung nach 10 Sekunden
+    // Automatische Aufräumung nach 5 Minuten
     setTimeout(() => {
-      _pushLock.delete(key);
+      delete _pushLock[key];
       console.log('🧹 Sperre aufgehoben für:', key);
-    }, 10000);
+    }, 5 * 60 * 1000);
   }
 }
 
@@ -1335,10 +1323,9 @@ function login() {
   saveSession();
   showToast(`✅ Willkommen zurück, ${user.name}!`, "success");
   
-  // 🔥 Push NICHT mehr hier initialisieren - das macht jetzt startApp()
-  // setTimeout(() => {
-  //   initPushNotifications();
-  // }, 1000);
+  setTimeout(() => {
+    initPushNotifications();
+  }, 1000);
 }
 
 function loadSavedLogin() {
@@ -2122,7 +2109,7 @@ function renderFooter() {
   return `
     <div class="footer">
       <div class="copyright">
-        © Trainer Stephan Köck, Release 2026 Version 1.0
+        © Trainer Stephan Köck, Release 2026 Version 1.2
       </div>
     </div>
   `;
@@ -2163,7 +2150,7 @@ function renderLogin() {
         </div>
         
         <div style="margin-top: 30px; text-align: center; color: #888; font-size: 11px; border-top: 1px solid #eee; padding-top: 15px;">
-          © Trainer Stephan Köck, Release 2026 Version 1.0
+          © Trainer Stephan Köck, Release 2026 Version 1.2
         </div>
       </div>
     </div>
@@ -4113,7 +4100,7 @@ async function startApp() {
   
   setTimeout(() => {
     if (session) {
-      initPushNotifications();  // 🔥 Jetzt NUR HIER!
+      initPushNotifications();
     }
   }, 2000);
 }
@@ -4163,28 +4150,6 @@ window.setSelectedReportMatch = setSelectedReportMatch;
 window.saveMatchReport = saveMatchReport;
 window.deleteMatchReport = deleteMatchReport;
 window.installApp = installApp;
-
-// 🔥 Service Worker Management
-if ('serviceWorker' in navigator) {
-  // Vorhandene Service Worker auflisten
-  navigator.serviceWorker.getRegistrations().then(function(registrations) {
-    console.log(`📋 ${registrations.length} Service Worker(s) gefunden`);
-    for(let registration of registrations) {
-      console.log('   -', registration.active ? 'aktiv' : 'inaktiv');
-    }
-  });
-  
-  // Service Worker registrieren (falls nicht vorhanden)
-  window.addEventListener('load', function() {
-    navigator.serviceWorker.register('/usv-staw-app/firebase-messaging-sw.js')
-      .then(function(registration) {
-        console.log('✅ Service Worker registriert');
-      })
-      .catch(function(error) {
-        console.log('❌ Service Worker Fehler:', error);
-      });
-  });
-}
 
 // App starten
 startApp();
