@@ -7,6 +7,10 @@
 <!-- PWA Manifest -->
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#156d3b">
+<!-- iOS Meta Tags für besseres Icon-Handling -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="icon-192.png">
 <style>
 :root {
   --green: #156d3b;
@@ -68,13 +72,61 @@ html, body {
   line-height: 1.4; 
 }
 
-.app { 
-  max-width: 720px; 
-  margin: 0 auto; 
-  min-height: 100vh; 
-  background: var(--bg); 
-  position: relative; 
-  width: 100%; 
+/* ==================== SPLASH SCREEN ==================== */
+.splash-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, var(--green), #0f562f);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: fadeSplash var(--splash-duration, 1.8s) ease-in-out forwards;
+  pointer-events: none;
+}
+
+.splash-screen img {
+  width: 120px;
+  height: 120px;
+  border-radius: 24px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  animation: logoPop 0.6s ease-out;
+}
+
+.splash-screen .splash-title {
+  color: white;
+  font-size: 24px;
+  font-weight: bold;
+  margin-top: 20px;
+  animation: textFade 0.8s ease-out;
+  text-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.splash-screen .splash-subtitle {
+  color: rgba(255,255,255,0.8);
+  font-size: 14px;
+  margin-top: 8px;
+  animation: textFade 1s ease-out;
+}
+
+@keyframes fadeSplash {
+  0% { opacity: 1; visibility: visible; }
+  70% { opacity: 1; visibility: visible; }
+  100% { opacity: 0; visibility: hidden; }
+}
+
+@keyframes logoPop {
+  0% { transform: scale(0.8); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes textFade {
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
 }
 
 /* Toast Container */
@@ -197,6 +249,24 @@ html, body {
 .section { padding: 16px 16px 80px; }
 .card { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 16px; margin-bottom: 16px; box-shadow: 0 3px 10px rgba(0,0,0,0.04); }
 .card h3 { margin: 0 0 12px; font-size: 18px; display: flex; align-items: center; gap: 6px; }
+
+/* Back Button */
+.back-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  color: var(--green);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 8px 0;
+  margin-bottom: 16px;
+}
+.back-button:hover {
+  opacity: 0.8;
+}
 
 /* Next Match Card with Attendance Color */
 .next-match-card { padding: 16px; border-radius: 16px; margin-bottom: 20px; color: white; }
@@ -419,6 +489,13 @@ input, select, textarea { width: 100%; padding: 12px; border: 1px solid #dce6de;
 </style>
 </head>
 <body>
+<!-- ==================== SPLASH SCREEN ==================== -->
+<div class="splash-screen" id="splash-screen" style="display: none;">
+  <img id="splash-image" src="icon-192.png" alt="USV">
+  <div class="splash-title" id="splash-title">USV St Andrä</div>
+  <div class="splash-subtitle" id="splash-subtitle">Team App</div>
+</div>
+
 <div class="app" id="app"></div>
 
 <!-- Toast Container für moderne Alerts -->
@@ -430,6 +507,77 @@ input, select, textarea { width: 100%; padding: 12px; border: 1px solid #dce6de;
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js"></script>
 
 <script>
+// ==================== SPLASH SCREEN FUNKTIONEN ====================
+function showSplashScreen() {
+  const splash = document.getElementById('splash-screen');
+  if (!splash || !state.splashConfig || state.splashConfig.duration === 0) return;
+  
+  // Aktuelles Datum für automatische Auswahl
+  const today = new Date();
+  const month = today.getMonth() + 1;
+  const day = today.getDate();
+  
+  // Prüfen ob jemand Geburtstag hat (höchste Priorität)
+  let birthdayPlayer = null;
+  if (state.splashConfig.birthday?.active) {
+    birthdayPlayer = state.players?.find(p => {
+      if (!p.birthday) return false;
+      const bd = new Date(p.birthday);
+      return bd.getMonth() + 1 === month && bd.getDate() === day;
+    });
+  }
+  
+  // Welcher Splash soll gezeigt werden?
+  let splashImage = state.splashConfig.defaultImage || 'icon-192.png';
+  let splashTitle = 'USV St Andrä';
+  let splashSubtitle = 'Team App';
+  
+  if (birthdayPlayer && state.splashConfig.birthday?.active) {
+    // GEBURTSTAG!
+    splashImage = state.splashConfig.birthday.image || splashImage;
+    splashTitle = (state.splashConfig.birthday.text || 'Happy Birthday, NAME! 🎂').replace('NAME', birthdayPlayer.name);
+    splashSubtitle = '🎉🎉🎉';
+  } else if (state.splashConfig.christmas?.active && month === 12 && day >= 24 && day <= 26) {
+    // WEIHNACHTEN
+    splashImage = state.splashConfig.christmas.image || splashImage;
+    splashTitle = state.splashConfig.christmas.text || 'Frohe Weihnachten!';
+    splashSubtitle = '🎄🎄🎄';
+  } else if (state.splashConfig.easter?.active) {
+    // OSTERN (vereinfacht - zwischen 22.3 und 25.4)
+    const easterStart = new Date(today.getFullYear(), 2, 22);
+    const easterEnd = new Date(today.getFullYear(), 3, 25);
+    if (today >= easterStart && today <= easterEnd) {
+      splashImage = state.splashConfig.easter.image || splashImage;
+      splashTitle = state.splashConfig.easter.text || 'Frohe Ostern!';
+      splashSubtitle = '🐰🐰🐰';
+    }
+  } else if (state.splashConfig.halloween?.active && month === 10 && day === 31) {
+    // HALLOWEEN
+    splashImage = state.splashConfig.halloween.image || splashImage;
+    splashTitle = state.splashConfig.halloween.text || 'Happy Halloween!';
+    splashSubtitle = '🎃🎃🎃';
+  } else if (state.splashConfig.newyear?.active && month === 12 && day === 31) {
+    // SILVESTER
+    splashImage = state.splashConfig.newyear.image || splashImage;
+    splashTitle = state.splashConfig.newyear.text || 'Guten Rutsch!';
+    splashSubtitle = '🎆🎆🎆';
+  }
+  
+  // Splash anzeigen
+  document.getElementById('splash-image').src = splashImage;
+  document.getElementById('splash-title').textContent = splashTitle;
+  document.getElementById('splash-subtitle').textContent = splashSubtitle;
+  
+  // Dauer setzen
+  splash.style.setProperty('--splash-duration', state.splashConfig.duration + 's');
+  splash.style.display = 'flex';
+  
+  // Nach der Dauer ausblenden
+  setTimeout(() => {
+    splash.style.display = 'none';
+  }, state.splashConfig.duration * 1000);
+}
+
 // ==================== MODERNE ALERT FUNKTION ====================
 function showToast(message, type = 'success', duration = 3000) {
   const container = document.getElementById('toast-container');
@@ -894,7 +1042,38 @@ const seed = {
   attendanceRequests: [],
   currentSeason: 2026,
   pushTokens: {},
-  reminderDays: 0,  // 🔥 NEU: Standardmäßig aus
+  reminderDays: 0,
+  
+  // 🔥 NEU: Splash-Screen Konfiguration
+  splashConfig: {
+    duration: 2,  // Sekunden (0 = aus)
+    defaultImage: 'icon-192.png',
+    christmas: {
+      active: false,
+      image: null,
+      text: 'Frohe Weihnachten!'
+    },
+    easter: {
+      active: false,
+      image: null,
+      text: 'Frohe Ostern!'
+    },
+    halloween: {
+      active: false,
+      image: null,
+      text: 'Happy Halloween!'
+    },
+    newyear: {
+      active: false,
+      image: null,
+      text: 'Guten Rutsch!'
+    },
+    birthday: {
+      active: false,
+      image: null,
+      text: 'Happy Birthday, NAME! 🎂'
+    }
+  },
   
   users: [
     { id: "u1", username: "trainer", password: "trainer", role: "admin", name: "Haupttrainer", childId: null },
@@ -1822,21 +2001,34 @@ function handlePhotoUpload(event) {
       const base64String = e.target.result;
       document.getElementById('player-photo').value = base64String;
       document.getElementById('photo-preview').innerHTML = `<img src="${base64String}" alt="Foto" style="width: 100%; height: 100%; object-fit: cover;">`;
-      showToast("📷 Foto bereit zum Speichern", "info");
+      showToast("📷 Foto bereit zum Speichern - Jetzt auf 'Speichern' klicken!", "info");
     };
     reader.readAsDataURL(file);
   }
 }
 
-// ==================== LOGO MANAGEMENT ====================
+// ==================== LOGO MANAGEMENT - FIXED ====================
 function handleLogoUpload(event) {
   const file = event.target.files[0];
   if (file) {
+    // Gleiche Größenbegrenzung wie bei Spielerfotos (500KB)
+    if (file.size > 500 * 1024) {
+      showToast("❌ Logo zu groß (max 500KB)", "error");
+      return;
+    }
+    
+    // Prüfen ob es ein Bild ist
+    if (!file.type.startsWith('image/')) {
+      showToast("❌ Bitte ein Bild auswählen", "error");
+      return;
+    }
+    
     const reader = new FileReader();
     reader.onload = function(e) {
-      document.getElementById('club-logo').value = e.target.result;
-      document.getElementById('logo-preview').innerHTML = `<img src="${e.target.result}" alt="Vereinslogo">`;
-      showToast("📷 Logo bereit zum Speichern", "info");
+      const base64String = e.target.result;
+      document.getElementById('club-logo').value = base64String;
+      document.getElementById('logo-preview').innerHTML = `<img src="${base64String}" alt="Vereinslogo">`;
+      showToast("📷 Logo bereit zum Speichern - Jetzt auf 'Logo speichern' klicken!", "info");
     };
     reader.readAsDataURL(file);
   }
@@ -1845,9 +2037,17 @@ function handleLogoUpload(event) {
 function saveClubLogo() {
   const logoInput = document.getElementById('club-logo');
   if (logoInput && logoInput.value) {
-    state.clubLogo = logoInput.value;
-    save();
-    showToast("✅ Vereinslogo gespeichert!", "success");
+    // Prüfen ob es ein gültiges Base64-Bild ist
+    if (logoInput.value.startsWith('data:image')) {
+      state.clubLogo = logoInput.value;
+      save();
+      showToast("✅ Vereinslogo gespeichert!", "success");
+    } else {
+      console.log('⚠️ Ungültiges Logo-Format');
+      showToast("❌ Ungültiges Bildformat", "error");
+    }
+  } else {
+    showToast("❌ Kein Bild ausgewählt", "warning");
   }
 }
 
@@ -2226,6 +2426,68 @@ function confirmDeleteAllPlayers() {
   
   save();
   showToast(`✅ Alle ${playerCount} Spieler wurden gelöscht!`, "success");
+}
+
+// ==================== SPLASH CONFIG FUNKTIONEN ====================
+function saveSplashDuration(duration) {
+  if (!state.splashConfig) state.splashConfig = {};
+  state.splashConfig.duration = parseInt(duration);
+  save();
+  showToast(`✅ Splash-Dauer auf ${duration === 0 ? 'Aus' : duration + ' Sekunden'} gesetzt`, 'success');
+}
+
+function saveSplashEvent(eventType, field, value) {
+  if (!state.splashConfig) state.splashConfig = {};
+  if (!state.splashConfig[eventType]) {
+    state.splashConfig[eventType] = { active: false, image: null, text: '' };
+  }
+  
+  if (field === 'active') {
+    state.splashConfig[eventType].active = value;
+  } else if (field === 'text') {
+    state.splashConfig[eventType].text = value;
+  }
+  
+  save();
+  showToast(`✅ ${eventType} Einstellung gespeichert`, 'success');
+}
+
+function handleSplashImageUpload(event, eventType) {
+  const file = event.target.files[0];
+  if (file) {
+    if (file.size > 500 * 1024) {
+      showToast("❌ Bild zu groß (max 500KB)", "error");
+      return;
+    }
+    
+    if (!file.type.startsWith('image/')) {
+      showToast("❌ Bitte ein Bild auswählen", "error");
+      return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const base64String = e.target.result;
+      
+      if (!state.splashConfig) state.splashConfig = {};
+      if (!state.splashConfig[eventType]) {
+        state.splashConfig[eventType] = { active: false, image: null, text: '' };
+      }
+      
+      state.splashConfig[eventType].image = base64String;
+      save();
+      
+      // Vorschau aktualisieren
+      const previewId = `splash-preview-${eventType}`;
+      const preview = document.getElementById(previewId);
+      if (preview) {
+        preview.innerHTML = `<img src="${base64String}" alt="Vorschau" style="width: 60px; height: 60px; border-radius: 12px; object-fit: cover;">`;
+      }
+      
+      showToast(`✅ Bild für ${eventType} gespeichert`, 'success');
+    };
+    reader.readAsDataURL(file);
+  }
 }
 
 // ==================== VIEW RENDERING ====================
@@ -3247,6 +3509,193 @@ function renderPlayers() {
   `;
 }
 
+// ==================== SPLASH CONFIG RENDER ====================
+function renderSplashConfig() {
+  if (session.role !== "admin") {
+    return `
+      <div class="section">
+        <div class="card">
+          <h3>⛔ Kein Zugriff</h3>
+          <p class="small">Nur der Haupttrainer hat Zugriff auf die Splash-Konfiguration.</p>
+        </div>
+      </div>
+    `;
+  }
+  
+  const config = state.splashConfig || {
+    duration: 2,
+    christmas: { active: false, image: null, text: 'Frohe Weihnachten!' },
+    easter: { active: false, image: null, text: 'Frohe Ostern!' },
+    halloween: { active: false, image: null, text: 'Happy Halloween!' },
+    newyear: { active: false, image: null, text: 'Guten Rutsch!' },
+    birthday: { active: false, image: null, text: 'Happy Birthday, NAME! 🎂' }
+  };
+  
+  function getPreviewHtml(eventType) {
+    const img = config[eventType]?.image;
+    if (img) {
+      return `<img src="${img}" alt="Vorschau" style="width: 60px; height: 60px; border-radius: 12px; object-fit: cover;">`;
+    }
+    return '<span style="color: var(--muted);">Kein Bild</span>';
+  }
+  
+  return `
+    <div class="section">
+      <button class="back-button" onclick="setAdminView('config')">
+        <span style="font-size: 24px;">←</span> Zurück zur Konfiguration
+      </button>
+      
+      <div class="card">
+        <h3>🎨 SPLASH-SCREEN ZENTRALE</h3>
+        <p class="small" style="margin-bottom: 20px;">Konfiguriere hier deine Splash-Screens für verschiedene Anlässe</p>
+        
+        <h4>⏰ DAUER</h4>
+        <div style="background: #f5f9f6; padding: 16px; border-radius: 12px; margin-bottom: 24px;">
+          <label>Anzeigedauer (0 = Aus)</label>
+          <select onchange="saveSplashDuration(this.value)">
+            <option value="0" ${config.duration == 0 ? 'selected' : ''}>Aus</option>
+            <option value="1" ${config.duration == 1 ? 'selected' : ''}>1 Sekunde</option>
+            <option value="2" ${config.duration == 2 ? 'selected' : ''}>2 Sekunden</option>
+            <option value="3" ${config.duration == 3 ? 'selected' : ''}>3 Sekunden</option>
+            <option value="4" ${config.duration == 4 ? 'selected' : ''}>4 Sekunden</option>
+            <option value="5" ${config.duration == 5 ? 'selected' : ''}>5 Sekunden</option>
+          </select>
+        </div>
+        
+        <h4>🎄 WEIHNACHTEN (24.-26.12.)</h4>
+        <div style="background: #f5f9f6; padding: 16px; border-radius: 12px; margin-bottom: 24px;">
+          <label style="display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" ${config.christmas?.active ? 'checked' : ''} 
+                   onchange="saveSplashEvent('christmas', 'active', this.checked)"> Aktivieren
+          </label>
+          
+          <div style="display: flex; gap: 16px; align-items: center; margin: 12px 0;">
+            <div style="flex: 1;">
+              <label>Text</label>
+              <input type="text" value="${config.christmas?.text || 'Frohe Weihnachten!'}" 
+                     onchange="saveSplashEvent('christmas', 'text', this.value)">
+            </div>
+            <div style="text-align: center;">
+              <div style="margin-bottom: 4px;">Vorschau</div>
+              <div id="splash-preview-christmas">${getPreviewHtml('christmas')}</div>
+            </div>
+          </div>
+          
+          <label class="btn secondary" style="cursor: pointer; display: inline-block;">
+            📷 Bild hochladen
+            <input type="file" accept="image/*" style="display:none;" onchange="handleSplashImageUpload(event, 'christmas')">
+          </label>
+        </div>
+        
+        <h4>🐰 OSTERN (22.3.-25.4.)</h4>
+        <div style="background: #f5f9f6; padding: 16px; border-radius: 12px; margin-bottom: 24px;">
+          <label style="display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" ${config.easter?.active ? 'checked' : ''} 
+                   onchange="saveSplashEvent('easter', 'active', this.checked)"> Aktivieren
+          </label>
+          
+          <div style="display: flex; gap: 16px; align-items: center; margin: 12px 0;">
+            <div style="flex: 1;">
+              <label>Text</label>
+              <input type="text" value="${config.easter?.text || 'Frohe Ostern!'}" 
+                     onchange="saveSplashEvent('easter', 'text', this.value)">
+            </div>
+            <div style="text-align: center;">
+              <div style="margin-bottom: 4px;">Vorschau</div>
+              <div id="splash-preview-easter">${getPreviewHtml('easter')}</div>
+            </div>
+          </div>
+          
+          <label class="btn secondary" style="cursor: pointer; display: inline-block;">
+            📷 Bild hochladen
+            <input type="file" accept="image/*" style="display:none;" onchange="handleSplashImageUpload(event, 'easter')">
+          </label>
+        </div>
+        
+        <h4>🎃 HALLOWEEN (31.10.)</h4>
+        <div style="background: #f5f9f6; padding: 16px; border-radius: 12px; margin-bottom: 24px;">
+          <label style="display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" ${config.halloween?.active ? 'checked' : ''} 
+                   onchange="saveSplashEvent('halloween', 'active', this.checked)"> Aktivieren
+          </label>
+          
+          <div style="display: flex; gap: 16px; align-items: center; margin: 12px 0;">
+            <div style="flex: 1;">
+              <label>Text</label>
+              <input type="text" value="${config.halloween?.text || 'Happy Halloween!'}" 
+                     onchange="saveSplashEvent('halloween', 'text', this.value)">
+            </div>
+            <div style="text-align: center;">
+              <div style="margin-bottom: 4px;">Vorschau</div>
+              <div id="splash-preview-halloween">${getPreviewHtml('halloween')}</div>
+            </div>
+          </div>
+          
+          <label class="btn secondary" style="cursor: pointer; display: inline-block;">
+            📷 Bild hochladen
+            <input type="file" accept="image/*" style="display:none;" onchange="handleSplashImageUpload(event, 'halloween')">
+          </label>
+        </div>
+        
+        <h4>🎆 SILVESTER (31.12.)</h4>
+        <div style="background: #f5f9f6; padding: 16px; border-radius: 12px; margin-bottom: 24px;">
+          <label style="display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" ${config.newyear?.active ? 'checked' : ''} 
+                   onchange="saveSplashEvent('newyear', 'active', this.checked)"> Aktivieren
+          </label>
+          
+          <div style="display: flex; gap: 16px; align-items: center; margin: 12px 0;">
+            <div style="flex: 1;">
+              <label>Text</label>
+              <input type="text" value="${config.newyear?.text || 'Guten Rutsch!'}" 
+                     onchange="saveSplashEvent('newyear', 'text', this.value)">
+            </div>
+            <div style="text-align: center;">
+              <div style="margin-bottom: 4px;">Vorschau</div>
+              <div id="splash-preview-newyear">${getPreviewHtml('newyear')}</div>
+            </div>
+          </div>
+          
+          <label class="btn secondary" style="cursor: pointer; display: inline-block;">
+            📷 Bild hochladen
+            <input type="file" accept="image/*" style="display:none;" onchange="handleSplashImageUpload(event, 'newyear')">
+          </label>
+        </div>
+        
+        <h4>🎂 GEBURTSTAGE</h4>
+        <div style="background: #f5f9f6; padding: 16px; border-radius: 12px; margin-bottom: 24px;">
+          <label style="display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" ${config.birthday?.active ? 'checked' : ''} 
+                   onchange="saveSplashEvent('birthday', 'active', this.checked)"> Aktivieren
+          </label>
+          <p class="small">NAME wird automatisch durch den Spielernamen ersetzt</p>
+          
+          <div style="display: flex; gap: 16px; align-items: center; margin: 12px 0;">
+            <div style="flex: 1;">
+              <label>Text (NAME = Spielername)</label>
+              <input type="text" value="${config.birthday?.text || 'Happy Birthday, NAME! 🎂'}" 
+                     onchange="saveSplashEvent('birthday', 'text', this.value)">
+            </div>
+            <div style="text-align: center;">
+              <div style="margin-bottom: 4px;">Vorschau</div>
+              <div id="splash-preview-birthday">${getPreviewHtml('birthday')}</div>
+            </div>
+          </div>
+          
+          <label class="btn secondary" style="cursor: pointer; display: inline-block;">
+            📷 Bild hochladen
+            <input type="file" accept="image/*" style="display:none;" onchange="handleSplashImageUpload(event, 'birthday')">
+          </label>
+        </div>
+        
+        <div style="display: flex; gap: 12px; justify-content: center; margin-top: 24px;">
+          <button class="btn primary" onclick="setAdminView('config')">Fertig</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 function renderConfig() {
   if (session.role !== "admin") {
     return `
@@ -3428,6 +3877,14 @@ function renderConfig() {
             </select>
           </div>
         `).join('')}
+        
+        <h4 style="margin-top: 30px;">🎨 SPLASH-SCREEN</h4>
+        <div style="background: #e8f0fe; padding: 16px; border-radius: 12px; margin-bottom: 24px; border-left: 4px solid var(--blue);">
+          <p style="margin-bottom: 16px;">Konfiguriere hier deine individuellen Splash-Screens für Weihnachten, Ostern, Geburtstage und mehr!</p>
+          <button class="btn primary" style="width: 100%;" onclick="setAdminView('splash')">
+            🎨 ZUR SPLASH-ZENTRALE
+          </button>
+        </div>
         
         <h4 style="margin-top: 30px;">⏰ Erinnerungen</h4>
         <div style="background: #f5f9f6; padding: 16px; border-radius: 12px; margin-bottom: 24px;">
@@ -4241,6 +4698,7 @@ function render() {
     else if (adminView === "tests") content += renderTests();
     else if (adminView === "statistics") content += renderStatistics();
     else if (adminView === "config") content += renderConfig();
+    else if (adminView === "splash") content += renderSplashConfig();
     else if (adminView === "password") content += `
       <div class="section">
         <div class="card">
@@ -4276,6 +4734,11 @@ async function startApp() {
   await loadState();
   listenState();
   render();
+  
+  // Splash-Screen anzeigen (kurze Verzögerung damit der Render fertig ist)
+  setTimeout(() => {
+    showSplashScreen();
+  }, 100);
   
   // 🔥 NEU: Erinnerungen einmal täglich prüfen (um 8:00 Uhr)
   const now = new Date();
@@ -4347,6 +4810,9 @@ window.setSelectedReportMatch = setSelectedReportMatch;
 window.saveMatchReport = saveMatchReport;
 window.deleteMatchReport = deleteMatchReport;
 window.saveReminderDays = saveReminderDays;
+window.saveSplashDuration = saveSplashDuration;
+window.saveSplashEvent = saveSplashEvent;
+window.handleSplashImageUpload = handleSplashImageUpload;
 window.installApp = installApp;
 
 // App starten
