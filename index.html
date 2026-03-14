@@ -475,6 +475,9 @@ let pushSupported = false;
 let deferredPrompt;
 let _pushInitialized = false;  // 🔥 Schutz gegen doppelte Initialisierung
 
+  // 🔍 DEBUG-ZÄHLER für Push
+let pushCounter = 0;
+
 // 🔥 NEU: ID-basierte De-Duplizierung für Vordergrund
 const _processedForegroundIds = new Set();
 
@@ -605,19 +608,26 @@ async function savePushToken(token) {
 let lastPushTime = 0;
 let lastPushKey = "";
 
+// 🔥 ALLERALLEREINFACHSTE LÖSUNG
+let lastPush = null;
+
 async function sendPushNotification(userId, title, body) {
-  // Einfachen Schlüssel erstellen
-  const key = `${userId}-${title}-${body}`;
+  pushCounter++;
+  console.log(`🔥 PUSH AUFRUF #${pushCounter}:`, {userId, title, body});
   
-  // Prüfen ob in den letzten 10 Sekunden der gleiche Push kam
-  if (key === lastPushKey && Date.now() - lastPushTime < 10000) {
-    console.log("⏭️ Doppelten Push verhindert:", key);
+  const now = Date.now();
+  
+  // Wenn gleicher Push in den letzten 3 Sekunden, ignorieren
+  if (lastPush && 
+      lastPush.userId === userId && 
+      lastPush.title === title && 
+      lastPush.body === body && 
+      now - lastPush.time < 3000) {
+    console.log("⛔ Doppelten Push verhindert");
     return;
   }
   
-  // Merken dass wir diesen Push jetzt senden
-  lastPushKey = key;
-  lastPushTime = Date.now();
+  lastPush = {userId, title, body, time: now};
   
   console.log("📨 Sende Push:", {userId, title, body});
   
