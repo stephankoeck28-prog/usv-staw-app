@@ -2050,30 +2050,21 @@ function handleLogoUpload(event) {
       
       const ctx = canvas.getContext('2d');
       
-      // 🔥 PRÜFEN OB PNG (Transparenz) ODER JPEG
-      const isPNG = file.type === 'image/png';
+      // 🔥 1. ALLES LÖSCHEN (macht den Canvas transparent)
+      ctx.clearRect(0, 0, width, height);
       
-      if (isPNG) {
-        // Bei PNG: Transparenten Hintergrund löschen
-        ctx.clearRect(0, 0, width, height);
-      } else {
-        // Bei JPEG: Weißen Hintergrund setzen (damit nichts durchscheint)
+      // 🔥 2. BEI JPEG: Weissen Hintergrund setzen
+      if (file.type === 'image/jpeg' || file.type === 'image/jpg') {
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, width, height);
       }
+      // Bei PNG: bleibt transparent (clearRect hat schon alles gelöscht)
       
-      // Bild zeichnen
+      // 🔥 3. BILD MIT ERHALTENER TRANSPARENZ ZEICHNEN
       ctx.drawImage(img, 0, 0, width, height);
       
-      // 🔥 RICHTIGES FORMAT WÄHLEN
-      let compressedBase64;
-      if (isPNG) {
-        // PNG = Qualität 0.9 (etwas komprimieren, aber Transparenz erhalten)
-        compressedBase64 = canvas.toDataURL('image/png', 0.9);
-      } else {
-        // JPEG = Qualität 0.8 (gute Komprimierung)
-        compressedBase64 = canvas.toDataURL('image/jpeg', 0.8);
-      }
+      // 🔥 4. IMMER ALS PNG SPEICHERN (für Transparenz)
+      const compressedBase64 = canvas.toDataURL('image/png');
       
       // Größe prüfen
       const sizeInBytes = Math.round((compressedBase64.length * 3) / 4);
