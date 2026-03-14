@@ -2014,28 +2014,61 @@ function handlePhotoUpload(event) {
 // ==================== LOGO MANAGEMENT - FIXED ====================
 function handleLogoUpload(event) {
   const file = event.target.files[0];
-  if (file) {
-    // Gleiche Größenbegrenzung wie bei Spielerfotos (500KB)
-    if (file.size > 500 * 1024) {
-      showToast("❌ Logo zu groß (max 500KB)", "error");
-      return;
-    }
-    
-    // Prüfen ob es ein Bild ist
-    if (!file.type.startsWith('image/')) {
-      showToast("❌ Bitte ein Bild auswählen", "error");
-      return;
-    }
-    
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      const base64String = e.target.result;
-      document.getElementById('club-logo').value = base64String;
-      document.getElementById('logo-preview').innerHTML = `<img src="${base64String}" alt="Vereinslogo">`;
-      showToast("📷 Logo bereit zum Speichern - Jetzt auf 'Logo speichern' klicken!", "info");
-    };
-    reader.readAsDataURL(file);
+  if (!file) return;
+  
+  // Prüfen ob es ein Bild ist
+  if (!file.type.startsWith('image/')) {
+    showToast("❌ Bitte ein Bild auswählen", "error");
+    return;
   }
+  
+  showToast("🔄 Komprimiere Logo...", "info", 2000);
+  
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      // Canvas erstellen
+      const canvas = document.createElement('canvas');
+      let width = img.width;
+      let height = img.height;
+      
+      // Maximalgröße 200px
+      const maxSize = 200;
+      if (width > maxSize || height > maxSize) {
+        if (width > height) {
+          height = Math.round((height * maxSize) / width);
+          width = maxSize;
+        } else {
+          width = Math.round((width * maxSize) / height);
+          height = maxSize;
+        }
+      }
+      
+      canvas.width = width;
+      canvas.height = height;
+      
+      // Bild zeichnen
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      
+      // Als JPEG mit 80% Qualität speichern
+      const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8);
+      
+      // Prüfen ob klein genug (ca. 500KB)
+      const sizeInBytes = Math.round((compressedBase64.length * 3) / 4);
+      if (sizeInBytes > 500 * 1024) {
+        showToast("❌ Logo immer noch zu groß - bitte manuell verkleinern", "error");
+        return;
+      }
+      
+      document.getElementById('club-logo').value = compressedBase64;
+      document.getElementById('logo-preview').innerHTML = `<img src="${compressedBase64}" alt="Vereinslogo">`;
+      showToast("📷 Logo bereit zum Speichern", "success");
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
 }
 
 function saveClubLogo() {
