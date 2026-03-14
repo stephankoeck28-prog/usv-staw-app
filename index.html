@@ -4154,6 +4154,31 @@ window.saveMatchReport = saveMatchReport;
 window.deleteMatchReport = deleteMatchReport;
 window.installApp = installApp;
 
+  // 🔥 HIER kommt der NEUE Code für Service Worker Management rein!
+if ('serviceWorker' in navigator) {
+  // Alte Service Worker bereinigen
+  navigator.serviceWorker.getRegistrations().then(function(registrations) {
+    if (registrations.length > 1) {
+      console.log('⚠️ Mehrere Service Worker gefunden:', registrations.length);
+      // Wir lassen sie erstmal, aber warnen
+    }
+    for(let registration of registrations) {
+      console.log('📋 Service Worker:', registration.active ? 'aktiv' : 'inaktiv');
+    }
+  });
+  
+  // Service Worker registrieren (falls nicht vorhanden)
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('/usv-staw-app/firebase-messaging-sw.js')
+      .then(function(registration) {
+        console.log('✅ Service Worker registriert:', registration);
+      })
+      .catch(function(error) {
+        console.log('❌ Service Worker Fehler:', error);
+      });
+  });
+}
+
 // App starten
 startApp();
 </script>
