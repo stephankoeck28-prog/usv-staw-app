@@ -6,21 +6,18 @@
 <title>USV St Andrä Wördern - Team App</title>
 <!-- PWA Manifest -->
 <link rel="manifest" href="manifest.json">
-<!-- NATIVEN SPLASH DEAKTIVIEREN -->
+  <!-- NATIVEN SPLASH DEAKTIVIEREN -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <!-- KEINE splash Bilder! -->
-<meta name="theme-color" id="theme-color" content="#156d3b">
+<meta name="theme-color" content="#156d3b">
 <!-- iOS Meta Tags für besseres Icon-Handling -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="apple-touch-icon" href="icon-192.png">
 <style>
 :root {
-  --primary: #156d3b;
-  --primary-dark: #0f562f;
-  --primary-light: #1f7f47;
-  --green: var(--primary);
+  --green: #156d3b;
   --green2: #2ea45d;
   --bg: #eef6f0;
   --card: #fff;
@@ -60,10 +57,6 @@
   --toast-error: #d45d4a;
   --toast-info: #5e8fe8;
   --toast-warning: #f3a43b;
-  --badge-meisterschaft: #3b82f6;
-  --badge-turnier: #8b5cf6;
-  --badge-testspiel: #14b8a6;
-  --badge-cup: #f97316;
 }
 
 * { 
@@ -90,21 +83,14 @@ html, body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: #003305;
+  background: linear-gradient(135deg, var(--green), #0f562f);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   z-index: 10000;
-  opacity: 1;
-  visibility: visible;
-  transition: opacity 0.3s ease, visibility 0.3s ease;
+  animation: fadeSplash var(--splash-duration, 1.8s) ease-in-out forwards;
   pointer-events: none;
-}
-
-.splash-screen.hidden {
-  opacity: 0;
-  visibility: hidden;
 }
 
 .splash-screen img {
@@ -129,6 +115,12 @@ html, body {
   font-size: 14px;
   margin-top: 8px;
   animation: textFade 1s ease-out;
+}
+
+@keyframes fadeSplash {
+  0% { opacity: 1; visibility: visible; }
+  70% { opacity: 1; visibility: visible; }
+  100% { opacity: 0; visibility: hidden; }
 }
 
 @keyframes logoPop {
@@ -224,27 +216,8 @@ html, body {
 }
 
 /* Header - LOGO FIX */
-.header { 
-  background: linear-gradient(180deg, var(--primary), var(--primary-dark)); 
-  color: white; 
-  padding: 16px; 
-  border-bottom-left-radius: 24px; 
-  border-bottom-right-radius: 24px; 
-  position: sticky; 
-  top: 0; 
-  z-index: 20; 
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
-}
-.header-content {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.brand { 
-  display: flex; 
-  align-items: center; 
-  gap: 14px; 
-}
+.header { background: linear-gradient(180deg, var(--green), #1f7f47); color: white; padding: 16px; border-bottom-left-radius: 24px; border-bottom-right-radius: 24px; position: sticky; top: 0; z-index: 20; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+.brand { display: flex; align-items: center; gap: 14px; }
 .logo { 
   width: 60px; 
   height: 60px; 
@@ -261,36 +234,20 @@ html, body {
   object-fit: contain; 
   padding: 0; 
 }
-.logo span { font-size: 24px; color: var(--primary); font-weight: bold; }
+.logo span { font-size: 24px; color: var(--green); font-weight: bold; }
 .brand small { display: block; opacity: 0.9; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; }
 .brand strong { display: block; font-size: 18px; }
 .role-badge { background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 20px; font-size: 11px; margin-top: 4px; display: inline-block; }
 
-/* Sponsor Bereich */
-.sponsor-area {
-  width: 80px;
-  height: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-}
-.sponsor-logo {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-  border-radius: 8px;
-}
-
-/* Footer - jetzt im Header! */
-.footer { background: transparent; color: rgba(255,255,255,0.5); padding: 4px 0 0; text-align: left; font-size: 9px; width: 100%; margin-top: 8px; border-top: 1px solid rgba(255,255,255,0.1); }
-.footer .copyright { opacity: 0.7; letter-spacing: 0.3px; }
+/* Footer */
+.footer { background: linear-gradient(180deg, #1f7f47, var(--green)); color: white; padding: 12px 16px; border-top-left-radius: 24px; border-top-right-radius: 24px; text-align: center; font-size: 12px; width: 100%; margin-top: 20px; }
+.footer .copyright { opacity: 0.9; letter-spacing: 0.5px; }
 
 /* Tabs */
 .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
 .pill { border: none; border-radius: 20px; padding: 8px 16px; font-weight: 600; font-size: 14px; cursor: pointer; background: rgba(255,255,255,0.2); color: white; }
 .pill.active { background: var(--yellow); color: #21482d; }
-.pill.alt { background: var(--primary-light); color: white; }
+.pill.alt { background: #56c477; color: white; }
 
 /* Cards */
 .section { padding: 16px 16px 80px; }
@@ -304,7 +261,7 @@ html, body {
   gap: 8px;
   background: none;
   border: none;
-  color: var(--primary);
+  color: var(--green);
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
@@ -337,8 +294,8 @@ input, select, textarea { width: 100%; padding: 12px; border: 1px solid #dce6de;
 
 /* Buttons */
 .btn { border: none; border-radius: 12px; padding: 12px 16px; font-weight: 600; cursor: pointer; transition: 0.2s; }
-.btn.primary { background: var(--primary); color: white; }
-.btn.primary:hover { background: var(--primary-dark); }
+.btn.primary { background: var(--green); color: white; }
+.btn.primary:hover { background: #0f562f; }
 .btn.secondary { background: #eef4ef; color: #264533; }
 .btn.warn { background: #fff4d4; color: #735700; }
 .btn.danger { background: #d45d4a; color: white; }
@@ -353,12 +310,12 @@ input, select, textarea { width: 100%; padding: 12px; border: 1px solid #dce6de;
 /* Player List */
 .player-list { max-height: 300px; overflow-y: auto; border: 1px solid var(--line); border-radius: 14px; padding: 8px; margin-bottom: 20px; background: white; }
 .player-list button { width: 100%; text-align: left; background: white; border: 1px solid var(--line); padding: 12px 14px; border-radius: 14px; font-weight: 600; margin-bottom: 6px; cursor: pointer; }
-.player-list button.active { border-color: var(--primary); background: #f7fbf8; }
+.player-list button.active { border-color: var(--green); background: #f7fbf8; }
 
 /* Match List */
 .match { display: flex; background: white; border-bottom: 1px solid #edf1ee; margin-bottom: 8px; cursor: pointer; transition: 0.2s; }
 .match:hover { background: #f5f9f6; }
-.match.expanded { background: #f0f7f2; border-left: 4px solid var(--primary); }
+.match.expanded { background: #f0f7f2; border-left: 4px solid var(--green); }
 .match.past { background: var(--match-past); opacity: 0.7; }
 .match.past:hover { background: #d0d0d0; }
 .datebox { width: 80px; padding: 12px 8px; text-align: center; border-right: 1px solid #edf1ee; }
@@ -367,14 +324,10 @@ input, select, textarea { width: 100%; padding: 12px; border: 1px solid #dce6de;
 .info { flex: 1; padding: 12px; }
 .name { font-size: 16px; font-weight: 600; margin: 4px 0; }
 .time { font-size: 14px; color: #44514a; }
-.badges { display: flex; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; }
+.badges { display: flex; gap: 6px; margin-bottom: 6px; }
 .badge { padding: 4px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
-.badge.meisterschaft { background: var(--badge-meisterschaft); color: white; }
-.badge.turnier { background: var(--badge-turnier); color: white; }
-.badge.testspiel { background: var(--badge-testspiel); color: white; }
-.badge.cup { background: var(--badge-cup); color: white; }
 .team1 { background: var(--yellow); color: #214b2f; }
-.team2 { background: var(--primary-light); color: white; }
+.team2 { background: #52bf74; color: white; }
 .status.home { color: #2d9c4b; font-weight: 600; }
 .status.away { color: #d8712b; font-weight: 600; }
 
@@ -445,7 +398,7 @@ input, select, textarea { width: 100%; padding: 12px; border: 1px solid #dce6de;
 /* Current Season Stats */
 .current-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0; }
 .stat-card { background: white; border: 1px solid var(--line); border-radius: 16px; padding: 16px; text-align: center; }
-.stat-card .value { font-size: 32px; font-weight: 800; color: var(--primary); }
+.stat-card .value { font-size: 32px; font-weight: 800; color: var(--green); }
 .stat-card .label { font-size: 12px; color: var(--muted); margin-top: 4px; }
 .stat-card .ranking { display: flex; align-items: center; justify-content: center; margin-top: 8px; font-size: 14px; }
 
@@ -454,7 +407,7 @@ input, select, textarea { width: 100%; padding: 12px; border: 1px solid #dce6de;
 
 /* Photo Upload */
 .photo-upload { display: flex; flex-direction: column; align-items: center; margin-bottom: 15px; }
-.photo-preview { width: 120px; height: 120px; border-radius: 60px; background: #f0f7f2; border: 2px dashed var(--primary); display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 10px; }
+.photo-preview { width: 120px; height: 120px; border-radius: 60px; background: #f0f7f2; border: 2px dashed var(--green); display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 10px; }
 .photo-preview img { width: 100%; height: 100%; object-fit: cover; }
 .photo-preview span { color: var(--muted); font-size: 12px; text-align: center; }
 
@@ -494,12 +447,12 @@ input, select, textarea { width: 100%; padding: 12px; border: 1px solid #dce6de;
 .nav { position: fixed; left: 0; right: 0; bottom: 0; background: white; border-top: 1px solid var(--line); display: flex; justify-content: center; z-index: 25; }
 .nav-inner { width: 100%; max-width: 720px; display: grid; grid-template-columns: repeat(10, 1fr); }
 .nav button { background: none; border: none; padding: 12px 4px; color: #617067; font-size: 20px; cursor: pointer; transition: 0.2s; }
-.nav button.active { color: var(--primary); transform: translateY(-2px); }
+.nav button.active { color: var(--green); transform: translateY(-2px); }
 .nav .trainer-kind-nav, .nav .coach-kind-nav { margin-left: 20px; }
 
 /* Logo Upload in Config - LOGO FIX */
 .logo-upload { display: flex; flex-direction: column; align-items: center; margin: 20px 0; padding: 20px; background: #f5f9f6; border-radius: 12px; }
-.logo-preview { width: 100px; height: 100px; border-radius: 18px; background: white; border: 2px dashed var(--primary); display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 10px; }
+.logo-preview { width: 100px; height: 100px; border-radius: 18px; background: white; border: 2px dashed var(--green); display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 10px; }
 .logo-preview img { 
   width: 100%; 
   height: 100%; 
@@ -507,21 +460,6 @@ input, select, textarea { width: 100%; padding: 12px; border: 1px solid #dce6de;
   padding: 0; 
 }
 .logo-preview span { color: var(--muted); font-size: 12px; text-align: center; }
-
-/* Sponsor Upload in Config */
-.sponsor-upload { display: flex; flex-direction: column; align-items: center; margin: 20px 0; padding: 20px; background: #f5f9f6; border-radius: 12px; }
-.sponsor-preview { width: 80px; height: 60px; border-radius: 8px; background: white; border: 2px dashed var(--primary); display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 10px; }
-.sponsor-preview img { width: 100%; height: 100%; object-fit: contain; }
-.sponsor-preview span { color: var(--muted); font-size: 12px; text-align: center; }
-
-/* Color Picker */
-.color-preview {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  border: 2px solid var(--line);
-  margin-left: 10px;
-}
 
 /* Gegner-Liste für U8 und kleiner */
 .opponents-list { margin: 12px 0; padding: 12px; background: #f5f9f6; border-radius: 12px; }
@@ -535,33 +473,15 @@ input, select, textarea { width: 100%; padding: 12px; border: 1px solid #dce6de;
 .match-report-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
 .match-report-title { font-weight: 600; font-size: 16px; }
 .match-report-actions { display: flex; gap: 8px; }
-.match-report-result { font-size: 18px; font-weight: 800; color: var(--primary); margin: 8px 0; }
+.match-report-result { font-size: 18px; font-weight: 800; color: var(--green); margin: 8px 0; }
 
 /* Milestone Card */
 .milestone-card { background: var(--milestone-bg); border: 2px solid var(--milestone-border); border-radius: 16px; padding: 16px; margin-bottom: 16px; }
 .milestone-year { font-size: 20px; font-weight: 800; color: #e65100; margin-bottom: 12px; border-bottom: 1px solid var(--milestone-border); padding-bottom: 8px; }
 .milestone-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 .milestone-stat { text-align: center; background: white; border-radius: 12px; padding: 12px; }
-.milestone-stat .value { font-size: 28px; font-weight: 800; color: var(--primary); }
+.milestone-stat .value { font-size: 28px; font-weight: 800; color: var(--green); }
 .milestone-stat .label { font-size: 12px; color: var(--muted); }
-
-/* Section Divider */
-.section-divider { 
-  margin: 30px 0 20px; 
-  border-top: 2px solid var(--line); 
-  position: relative; 
-}
-.section-divider span { 
-  position: absolute; 
-  top: -12px; 
-  left: 20px; 
-  background: var(--bg); 
-  padding: 0 10px; 
-  font-weight: 600; 
-  color: var(--primary); 
-  font-size: 14px; 
-}
-.spacer { height: 20px; }
 
 /* Utils */
 .small { font-size: 12px; color: var(--muted); }
@@ -570,18 +490,17 @@ input, select, textarea { width: 100%; padding: 12px; border: 1px solid #dce6de;
 .mt-3 { margin-top: 12px; }
 .mt-4 { margin-top: 16px; }
 .mb-2 { margin-bottom: 8px; }
-.mb-3 { margin-bottom: 16px; }
 </style>
 </head>
 <body>
 <!-- ==================== SPLASH SCREEN ==================== -->
-<div class="splash-screen" id="splash-screen">
+<div class="splash-screen" id="splash-screen" style="display: none;">
   <img id="splash-image" src="icon-192.png" alt="USV">
   <div class="splash-title" id="splash-title">USV St Andrä</div>
   <div class="splash-subtitle" id="splash-subtitle">Team App</div>
 </div>
 
-<div class="app" id="app" style="opacity: 0; transition: opacity 0.3s ease;"></div>
+<div class="app" id="app"></div>
 
 <!-- Toast Container für moderne Alerts -->
 <div id="toast-container" class="toast-container"></div>
@@ -592,149 +511,74 @@ input, select, textarea { width: 100%; padding: 12px; border: 1px solid #dce6de;
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js"></script>
 
 <script>
-// ==================== HILFSFUNKTION FÜR FARBEN ====================
-function updatePrimaryColor(color) {
-  document.documentElement.style.setProperty('--primary', color);
-  
-  // Dunklere Variante berechnen
-  const r = parseInt(color.slice(1,3), 16);
-  const g = parseInt(color.slice(3,5), 16);
-  const b = parseInt(color.slice(5,7), 16);
-  
-  const darkerR = Math.max(0, Math.floor(r * 0.8));
-  const darkerG = Math.max(0, Math.floor(g * 0.8));
-  const darkerB = Math.max(0, Math.floor(b * 0.8));
-  
-  const darkerColor = `#${darkerR.toString(16).padStart(2,'0')}${darkerG.toString(16).padStart(2,'0')}${darkerB.toString(16).padStart(2,'0')}`;
-  
-  document.documentElement.style.setProperty('--primary-dark', darkerColor);
-  
-  // Helle Variante berechnen
-  const lighterR = Math.min(255, Math.floor(r + (255 - r) * 0.3));
-  const lighterG = Math.min(255, Math.floor(g + (255 - g) * 0.3));
-  const lighterB = Math.min(255, Math.floor(b + (255 - b) * 0.3));
-  
-  const lighterColor = `#${lighterR.toString(16).padStart(2,'0')}${lighterG.toString(16).padStart(2,'0')}${lighterB.toString(16).padStart(2,'0')}`;
-  
-  document.documentElement.style.setProperty('--primary-light', lighterColor);
-  
-  // Theme-Color für PWA
-  document.getElementById('theme-color').setAttribute('content', color);
-}
-
-// ==================== HILFSFUNKTION FÜR UMLAUTE ====================
-function generateUsername(name) {
-  return name
-    .toLowerCase()
-    .replace(/ä/g, 'ae')
-    .replace(/ö/g, 'oe')
-    .replace(/ü/g, 'ue')
-    .replace(/ß/g, 'ss')
-    .replace(/[^a-z0-9]/g, '-')
-    .replace(/--+/g, '-')
-    .replace(/^-|-$/g, '');
-}
-
 // ==================== SPLASH SCREEN FUNKTIONEN ====================
-function hideSplash() {
-  const splash = document.getElementById('splash-screen');
-  const app = document.getElementById('app');
-  if (splash) splash.classList.add('hidden');
-  if (app) app.style.opacity = '1';
-}
-
 function showSplashScreen() {
   const splash = document.getElementById('splash-screen');
-  if (!splash || !state.splashConfig || state.splashConfig.duration === 0) {
-    hideSplash();
-    return;
-  }
+  if (!splash || !state.splashConfig || state.splashConfig.duration === 0) return;
   
   // Aktuelles Datum für automatische Auswahl
   const today = new Date();
   const month = today.getMonth() + 1;
   const day = today.getDate();
   
-  // Priorität: 1. Geburtstag, 2. Eigene Events, 3. Feiertage
-  let selectedSplash = null;
-  
   // Prüfen ob jemand Geburtstag hat (höchste Priorität)
+  let birthdayPlayer = null;
   if (state.splashConfig.birthday?.active) {
-    const birthdayPlayer = state.players?.find(p => {
+    birthdayPlayer = state.players?.find(p => {
       if (!p.birthday) return false;
       const bd = new Date(p.birthday);
       return bd.getMonth() + 1 === month && bd.getDate() === day;
     });
-    if (birthdayPlayer) {
-      selectedSplash = {
-        image: state.splashConfig.birthday.image,
-        title: (state.splashConfig.birthday.text || 'Happy Birthday, NAME! 🎂').replace('NAME', birthdayPlayer.name),
-        subtitle: '🎉🎉🎉'
-      };
-    }
   }
   
-  // Eigene Events prüfen (z.B. Meisterschaft)
-  if (!selectedSplash && state.splashConfig.customEvents) {
-    const todayStr = `${today.getFullYear()}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-    const activeEvent = state.splashConfig.customEvents.find(e => 
-      e.active && e.date === todayStr
-    );
-    if (activeEvent) {
-      selectedSplash = {
-        image: activeEvent.image,
-        title: activeEvent.text || 'Besonderer Tag!',
-        subtitle: activeEvent.emoji || '🎉'
-      };
-    }
-  }
+  // Welcher Splash soll gezeigt werden?
+  let splashImage = state.splashConfig.defaultImage || 'icon-192.png';
+  let splashTitle = 'USV St Andrä';
+  let splashSubtitle = 'Team App';
   
-  // Feiertage prüfen
-  if (!selectedSplash) {
-    if (state.splashConfig.christmas?.active && month === 12 && day >= 24 && day <= 26) {
-      selectedSplash = {
-        image: state.splashConfig.christmas.image,
-        title: state.splashConfig.christmas.text || 'Frohe Weihnachten!',
-        subtitle: '🎄🎄🎄'
-      };
-    } else if (state.splashConfig.easter?.active) {
-      const easterStart = new Date(today.getFullYear(), 2, 22);
-      const easterEnd = new Date(today.getFullYear(), 3, 25);
-      if (today >= easterStart && today <= easterEnd) {
-        selectedSplash = {
-          image: state.splashConfig.easter.image,
-          title: state.splashConfig.easter.text || 'Frohe Ostern!',
-          subtitle: '🐰🐰🐰'
-        };
-      }
-    } else if (state.splashConfig.halloween?.active && month === 10 && day === 31) {
-      selectedSplash = {
-        image: state.splashConfig.halloween.image,
-        title: state.splashConfig.halloween.text || 'Happy Halloween!',
-        subtitle: '🎃🎃🎃'
-      };
-    } else if (state.splashConfig.newyear?.active && month === 12 && day === 31) {
-      selectedSplash = {
-        image: state.splashConfig.newyear.image,
-        title: state.splashConfig.newyear.text || 'Guten Rutsch!',
-        subtitle: '🎆🎆🎆'
-      };
+  if (birthdayPlayer && state.splashConfig.birthday?.active) {
+    // GEBURTSTAG!
+    splashImage = state.splashConfig.birthday.image || splashImage;
+    splashTitle = (state.splashConfig.birthday.text || 'Happy Birthday, NAME! 🎂').replace('NAME', birthdayPlayer.name);
+    splashSubtitle = '🎉🎉🎉';
+  } else if (state.splashConfig.christmas?.active && month === 12 && day >= 24 && day <= 26) {
+    // WEIHNACHTEN
+    splashImage = state.splashConfig.christmas.image || splashImage;
+    splashTitle = state.splashConfig.christmas.text || 'Frohe Weihnachten!';
+    splashSubtitle = '🎄🎄🎄';
+  } else if (state.splashConfig.easter?.active) {
+    // OSTERN (vereinfacht - zwischen 22.3 und 25.4)
+    const easterStart = new Date(today.getFullYear(), 2, 22);
+    const easterEnd = new Date(today.getFullYear(), 3, 25);
+    if (today >= easterStart && today <= easterEnd) {
+      splashImage = state.splashConfig.easter.image || splashImage;
+      splashTitle = state.splashConfig.easter.text || 'Frohe Ostern!';
+      splashSubtitle = '🐰🐰🐰';
     }
-  }
-  
-  // Splash aktualisieren
-  if (selectedSplash) {
-    if (selectedSplash.image) document.getElementById('splash-image').src = selectedSplash.image;
-    document.getElementById('splash-title').textContent = selectedSplash.title;
-    document.getElementById('splash-subtitle').textContent = selectedSplash.subtitle;
+  } else if (state.splashConfig.halloween?.active && month === 10 && day === 31) {
+    // HALLOWEEN
+    splashImage = state.splashConfig.halloween.image || splashImage;
+    splashTitle = state.splashConfig.halloween.text || 'Happy Halloween!';
+    splashSubtitle = '🎃🎃🎃';
+  } else if (state.splashConfig.newyear?.active && month === 12 && day === 31) {
+    // SILVESTER
+    splashImage = state.splashConfig.newyear.image || splashImage;
+    splashTitle = state.splashConfig.newyear.text || 'Guten Rutsch!';
+    splashSubtitle = '🎆🎆🎆';
   }
   
   // Splash anzeigen
-  splash.classList.remove('hidden');
+  document.getElementById('splash-image').src = splashImage;
+  document.getElementById('splash-title').textContent = splashTitle;
+  document.getElementById('splash-subtitle').textContent = splashSubtitle;
+  
+  // Dauer setzen
+  splash.style.setProperty('--splash-duration', state.splashConfig.duration + 's');
+  splash.style.display = 'flex';
   
   // Nach der Dauer ausblenden
   setTimeout(() => {
-    hideSplash();
+    splash.style.display = 'none';
   }, state.splashConfig.duration * 1000);
 }
 
@@ -785,10 +629,12 @@ function closeToast(toastId) {
 }
 
 // ==================== HELPER FUNKTIONEN FÜR INSTALLATION ====================
+// Prüfen ob iOS Gerät
 function isIOS() {
   return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 }
 
+// Prüfen ob App bereits installiert ist
 function isAppInstalled() {
   return window.matchMedia('(display-mode: standalone)').matches || 
          window.navigator.standalone === true;
@@ -802,20 +648,6 @@ let _pushInitialized = false;
 
 // 🔍 DEBUG-ZÄHLER für Push
 let pushCounter = 0;
-
-// 🔥 NEU: ZENTRALE De-Duplizierung für ALLE Push-Typen
-const _processedPushIds = new Set();
-
-// Alle 10 Sekunden aufräumen
-setInterval(() => {
-  _processedPushIds.clear();
-  console.log("🧹 Zentrale Push-IDs geleert");
-}, 10000);
-
-// 🔥 NEU: Eindeutige ID für jeden Push generieren
-function generatePushId(userId, title, body) {
-  return `${userId}-${title}-${body}-${Date.now()}`;
-}
 
 // 🔥 NEU: Persistent Alert statt Toast
 function showPersistentAlert(message) {
@@ -861,6 +693,15 @@ function showPersistentAlert(message) {
   if (messageEl) messageEl.textContent = message;
 }
 
+// 🔥 NEU: ID-basierte De-Duplizierung für Vordergrund
+const _processedForegroundIds = new Set();
+
+// Alle 10 Sekunden aufräumen
+setInterval(() => {
+  _processedForegroundIds.clear();
+  console.log("🧹 Vordergrund: processedForegroundIds geleert");
+}, 10000);
+
 // iOS "Zum Home-Bildschirm" Anleitung zeigen
 function showIOSInstructions() {
   showToast(
@@ -894,7 +735,7 @@ async function getAccessToken() {
   }
 }
 
-// 🔥 VERBESSERTE initPushNotifications mit ZENTRALER De-Duplizierung
+// 🔥 VERBESSERTE initPushNotifications mit ID-basierter De-Duplizierung
 async function initPushNotifications() {
   if (_pushInitialized) {
     console.log('⏭️ Push bereits initialisiert, überspringe...');
@@ -928,7 +769,7 @@ async function initPushNotifications() {
         showToast('Push-Token Fehler', 'error');
       }
       
-      // 🔥 Verbesserter onMessage Handler mit ZENTRALER De-Duplizierung
+      // 🔥 Verbesserter onMessage Handler mit PERSISTENTEM ALERT
       messaging.onMessage((payload) => {
         console.log('📨 Push (Vordergrund):', payload);
         
@@ -936,12 +777,12 @@ async function initPushNotifications() {
                           payload.messageId || 
                           `${payload.notification?.title}-${payload.notification?.body}`;
         
-        if (_processedPushIds.has(messageId)) {
-          console.log('⏭️ Doppelten Push verhindert (ID):', messageId);
+        if (_processedForegroundIds.has(messageId)) {
+          console.log('⏭️ Doppelten Toast verhindert (ID):', messageId);
           return;
         }
         
-        _processedPushIds.add(messageId);
+        _processedForegroundIds.add(messageId);
         console.log('✅ Persistent Alert wird angezeigt mit ID:', messageId);
         
         const body = payload.notification?.body || payload.data?.body || 'Neue Nachricht';
@@ -970,37 +811,26 @@ async function savePushToken(token) {
   }
 }
 
-// 🔥 VERBESSERTE sendPushNotification mit ZENTRALER De-Duplizierung
-let lastPushTime = 0;
-let lastPushKey = '';
+// 🔥 GANZ EINFACHE LÖSUNG FÜR DOPPELTE PUSHES
+let lastPush = null;
 
 async function sendPushNotification(userId, title, body) {
   pushCounter++;
+  console.log(`🔥 PUSH AUFRUF #${pushCounter}:`, {userId, title, body});
   
   const now = Date.now();
-  const pushKey = `${userId}-${title}-${body}`;
   
   // Wenn gleicher Push in den letzten 3 Sekunden, ignorieren
-  if (pushKey === lastPushKey && now - lastPushTime < 3000) {
-    console.log("⛔ Doppelten sendPushNotification Aufruf verhindert:", pushKey);
+  if (lastPush && 
+      lastPush.userId === userId && 
+      lastPush.title === title && 
+      lastPush.body === body && 
+      now - lastPush.time < 3000) {
+    console.log("⛔ Doppelten Push verhindert");
     return;
   }
   
-  lastPushKey = pushKey;
-  lastPushTime = now;
-  
-  // Eindeutige ID für diesen Push generieren
-  const pushId = generatePushId(userId, title, body);
-  
-  console.log(`🔥 PUSH AUFRUF #${pushCounter}:`, {userId, title, body, pushId});
-  
-  // Prüfen ob dieser Push bereits in den letzten 10 Sekunden gesendet wurde
-  if (_processedPushIds.has(pushId)) {
-    console.log("⛔ Doppelten Push verhindert (zentral):", pushId);
-    return;
-  }
-  
-  _processedPushIds.add(pushId);
+  lastPush = {userId, title, body, time: now};
   
   console.log("📨 Sende Push:", {userId, title, body});
   
@@ -1037,8 +867,7 @@ async function sendPushNotification(userId, title, body) {
               },
               data: {
                 click_action: 'FLUTTER_NOTIFICATION_CLICK',
-                screen: 'home',
-                message_id: pushId
+                screen: 'home'
               },
               android: {
                 priority: 'high'
@@ -1207,9 +1036,6 @@ window.addEventListener('appinstalled', (evt) => {
 
 // ==================== DATEN ====================
 const seed = {
-  primaryColor: "#156d3b",
-  sponsorLogo: null,
-  
   teams: {
     main: "U8",
     second: "U9",
@@ -1222,7 +1048,7 @@ const seed = {
   pushTokens: {},
   reminderDays: 0,
   
-  // 🔥 NEU: Splash-Screen Konfiguration mit eigenen Events
+  // 🔥 NEU: Splash-Screen Konfiguration
   splashConfig: {
     duration: 2,  // Sekunden (0 = aus)
     defaultImage: 'icon-192.png',
@@ -1250,8 +1076,7 @@ const seed = {
       active: false,
       image: null,
       text: 'Happy Birthday, NAME! 🎂'
-    },
-    customEvents: [] // Hier kommen eigene Events rein
+    }
   },
   
   users: [
@@ -1331,9 +1156,9 @@ const seed = {
   selectedReportMatchId: null
 };
 
-// Eltern-Accounts generieren - JETZT MIT UMLAUT-UNTERSTÜTZUNG!
+// Eltern-Accounts generieren
 seed.players.forEach(p => {
-  const username = generateUsername(p.name);
+  const username = p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
   
   seed.users.push({
     id: "u-" + p.id,
@@ -1361,11 +1186,6 @@ async function save() {
   try {
     await db.collection("app").doc("state").set(state);
     console.log("✅ Gespeichert in Firebase");
-    
-    // Primärfarbe aktualisieren falls geändert
-    if (state.primaryColor) {
-      updatePrimaryColor(state.primaryColor);
-    }
   } catch (error) {
     console.error("❌ Fehler beim Speichern:", error);
     showToast("Fehler beim Speichern: " + error.message, "error");
@@ -1378,31 +1198,16 @@ async function loadState() {
     if (doc.exists) {
       state = doc.data();
       console.log("✅ Daten aus Firebase geladen");
-      
-      // Primärfarbe anwenden
-      if (state.primaryColor) {
-        updatePrimaryColor(state.primaryColor);
-      }
     } else {
       await db.collection("app").doc("state").set(seed);
       state = seed;
       console.log("✅ Erste Firebase-Datenbank angelegt");
-      
-      // Primärfarbe anwenden
-      if (state.primaryColor) {
-        updatePrimaryColor(state.primaryColor);
-      }
     }
     render();
   } catch (error) {
     console.error("❌ Fehler beim Laden:", error);
     showToast("Fehler beim Laden: " + error.message + " - Verwende Seed-Daten", "error");
     state = seed;
-    
-    // Primärfarbe anwenden
-    if (state.primaryColor) {
-      updatePrimaryColor(state.primaryColor);
-    }
     render();
   }
 }
@@ -1412,11 +1217,6 @@ function listenState() {
     if (doc.exists) {
       state = doc.data();
       console.log("🔄 Live-Update von Firebase");
-      
-      // Primärfarbe anwenden
-      if (state.primaryColor) {
-        updatePrimaryColor(state.primaryColor);
-      }
       render();
     }
   }, (error) => {
@@ -2114,7 +1914,7 @@ function addPlayer() {
     photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}
   });
   
-  const username = generateUsername(name);
+  const username = name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
   
   state.users.push({
     id: "u-" + id, username, password: "1234", role: "parent",
@@ -2299,71 +2099,6 @@ function saveClubLogo() {
   }
 }
 
-// ==================== SPONSOR MANAGEMENT ====================
-function handleSponsorUpload(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  
-  if (!file.type.startsWith('image/')) {
-    showToast("❌ Bitte ein Bild auswählen", "error");
-    return;
-  }
-  
-  showToast("🔄 Lade Sponsor-Logo...", "info", 2000);
-  
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    const base64String = e.target.result;
-    
-    // Größe prüfen
-    const sizeInBytes = Math.round((base64String.length * 3) / 4);
-    if (sizeInBytes > 500 * 1024) {
-      showToast("❌ Logo zu groß - bitte manuell verkleinern", "error");
-      return;
-    }
-    
-    document.getElementById('sponsor-logo').value = base64String;
-    document.getElementById('sponsor-preview').innerHTML = `<img src="${base64String}" alt="Sponsor">`;
-    showToast("📷 Sponsor-Logo bereit zum Speichern - Jetzt auf 'Sponsor speichern' klicken!", "success");
-  };
-  reader.readAsDataURL(file);
-}
-
-function saveSponsorLogo() {
-  const sponsorInput = document.getElementById('sponsor-logo');
-  if (sponsorInput && sponsorInput.value) {
-    if (sponsorInput.value.startsWith('data:image')) {
-      state.sponsorLogo = sponsorInput.value;
-      save();
-      showToast("✅ Sponsor-Logo gespeichert!", "success");
-    } else {
-      showToast("❌ Ungültiges Bildformat", "error");
-    }
-  } else {
-    // Sponsor löschen
-    state.sponsorLogo = null;
-    save();
-    showToast("✅ Sponsor-Logo entfernt", "success");
-    document.getElementById('sponsor-preview').innerHTML = '<span>Kein Sponsor</span>';
-  }
-}
-
-function clearSponsorLogo() {
-  document.getElementById('sponsor-logo').value = '';
-  document.getElementById('sponsor-preview').innerHTML = '<span>Kein Sponsor</span>';
-  state.sponsorLogo = null;
-  save();
-  showToast("✅ Sponsor-Logo entfernt", "success");
-}
-
-// ==================== FARB-KONFIGURATION ====================
-function savePrimaryColor(color) {
-  state.primaryColor = color;
-  updatePrimaryColor(color);
-  save();
-  showToast(`✅ Hauptfarbe geändert zu ${color}`, "success");
-}
-
 // ==================== MATCH MANAGEMENT ====================
 function addMatch() {
   const title = document.getElementById("match-title").value.trim();
@@ -2487,7 +2222,7 @@ function addCoach() {
   const name = document.getElementById("coach-name").value.trim();
   if (!name) { showToast("Bitte Namen eingeben!", "warning"); return; }
   
-  const username = generateUsername(name) + "-coach";
+  const username = name.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-coach";
   const id = "c" + Date.now();
   
   state.users.push({
@@ -2803,77 +2538,6 @@ function handleSplashImageUpload(event, eventType) {
   }
 }
 
-// 🔥 NEU: Funktionen für eigene Events
-function addCustomEvent() {
-  if (!state.splashConfig.customEvents) state.splashConfig.customEvents = [];
-  
-  const newEvent = {
-    id: 'event-' + Date.now(),
-    name: 'Mein Event',
-    date: new Date().toISOString().split('T')[0],
-    active: true,
-    image: null,
-    text: 'Besonderer Tag!',
-    emoji: '🎉'
-  };
-  
-  state.splashConfig.customEvents.push(newEvent);
-  save();
-  showToast('✅ Neues Event erstellt', 'success');
-  renderSplashConfig(); // Neu rendern
-}
-
-function deleteCustomEvent(eventId) {
-  if (!state.splashConfig.customEvents) return;
-  state.splashConfig.customEvents = state.splashConfig.customEvents.filter(e => e.id !== eventId);
-  save();
-  showToast('✅ Event gelöscht', 'success');
-  renderSplashConfig();
-}
-
-function updateCustomEvent(eventId, field, value) {
-  const event = state.splashConfig.customEvents?.find(e => e.id === eventId);
-  if (event) {
-    event[field] = value;
-    save();
-  }
-}
-
-function handleCustomEventImageUpload(event, eventId) {
-  const file = event.target.files[0];
-  if (file) {
-    if (file.size > 500 * 1024) {
-      showToast("❌ Bild zu groß (max 500KB)", "error");
-      return;
-    }
-    
-    if (!file.type.startsWith('image/')) {
-      showToast("❌ Bitte ein Bild auswählen", "error");
-      return;
-    }
-    
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      const base64String = e.target.result;
-      const customEvent = state.splashConfig.customEvents?.find(ev => ev.id === eventId);
-      if (customEvent) {
-        customEvent.image = base64String;
-        save();
-        
-        // Vorschau aktualisieren
-        const previewId = `custom-preview-${eventId}`;
-        const preview = document.getElementById(previewId);
-        if (preview) {
-          preview.innerHTML = `<img src="${base64String}" alt="Vorschau" style="width: 60px; height: 60px; border-radius: 12px; object-fit: cover;">`;
-        }
-        
-        showToast('✅ Bild gespeichert', 'success');
-      }
-    };
-    reader.readAsDataURL(file);
-  }
-}
-
 // ==================== VIEW RENDERING ====================
 function renderHeader() {
   const roleLabels = { admin: "Haupttrainer", coach: "Co-Trainer", parent: "Eltern" };
@@ -2885,10 +2549,6 @@ function renderHeader() {
     `<img src="${state.clubLogo}" alt="Vereinslogo">` : 
     '<span>⚽</span>';
   
-  const sponsorHtml = state.sponsorLogo ? 
-    `<img src="${state.sponsorLogo}" alt="Sponsor" class="sponsor-logo">` : 
-    '';
-  
   let notificationBadge = '';
   if (session.role === "admin" && state.attendanceRequests) {
     const pendingRequests = state.attendanceRequests.filter(r => r.status === 'pending').length;
@@ -2899,17 +2559,12 @@ function renderHeader() {
   
   return `
     <div class="header">
-      <div class="header-content">
-        <div class="brand">
-          <div class="logo">${logoHtml}</div>
-          <div>
-            <small>USV St Andrä Wördern</small>
-            <strong>Team App</strong>
-            <div class="role-badge">${roleName} ${notificationBadge}</div>
-          </div>
-        </div>
-        <div class="sponsor-area">
-          ${sponsorHtml}
+      <div class="brand">
+        <div class="logo">${logoHtml}</div>
+        <div>
+          <small>USV St Andrä Wördern</small>
+          <strong>Team App</strong>
+          <div class="role-badge">${roleName} ${notificationBadge}</div>
         </div>
       </div>
       ${session.role !== "parent" ? `
@@ -2919,10 +2574,15 @@ function renderHeader() {
           <button class="pill ${state.currentTeam === 'ALLE' ? 'active' : 'alt'}" onclick="setTeam('ALLE')">ALLE</button>
         </div>
       ` : ''}
-      <div class="footer">
-        <div class="copyright">
-          © Trainer Stephan Köck, Release 2026 Version 1.0
-        </div>
+    </div>
+  `;
+}
+
+function renderFooter() {
+  return `
+    <div class="footer">
+      <div class="copyright">
+        © Trainer Stephan Köck, Release 2026 Version 1.0
       </div>
     </div>
   `;
@@ -3017,7 +2677,7 @@ function renderDashboard() {
     <div class="section">
       ${requestsHtml}
       
-      <div class="card" style="background: linear-gradient(135deg, var(--primary), var(--primary-light)); color: white;">
+      <div class="card" style="background: linear-gradient(135deg, var(--green), var(--green2)); color: white;">
         <h3 style="color: white;">📅 Nächste Spiele</h3>
         ${matches.length > 0 ? matches.map(m => {
           const c = countAttendance(m);
@@ -3055,7 +2715,7 @@ function renderDashboard() {
         ${top3Scorers.map(p => `
           <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--line);">
             <span>${p.name}</span>
-            <span style="font-weight: 600; color: var(--primary);">${p.goals} Tore</span>
+            <span style="font-weight: 600; color: var(--green);">${p.goals} Tore</span>
           </div>
         `).join('')}
         
@@ -3103,7 +2763,7 @@ function renderDashboard() {
           return `
             <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--line);">
               <span>${p.name}</span>
-              <span style="font-weight: 600; color: var(--primary);">${percent}%</span>
+              <span style="font-weight: 600; color: var(--green);">${percent}%</span>
             </div>
           `;
         }).join('')}
@@ -3191,9 +2851,9 @@ function renderStatistics() {
                     return `
                       <tr>
                         <td><strong>${p.name}</strong></td>
-                        <td style="color: var(--primary); font-weight: 600; text-align: center;">${p.goals || 0}</td>
+                        <td style="color: var(--green); font-weight: 600; text-align: center;">${p.goals || 0}</td>
                         <td style="color: var(--blue); font-weight: 600; text-align: center;">${p.assists || 0}</td>
-                        <td style="font-weight: 600; text-align: center; color: ${percent >= 75 ? 'var(--primary)' : percent >= 50 ? '#f3a43b' : 'var(--red)'};">${percent}%</td>
+                        <td style="font-weight: 600; text-align: center; color: ${percent >= 75 ? 'var(--green)' : percent >= 50 ? '#f3a43b' : 'var(--red)'};">${percent}%</td>
                       </tr>
                     `;
                   }).join('')}
@@ -3338,13 +2998,6 @@ function renderCalendar() {
           const showOpponents = isYouthTeam(m.team) && m.opponents && m.opponents.length > 0;
           const isPast = isMatchPast(m);
           
-          let kindClass = '';
-          let kindDisplay = m.kind || '';
-          if (kindDisplay === 'MEISTERSCHAFT') kindClass = 'meisterschaft';
-          else if (kindDisplay === 'TURNIER') kindClass = 'turnier';
-          else if (kindDisplay === 'TESTSPIEL') kindClass = 'testspiel';
-          else if (kindDisplay === 'CUP') kindClass = 'cup';
-          
           let approvalMessage = '';
           if (isParentMode && playerId && state.attendanceRequests) {
             const myRequest = state.attendanceRequests.find(r => 
@@ -3405,7 +3058,6 @@ function renderCalendar() {
               <div class="info">
                 <div class="badges">
                   <span class="badge ${m.team === state.teams.main ? 'team1' : 'team2'}">${m.team}</span>
-                  ${kindClass ? `<span class="badge ${kindClass}">${kindDisplay}</span>` : ''}
                   ${isPast ? '<span class="badge" style="background: #888; color: white;">Abgeschlossen</span>' : ''}
                 </div>
                 <div class="name">${m.title}</div>
@@ -3656,7 +3308,7 @@ function renderMatchReport() {
               <div class="match-report-result">Ergebnis: ${m.result}</div>
               <div style="margin-top: 10px;">
                 ${playersWithGoals.length > 0 ? `
-                  <div style="font-weight: 600; color: var(--primary);">⚽ Torschützen:</div>
+                  <div style="font-weight: 600; color: var(--green);">⚽ Torschützen:</div>
                   ${playersWithGoals.map(([playerId, count]) => {
                     const player = findPlayer(playerId);
                     return `<div style="margin-left: 16px;">${player?.name}: ${count} Tor${count !== 1 ? 'e' : ''}</div>`;
@@ -3924,8 +3576,7 @@ function renderSplashConfig() {
     easter: { active: false, image: null, text: 'Frohe Ostern!' },
     halloween: { active: false, image: null, text: 'Happy Halloween!' },
     newyear: { active: false, image: null, text: 'Guten Rutsch!' },
-    birthday: { active: false, image: null, text: 'Happy Birthday, NAME! 🎂' },
-    customEvents: []
+    birthday: { active: false, image: null, text: 'Happy Birthday, NAME! 🎂' }
   };
   
   function getPreviewHtml(eventType) {
@@ -4085,57 +3736,6 @@ function renderSplashConfig() {
           </label>
         </div>
         
-        <h4 style="margin-top: 30px;">📅 EIGENE EVENTS</h4>
-        <p class="small">Erstelle eigene Splash-Screens für besondere Anlässe (Meisterschaft, Turniere, etc.)</p>
-        
-        <button class="btn primary" style="margin-bottom: 20px;" onclick="addCustomEvent()">
-          ➕ NEUES EVENT
-        </button>
-        
-        ${config.customEvents && config.customEvents.length > 0 ? config.customEvents.map(event => `
-          <div style="background: #f5f9f6; padding: 16px; border-radius: 12px; margin-bottom: 16px; border-left: 4px solid var(--blue);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-              <input type="text" value="${event.name}" style="width: auto; flex: 1; margin-right: 8px;"
-                     onchange="updateCustomEvent('${event.id}', 'name', this.value)">
-              <button class="btn danger small" onclick="deleteCustomEvent('${event.id}')">✗</button>
-            </div>
-            
-            <label style="display: flex; align-items: center; gap: 8px;">
-              <input type="checkbox" ${event.active ? 'checked' : ''} 
-                     onchange="updateCustomEvent('${event.id}', 'active', this.checked)"> Aktiv
-            </label>
-            
-            <div class="grid2" style="margin: 12px 0;">
-              <div>
-                <label>Datum</label>
-                <input type="date" value="${event.date}" onchange="updateCustomEvent('${event.id}', 'date', this.value)">
-              </div>
-              <div>
-                <label>Emoji</label>
-                <input type="text" value="${event.emoji || '🎉'}" onchange="updateCustomEvent('${event.id}', 'emoji', this.value)">
-              </div>
-            </div>
-            
-            <div style="display: flex; gap: 16px; align-items: center; margin: 12px 0;">
-              <div style="flex: 1;">
-                <label>Text</label>
-                <input type="text" value="${event.text || ''}" onchange="updateCustomEvent('${event.id}', 'text', this.value)">
-              </div>
-              <div style="text-align: center;">
-                <div style="margin-bottom: 4px;">Vorschau</div>
-                <div id="custom-preview-${event.id}">
-                  ${event.image ? `<img src="${event.image}" alt="Vorschau" style="width: 60px; height: 60px; border-radius: 12px; object-fit: cover;">` : '<span style="color: var(--muted);">Kein Bild</span>'}
-                </div>
-              </div>
-            </div>
-            
-            <label class="btn secondary" style="cursor: pointer; display: inline-block;">
-              📷 Bild hochladen
-              <input type="file" accept="image/*" style="display:none;" onchange="handleCustomEventImageUpload(event, '${event.id}')">
-            </label>
-          </div>
-        `).join('') : '<p class="small" style="text-align: center;">Noch keine eigenen Events erstellt</p>'}
-        
         <div style="display: flex; gap: 12px; justify-content: center; margin-top: 24px;">
           <button class="btn primary" onclick="setAdminView('config')">Fertig</button>
         </div>
@@ -4163,10 +3763,6 @@ function renderConfig() {
     `<img src="${state.clubLogo}" alt="Vereinslogo">` : 
     '<span>⚽</span>';
   
-  const sponsorHtml = state.sponsorLogo ? 
-    `<img src="${state.sponsorLogo}" alt="Sponsor">` : 
-    '<span>Kein Sponsor</span>';
-  
   return `
     <div class="section">
       <div class="card">
@@ -4181,35 +3777,6 @@ function renderConfig() {
           <input type="hidden" id="club-logo" value="${state.clubLogo || ''}">
           <button class="btn primary" style="width: 100%;" onclick="saveClubLogo()">💾 Logo speichern</button>
           <p class="small" style="margin-top: 10px;">Das Logo wird im Header und auf der Login-Seite angezeigt.</p>
-        </div>
-        
-        <div class="sponsor-upload">
-          <div class="sponsor-preview" id="sponsor-preview">${sponsorHtml}</div>
-          <label class="btn secondary" style="cursor: pointer; margin-bottom: 10px;">
-            📷 Sponsor-Logo auswählen
-            <input type="file" id="sponsor-upload" accept="image/*" style="display:none;" onchange="handleSponsorUpload(event)">
-          </label>
-          <input type="hidden" id="sponsor-logo" value="${state.sponsorLogo || ''}">
-          <div style="display: flex; gap: 8px; width: 100%;">
-            <button class="btn primary" style="flex: 2;" onclick="saveSponsorLogo()">💾 Sponsor speichern</button>
-            <button class="btn danger" style="flex: 1;" onclick="clearSponsorLogo()">🗑️ Entfernen</button>
-          </div>
-          <p class="small" style="margin-top: 10px;">Das Sponsor-Logo erscheint rechts im Header.</p>
-        </div>
-        
-        <h4>🎨 Farbe anpassen</h4>
-        <div style="background: #f5f9f6; padding: 16px; border-radius: 12px; margin-bottom: 24px;">
-          <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 12px;">
-            <div style="flex: 1;">
-              <label>Hauptfarbe</label>
-              <input type="color" id="primary-color" value="${state.primaryColor || '#156d3b'}" style="height: 50px; padding: 5px;">
-            </div>
-            <div class="color-preview" style="background: ${state.primaryColor || '#156d3b'};"></div>
-          </div>
-          <button class="btn primary" style="width: 100%;" onclick="savePrimaryColor(document.getElementById('primary-color').value)">
-            Farbe speichern
-          </button>
-          <p class="small" style="margin-top: 10px;">Ändert die Hauptfarbe der App (Header, Buttons, etc.)</p>
         </div>
         
         <h4>Team-Namen</h4>
@@ -4237,9 +3804,6 @@ function renderConfig() {
           </select>
         </div>
         
-        <div class="section-divider"><span>➕ Spielermanagement</span></div>
-        <div class="spacer"></div>
-        
         <h4>➕ Neuen Spieler anlegen</h4>
         <div class="grid2">
           <div>
@@ -4254,7 +3818,7 @@ function renderConfig() {
             </select>
           </div>
         </div>
-        <p class="small">Login-Name wird automatisch aus Vor- und Nachname generiert (z.B. max-mustermann) - Umlaute werden zu ae, oe, ue</p>
+        <p class="small">Login-Name wird automatisch aus Vor- und Nachname generiert (z.B. max-mustermann)</p>
         <button class="btn primary" style="width: 100%; margin-bottom: 24px;" onclick="addPlayer()">Spieler anlegen</button>
         
         <h4>⚽ Neues Spiel anlegen</h4>
@@ -4284,7 +3848,6 @@ function renderConfig() {
               <option>TESTSPIEL</option>
               <option>MEISTERSCHAFT</option>
               <option>CUP</option>
-              <option>TURNIER</option>
             </select>
           </div>
           <div>
@@ -4304,7 +3867,7 @@ function renderConfig() {
           <p class="small">Maximal 5 Gegner möglich</p>
         </div>
         
-        <button class="btn primary" style="width: 100%; margin-top: 16px; margin-bottom: 40px;" onclick="addMatch()">Spiel anlegen</button>
+        <button class="btn primary" style="width: 100%; margin-top: 16px;" onclick="addMatch()">Spiel anlegen</button>
         
         <h4>📊 Leistungstests</h4>
         ${(state.testConfig || []).map(t => `
@@ -4365,7 +3928,7 @@ function renderConfig() {
         
         <h4 style="margin-top: 30px;">🎨 SPLASH-SCREEN</h4>
         <div style="background: #e8f0fe; padding: 16px; border-radius: 12px; margin-bottom: 24px; border-left: 4px solid var(--blue);">
-          <p style="margin-bottom: 16px;">Konfiguriere hier deine individuellen Splash-Screens für Weihnachten, Ostern, Geburtstage und eigene Events!</p>
+          <p style="margin-bottom: 16px;">Konfiguriere hier deine individuellen Splash-Screens für Weihnachten, Ostern, Geburtstage und mehr!</p>
           <button class="btn primary" style="width: 100%;" onclick="setAdminView('splash')">
             🎨 ZUR SPLASH-ZENTRALE
           </button>
@@ -5202,6 +4765,7 @@ function render() {
     else content += renderDashboard();
   }
   
+  content = renderFooter() + content; 
   content += renderNav();
   
   app.innerHTML = content;
@@ -5215,24 +4779,22 @@ function render() {
 // ==================== START ====================
 async function startApp() {
   console.log("🚀 App wird gestartet...");
-  
-  // Erst Daten laden, dann rendern
   await loadState();
   listenState();
   render();
   
-  // Nach dem Rendern den Splash konfigurieren (aber nicht verstecken!)
+  // Splash-Screen anzeigen (kurze Verzögerung damit der Render fertig ist)
   setTimeout(() => {
     showSplashScreen();
   }, 100);
   
-  // Erinnerungen
+  // 🔥 NEU: Erinnerungen einmal täglich prüfen (um 8:00 Uhr)
   const now = new Date();
   const nextCheck = new Date();
-  nextCheck.setHours(8, 0, 0, 0);
+  nextCheck.setHours(8, 0, 0, 0); // Nächste Prüfung um 8:00
   
   if (now > nextCheck) {
-    nextCheck.setDate(nextCheck.getDate() + 1);
+    nextCheck.setDate(nextCheck.getDate() + 1); // Wenn schon nach 8:00, dann morgen
   }
   
   const timeUntilCheck = nextCheck - now;
@@ -5240,6 +4802,7 @@ async function startApp() {
   
   setTimeout(() => {
     checkAndSendReminders();
+    // Dann alle 24 Stunden wiederholen
     setInterval(checkAndSendReminders, 24 * 60 * 60 * 1000);
   }, timeUntilCheck);
   
@@ -5270,10 +4833,6 @@ window.savePlayerData = savePlayerData;
 window.handlePhotoUpload = handlePhotoUpload;
 window.handleLogoUpload = handleLogoUpload;
 window.saveClubLogo = saveClubLogo;
-window.handleSponsorUpload = handleSponsorUpload;
-window.saveSponsorLogo = saveSponsorLogo;
-window.clearSponsorLogo = clearSponsorLogo;
-window.savePrimaryColor = savePrimaryColor;
 window.addMatch = addMatch;
 window.deleteMatch = deleteMatch;
 window.editMatch = editMatch;
@@ -5302,10 +4861,6 @@ window.saveReminderDays = saveReminderDays;
 window.saveSplashDuration = saveSplashDuration;
 window.saveSplashEvent = saveSplashEvent;
 window.handleSplashImageUpload = handleSplashImageUpload;
-window.addCustomEvent = addCustomEvent;
-window.deleteCustomEvent = deleteCustomEvent;
-window.updateCustomEvent = updateCustomEvent;
-window.handleCustomEventImageUpload = handleCustomEventImageUpload;
 window.installApp = installApp;
 
 // App starten
