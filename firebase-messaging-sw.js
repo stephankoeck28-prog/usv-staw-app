@@ -12,192 +12,59 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// 🔥 VERBESSERTE IndexedDB mit Transaktionssperre
-let db;
+// Einfaches Set für kürzlich verarbeitete Nachrichten
+const recentMessages = new Set();
 
-// Datenbank öffnen
-const request = indexedDB.open('PushDB', 2); // Version 2 für neues Schema
-
-request.onerror = (event) => {
-  console.log('❌ IndexedDB Fehler:', event);
-};
-
-request.onsuccess = (event) => {
-  db = event.target.result;
-  console.log('✅ IndexedDB geöffnet');
-  
-  // Alte Einträge aufräumen (älter als 1 Stunde)
-  const transaction = db.transaction(['processed_pushes'], 'readwrite');
-  const store = transaction.objectStore('processed_pushes');
-  const oneHourAgo = Date.now() - 3600000;
-  const range = IDBKeyRange.upperBound(oneHourAgo);
-  store.delete(range);
-};
-
-request.onupgradeneeded = (event) => {
-  db = event.target.result;
-  
-  // Alten Store löschen falls vorhanden
-  if (db.objectStoreNames.contains('pushes')) {
-    db.deleteObjectStore('pushes');
-  }
-  if (db.objectStoreNames.contains('processed_pushes')) {
-    db.deleteObjectStore('processed_pushes');
-  }
-  
-  // Neuer Store mit besserem Schema
-  const store = db.createObjectStore('processed_pushes', { keyPath: 'id' });
-  store.createIndex('timestamp', 'timestamp', { unique: false });
-  console.log('✅ IndexedDB Store erstellt (Version 2)');
-};
-
-// Prüfen ob eine Push-ID bereits verarbeitet wurde
-async function isPushProcessed(messageId) {
-  return new Promise((resolve) => {
-    if (!db) {
-      resolve(false);
-      return;
-    }
-    
-    try {
-      const transaction = db.transaction(['processed_pushes'], 'readonly');
-      const store = transaction.objectStore('processed_pushes');
-      const request = store.get(messageId);
-      
-      request.onsuccess = () => {
-        resolve(!!request.result);
-      };
-      
-      request.onerror = () => {
-        console.log('❌ Fehler beim Lesen:', request.error);
-        resolve(false);
-      };
-    } catch (e) {
-      console.log('❌ Transaktionsfehler:', e);
-      resolve(false);
-    }
-  });
-}
-
-// Push-ID als verarbeitet markieren (mit Zeitstempel)
-async function markPushAsProcessed(messageId) {
-  return new Promise((resolve) => {
-    if (!db) {
-      resolve();
-      return;
-    }
-    
-    try {
-      const transaction = db.transaction(['processed_pushes'], 'readwrite');
-      const store = transaction.objectStore('processed_pushes');
-      store.put({
-        id: messageId,
-        timestamp: Date.now()
-      });
-      
-      transaction.oncomplete = () => {
-        console.log(`✅ Push-ID ${messageId} gespeichert`);
-        resolve();
-      };
-      
-      transaction.onerror = () => {
-        console.log('❌ Fehler beim Speichern:', transaction.error);
-        resolve();
-      };
-    } catch (e) {
-      console.log('❌ Transaktionsfehler:', e);
-      resolve();
-    }
-  });
-}
-
-// 🔥 GLOBALES SET für laufende Verarbeitung (verhindert parallele Ausführung)
-const processingIds = new Set();
+// Alle 2 Sekunden aufräumen (kurz genug für doppelte Pushes)
+setInterval(() => {
+  recentMessages.clear();
+}, 2000);
 
 messaging.onBackgroundMessage((payload) => {
   console.log("📨 Push erhalten:", payload);
   
+  // Prüfen ob die App offen ist
   self.clients.matchAll({
     type: 'window',
     includeUncontrolled: true
-  }).then(async (clients) => {
-    // Wenn App offen ist, keine Benachrichtigung zeigen
+  }).then((clients) => {
+    // Wenn App offen ist, keine Benachrichtigung
     if (clients.length > 0) {
-      console.log("✅ App ist offen - KEINE System-Benachrichtigung");
+      console.log("✅ App offen - keine Benachrichtigung");
       return;
     }
     
-    console.log("📱 App ist GESCHLOSSEN - prüfe auf Duplikate");
+    // EINFACHE ID: Titel + Body
+    const messageId = `${payload.notification?.title}-${payload.notification?.body}`;
     
-    // Eindeutige ID für den Push erstellen
-    const baseId = payload.data?.message_id || 
-                   payload.messageId || 
-                   `${payload.notification?.title}-${payload.notification?.body}`;
-    const messageId = `push_${baseId}`;
-    
-    // 🔥 Prüfen ob gerade in Verarbeitung
-    if (processingIds.has(messageId)) {
-      console.log("⛔ Push wird bereits verarbeitet:", messageId);
+    // Wenn in den letzten 2 Sekunden schon gesehen, ignorieren
+    if (recentMessages.has(messageId)) {
+      console.log("⛔ Doppelte Nachricht ignoriert");
       return;
     }
     
-    processingIds.add(messageId);
+    // Als gesehen markieren
+    recentMessages.add(messageId);
     
-    try {
-      // 🔥 Prüfen ob diese Push-ID bereits in IndexedDB ist
-      const isProcessed = await isPushProcessed(messageId);
-      
-      if (isProcessed) {
-        console.log("⛔ Doppelter Push blockiert (IndexedDB):", messageId);
-        processingIds.delete(messageId);
-        return;
-      }
-      
-      // Als verarbeitet markieren
-      await markPushAsProcessed(messageId);
-      
-      const title = payload.notification?.title || payload.data?.title || "USV StAW";
-      const body = payload.notification?.body || payload.data?.body || "Neue Nachricht";
+    // Benachrichtigung zeigen
+    const title = payload.notification?.title || "USV StAW";
+    const body = payload.notification?.body || "Neue Nachricht";
 
-      await self.registration.showNotification(title, {
-        body: body,
-        icon: "/icon-192.png",
-        badge: "/icon-192.png",
-        tag: messageId,
-        renotify: false,
-        silent: false,
-        data: {
-          messageId: messageId,
-          timestamp: Date.now(),
-          click_action: 'FLUTTER_NOTIFICATION_CLICK'
-        }
-      });
-      
-      console.log("✅ Benachrichtigung angezeigt:", messageId);
-    } catch (error) {
-      console.log('❌ Fehler bei Push-Verarbeitung:', error);
-    } finally {
-      processingIds.delete(messageId);
-    }
+    self.registration.showNotification(title, {
+      body: body,
+      icon: "/icon-192.png",
+      badge: "/icon-192.png",
+      tag: messageId,  // Verhindert doppelte Benachrichtigungen im System
+      renotify: false,
+      silent: false
+    });
+    
+    console.log("✅ Benachrichtigung gesendet");
   });
 });
 
-// Auf Klick auf Benachrichtigung reagieren
+// Auf Klick reagieren
 self.addEventListener('notificationclick', (event) => {
-  console.log('🔔 Benachrichtigung geklickt:', event.notification);
   event.notification.close();
-  
-  event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true })
-      .then((clientList) => {
-        for (const client of clientList) {
-          if (client.url.includes('/index.html') && 'focus' in client) {
-            return client.focus();
-          }
-        }
-        if (clients.openWindow) {
-          return clients.openWindow('/');
-        }
-      })
-  );
+  event.waitUntil(clients.openWindow('/'));
 });
