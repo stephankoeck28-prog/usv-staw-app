@@ -720,35 +720,6 @@ let _pushInitialized = false;
 // 🔍 DEBUG-ZÄHLER für Push
 let pushCounter = 0;
 
-// 🔥 ZENTRALE ID-basierte De-Duplizierung für ALLE Push-Typen
-const _processedPushIds = new Set();
-
-// Alle 10 Sekunden aufräumen
-setInterval(() => {
-  _processedPushIds.clear();
-  console.log("🧹 Push-IDs geleert");
-}, 10000);
-
-// 🔥 EINHEITLICHE Push-Anzeige (entweder persistent ODER Toast, nie beide)
-function showPushNotification(body, title = 'Neue Nachricht', isForeground = false) {
-  const messageId = title + '-' + body + '-' + Date.now();
-  
-  if (_processedPushIds.has(messageId)) {
-    console.log('⏭️ Doppelten Push verhindert:', messageId);
-    return;
-  }
-  
-  _processedPushIds.add(messageId);
-  
-  if (isForeground) {
-    // Im Vordergrund: Persistenten Alert zeigen
-    showPersistentAlert(body);
-  } else {
-    // Im Hintergrund: Normalen Toast zeigen
-    showToast(body, 'info', 5000);
-  }
-}
-
 // 🔥 NEU: Persistent Alert statt Toast
 function showPersistentAlert(message) {
   let alertBox = document.getElementById('persistent-alert');
@@ -792,6 +763,15 @@ function showPersistentAlert(message) {
   const messageEl = document.getElementById('alert-message');
   if (messageEl) messageEl.textContent = message;
 }
+
+// 🔥 NEU: ID-basierte De-Duplizierung für Vordergrund
+const _processedForegroundIds = new Set();
+
+// Alle 10 Sekunden aufräumen
+setInterval(() => {
+  _processedForegroundIds.clear();
+  console.log("🧹 Vordergrund: processedForegroundIds geleert");
+}, 10000);
 
 // iOS "Zum Home-Bildschirm" Anleitung zeigen
 function showIOSInstructions() {
@@ -860,15 +840,24 @@ async function initPushNotifications() {
         showToast('Push-Token Fehler', 'error');
       }
       
-      // 🔥 Verbesserter onMessage Handler - NUR EINE ANZEIGE
+      // 🔥 Verbesserter onMessage Handler mit PERSISTENTEM ALERT
       messaging.onMessage((payload) => {
         console.log('📨 Push (Vordergrund):', payload);
         
-        const title = payload.notification?.title || 'Neue Nachricht';
-        const body = payload.notification?.body || payload.data?.body || 'Neue Nachricht';
+        const messageId = payload.data?.message_id || 
+                          payload.messageId || 
+                          `${payload.notification?.title}-${payload.notification?.body}`;
         
-        // Nur den persistenten Alert zeigen (keinen zusätzlichen Toast!)
-        showPushNotification(body, title, true);
+        if (_processedForegroundIds.has(messageId)) {
+          console.log('⏭️ Doppelten Toast verhindert (ID):', messageId);
+          return;
+        }
+        
+        _processedForegroundIds.add(messageId);
+        console.log('✅ Persistent Alert wird angezeigt mit ID:', messageId);
+        
+        const body = payload.notification?.body || payload.data?.body || 'Neue Nachricht';
+        showPersistentAlert(body);
       });
     }
   } catch (error) {
@@ -901,15 +890,18 @@ async function sendPushNotification(userId, title, body) {
   console.log(`🔥 PUSH AUFRUF #${pushCounter}:`, {userId, title, body});
   
   const now = Date.now();
-  const messageId = userId + '-' + title + '-' + body;
   
   // Wenn gleicher Push in den letzten 3 Sekunden, ignorieren
-  if (lastPush && lastPush.id === messageId && now - lastPush.time < 3000) {
+  if (lastPush && 
+      lastPush.userId === userId && 
+      lastPush.title === title && 
+      lastPush.body === body && 
+      now - lastPush.time < 3000) {
     console.log("⛔ Doppelten Push verhindert");
     return;
   }
   
-  lastPush = {id: messageId, time: now};
+  lastPush = {userId, title, body, time: now};
   
   console.log("📨 Sende Push:", {userId, title, body});
   
@@ -946,8 +938,7 @@ async function sendPushNotification(userId, title, body) {
               },
               data: {
                 click_action: 'FLUTTER_NOTIFICATION_CLICK',
-                screen: 'home',
-                message_id: messageId // Wichtig für De-Duplizierung!
+                screen: 'home'
               },
               android: {
                 priority: 'high'
