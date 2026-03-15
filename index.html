@@ -10,14 +10,17 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <!-- KEINE splash Bilder! -->
-<meta name="theme-color" content="#156d3b">
+<meta name="theme-color" id="theme-color" content="#156d3b">
 <!-- iOS Meta Tags für besseres Icon-Handling -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="apple-touch-icon" href="icon-192.png">
 <style>
 :root {
-  --green: #156d3b;
+  --primary: #156d3b;
+  --primary-dark: #0f562f;
+  --primary-light: #1f7f47;
+  --green: var(--primary);
   --green2: #2ea45d;
   --bg: #eef6f0;
   --card: #fff;
@@ -57,6 +60,10 @@
   --toast-error: #d45d4a;
   --toast-info: #5e8fe8;
   --toast-warning: #f3a43b;
+  --badge-meisterschaft: #3b82f6;
+  --badge-turnier: #8b5cf6;
+  --badge-testspiel: #14b8a6;
+  --badge-cup: #f97316;
 }
 
 * { 
@@ -83,7 +90,7 @@ html, body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, var(--green), #0f562f);
+  background: #003305;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -217,8 +224,27 @@ html, body {
 }
 
 /* Header - LOGO FIX */
-.header { background: linear-gradient(180deg, var(--green), #1f7f47); color: white; padding: 16px; border-bottom-left-radius: 24px; border-bottom-right-radius: 24px; position: sticky; top: 0; z-index: 20; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-.brand { display: flex; align-items: center; gap: 14px; }
+.header { 
+  background: linear-gradient(180deg, var(--primary), var(--primary-dark)); 
+  color: white; 
+  padding: 16px; 
+  border-bottom-left-radius: 24px; 
+  border-bottom-right-radius: 24px; 
+  position: sticky; 
+  top: 0; 
+  z-index: 20; 
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
+}
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.brand { 
+  display: flex; 
+  align-items: center; 
+  gap: 14px; 
+}
 .logo { 
   width: 60px; 
   height: 60px; 
@@ -235,20 +261,36 @@ html, body {
   object-fit: contain; 
   padding: 0; 
 }
-.logo span { font-size: 24px; color: var(--green); font-weight: bold; }
+.logo span { font-size: 24px; color: var(--primary); font-weight: bold; }
 .brand small { display: block; opacity: 0.9; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; }
 .brand strong { display: block; font-size: 18px; }
 .role-badge { background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 20px; font-size: 11px; margin-top: 4px; display: inline-block; }
 
-/* Footer */
-.footer { background: linear-gradient(180deg, #1f7f47, var(--green)); color: white; padding: 12px 16px; border-top-left-radius: 24px; border-top-right-radius: 24px; text-align: center; font-size: 12px; width: 100%; margin-top: 20px; }
-.footer .copyright { opacity: 0.9; letter-spacing: 0.5px; }
+/* Sponsor Bereich */
+.sponsor-area {
+  width: 80px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+}
+.sponsor-logo {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+/* Footer - jetzt im Header! */
+.footer { background: transparent; color: rgba(255,255,255,0.5); padding: 4px 0 0; text-align: left; font-size: 9px; width: 100%; margin-top: 8px; border-top: 1px solid rgba(255,255,255,0.1); }
+.footer .copyright { opacity: 0.7; letter-spacing: 0.3px; }
 
 /* Tabs */
 .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
 .pill { border: none; border-radius: 20px; padding: 8px 16px; font-weight: 600; font-size: 14px; cursor: pointer; background: rgba(255,255,255,0.2); color: white; }
 .pill.active { background: var(--yellow); color: #21482d; }
-.pill.alt { background: #56c477; color: white; }
+.pill.alt { background: var(--primary-light); color: white; }
 
 /* Cards */
 .section { padding: 16px 16px 80px; }
@@ -262,7 +304,7 @@ html, body {
   gap: 8px;
   background: none;
   border: none;
-  color: var(--green);
+  color: var(--primary);
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
@@ -295,8 +337,8 @@ input, select, textarea { width: 100%; padding: 12px; border: 1px solid #dce6de;
 
 /* Buttons */
 .btn { border: none; border-radius: 12px; padding: 12px 16px; font-weight: 600; cursor: pointer; transition: 0.2s; }
-.btn.primary { background: var(--green); color: white; }
-.btn.primary:hover { background: #0f562f; }
+.btn.primary { background: var(--primary); color: white; }
+.btn.primary:hover { background: var(--primary-dark); }
 .btn.secondary { background: #eef4ef; color: #264533; }
 .btn.warn { background: #fff4d4; color: #735700; }
 .btn.danger { background: #d45d4a; color: white; }
@@ -307,16 +349,18 @@ input, select, textarea { width: 100%; padding: 12px; border: 1px solid #dce6de;
 .btn.approve { background: var(--approval-green); color: white; }
 .btn.reject { background: var(--approval-red); color: white; }
 .btn.request { background: var(--notification-border); color: #856404; }
+.btn.reset { background: #6c757d; color: white; }
+.btn.reset:hover { background: #5a6268; }
 
 /* Player List */
 .player-list { max-height: 300px; overflow-y: auto; border: 1px solid var(--line); border-radius: 14px; padding: 8px; margin-bottom: 20px; background: white; }
 .player-list button { width: 100%; text-align: left; background: white; border: 1px solid var(--line); padding: 12px 14px; border-radius: 14px; font-weight: 600; margin-bottom: 6px; cursor: pointer; }
-.player-list button.active { border-color: var(--green); background: #f7fbf8; }
+.player-list button.active { border-color: var(--primary); background: #f7fbf8; }
 
 /* Match List */
 .match { display: flex; background: white; border-bottom: 1px solid #edf1ee; margin-bottom: 8px; cursor: pointer; transition: 0.2s; }
 .match:hover { background: #f5f9f6; }
-.match.expanded { background: #f0f7f2; border-left: 4px solid var(--green); }
+.match.expanded { background: #f0f7f2; border-left: 4px solid var(--primary); }
 .match.past { background: var(--match-past); opacity: 0.7; }
 .match.past:hover { background: #d0d0d0; }
 .datebox { width: 80px; padding: 12px 8px; text-align: center; border-right: 1px solid #edf1ee; }
@@ -325,10 +369,14 @@ input, select, textarea { width: 100%; padding: 12px; border: 1px solid #dce6de;
 .info { flex: 1; padding: 12px; }
 .name { font-size: 16px; font-weight: 600; margin: 4px 0; }
 .time { font-size: 14px; color: #44514a; }
-.badges { display: flex; gap: 6px; margin-bottom: 6px; }
+.badges { display: flex; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; }
 .badge { padding: 4px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+.badge.meisterschaft { background: var(--badge-meisterschaft); color: white; }
+.badge.turnier { background: var(--badge-turnier); color: white; }
+.badge.testspiel { background: var(--badge-testspiel); color: white; }
+.badge.cup { background: var(--badge-cup); color: white; }
 .team1 { background: var(--yellow); color: #214b2f; }
-.team2 { background: #52bf74; color: white; }
+.team2 { background: var(--primary-light); color: white; }
 .status.home { color: #2d9c4b; font-weight: 600; }
 .status.away { color: #d8712b; font-weight: 600; }
 
@@ -399,7 +447,7 @@ input, select, textarea { width: 100%; padding: 12px; border: 1px solid #dce6de;
 /* Current Season Stats */
 .current-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0; }
 .stat-card { background: white; border: 1px solid var(--line); border-radius: 16px; padding: 16px; text-align: center; }
-.stat-card .value { font-size: 32px; font-weight: 800; color: var(--green); }
+.stat-card .value { font-size: 32px; font-weight: 800; color: var(--primary); }
 .stat-card .label { font-size: 12px; color: var(--muted); margin-top: 4px; }
 .stat-card .ranking { display: flex; align-items: center; justify-content: center; margin-top: 8px; font-size: 14px; }
 
@@ -408,7 +456,7 @@ input, select, textarea { width: 100%; padding: 12px; border: 1px solid #dce6de;
 
 /* Photo Upload */
 .photo-upload { display: flex; flex-direction: column; align-items: center; margin-bottom: 15px; }
-.photo-preview { width: 120px; height: 120px; border-radius: 60px; background: #f0f7f2; border: 2px dashed var(--green); display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 10px; }
+.photo-preview { width: 120px; height: 120px; border-radius: 60px; background: #f0f7f2; border: 2px dashed var(--primary); display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 10px; }
 .photo-preview img { width: 100%; height: 100%; object-fit: cover; }
 .photo-preview span { color: var(--muted); font-size: 12px; text-align: center; }
 
@@ -448,12 +496,12 @@ input, select, textarea { width: 100%; padding: 12px; border: 1px solid #dce6de;
 .nav { position: fixed; left: 0; right: 0; bottom: 0; background: white; border-top: 1px solid var(--line); display: flex; justify-content: center; z-index: 25; }
 .nav-inner { width: 100%; max-width: 720px; display: grid; grid-template-columns: repeat(10, 1fr); }
 .nav button { background: none; border: none; padding: 12px 4px; color: #617067; font-size: 20px; cursor: pointer; transition: 0.2s; }
-.nav button.active { color: var(--green); transform: translateY(-2px); }
+.nav button.active { color: var(--primary); transform: translateY(-2px); }
 .nav .trainer-kind-nav, .nav .coach-kind-nav { margin-left: 20px; }
 
 /* Logo Upload in Config - LOGO FIX */
 .logo-upload { display: flex; flex-direction: column; align-items: center; margin: 20px 0; padding: 20px; background: #f5f9f6; border-radius: 12px; }
-.logo-preview { width: 100px; height: 100px; border-radius: 18px; background: white; border: 2px dashed var(--green); display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 10px; }
+.logo-preview { width: 100px; height: 100px; border-radius: 18px; background: white; border: 2px dashed var(--primary); display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 10px; }
 .logo-preview img { 
   width: 100%; 
   height: 100%; 
@@ -461,6 +509,21 @@ input, select, textarea { width: 100%; padding: 12px; border: 1px solid #dce6de;
   padding: 0; 
 }
 .logo-preview span { color: var(--muted); font-size: 12px; text-align: center; }
+
+/* Sponsor Upload in Config */
+.sponsor-upload { display: flex; flex-direction: column; align-items: center; margin: 20px 0; padding: 20px; background: #f5f9f6; border-radius: 12px; }
+.sponsor-preview { width: 80px; height: 60px; border-radius: 8px; background: white; border: 2px dashed var(--primary); display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 10px; }
+.sponsor-preview img { width: 100%; height: 100%; object-fit: contain; }
+.sponsor-preview span { color: var(--muted); font-size: 12px; text-align: center; }
+
+/* Color Picker */
+.color-preview {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  border: 2px solid var(--line);
+  margin-left: 10px;
+}
 
 /* Gegner-Liste für U8 und kleiner */
 .opponents-list { margin: 12px 0; padding: 12px; background: #f5f9f6; border-radius: 12px; }
@@ -474,15 +537,33 @@ input, select, textarea { width: 100%; padding: 12px; border: 1px solid #dce6de;
 .match-report-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
 .match-report-title { font-weight: 600; font-size: 16px; }
 .match-report-actions { display: flex; gap: 8px; }
-.match-report-result { font-size: 18px; font-weight: 800; color: var(--green); margin: 8px 0; }
+.match-report-result { font-size: 18px; font-weight: 800; color: var(--primary); margin: 8px 0; }
 
 /* Milestone Card */
 .milestone-card { background: var(--milestone-bg); border: 2px solid var(--milestone-border); border-radius: 16px; padding: 16px; margin-bottom: 16px; }
 .milestone-year { font-size: 20px; font-weight: 800; color: #e65100; margin-bottom: 12px; border-bottom: 1px solid var(--milestone-border); padding-bottom: 8px; }
 .milestone-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 .milestone-stat { text-align: center; background: white; border-radius: 12px; padding: 12px; }
-.milestone-stat .value { font-size: 28px; font-weight: 800; color: var(--green); }
+.milestone-stat .value { font-size: 28px; font-weight: 800; color: var(--primary); }
 .milestone-stat .label { font-size: 12px; color: var(--muted); }
+
+/* Section Divider */
+.section-divider { 
+  margin: 30px 0 20px; 
+  border-top: 2px solid var(--line); 
+  position: relative; 
+}
+.section-divider span { 
+  position: absolute; 
+  top: -12px; 
+  left: 20px; 
+  background: var(--bg); 
+  padding: 0 10px; 
+  font-weight: 600; 
+  color: var(--primary); 
+  font-size: 14px; 
+}
+.spacer { height: 20px; }
 
 /* Utils */
 .small { font-size: 12px; color: var(--muted); }
@@ -491,11 +572,11 @@ input, select, textarea { width: 100%; padding: 12px; border: 1px solid #dce6de;
 .mt-3 { margin-top: 12px; }
 .mt-4 { margin-top: 16px; }
 .mb-2 { margin-bottom: 8px; }
+.mb-3 { margin-bottom: 16px; }
 </style>
 </head>
 <body>
 <!-- ==================== SPLASH SCREEN ==================== -->
-<!-- Direkt sichtbar, bevor JavaScript lädt! -->
 <div class="splash-screen" id="splash-screen">
   <img id="splash-image" src="icon-192.png" alt="USV">
   <div class="splash-title" id="splash-title">USV St Andrä</div>
@@ -513,6 +594,56 @@ input, select, textarea { width: 100%; padding: 12px; border: 1px solid #dce6de;
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js"></script>
 
 <script>
+// ==================== HILFSFUNKTION FÜR FARBEN ====================
+const DEFAULT_PRIMARY_COLOR = "#156d3b";
+
+function updatePrimaryColor(color) {
+  document.documentElement.style.setProperty('--primary', color);
+  
+  // Dunklere Variante berechnen
+  const r = parseInt(color.slice(1,3), 16);
+  const g = parseInt(color.slice(3,5), 16);
+  const b = parseInt(color.slice(5,7), 16);
+  
+  const darkerR = Math.max(0, Math.floor(r * 0.8));
+  const darkerG = Math.max(0, Math.floor(g * 0.8));
+  const darkerB = Math.max(0, Math.floor(b * 0.8));
+  
+  const darkerColor = `#${darkerR.toString(16).padStart(2,'0')}${darkerG.toString(16).padStart(2,'0')}${darkerB.toString(16).padStart(2,'0')}`;
+  
+  document.documentElement.style.setProperty('--primary-dark', darkerColor);
+  
+  // Helle Variante berechnen
+  const lighterR = Math.min(255, Math.floor(r + (255 - r) * 0.3));
+  const lighterG = Math.min(255, Math.floor(g + (255 - g) * 0.3));
+  const lighterB = Math.min(255, Math.floor(b + (255 - b) * 0.3));
+  
+  const lighterColor = `#${lighterR.toString(16).padStart(2,'0')}${lighterG.toString(16).padStart(2,'0')}${lighterB.toString(16).padStart(2,'0')}`;
+  
+  document.documentElement.style.setProperty('--primary-light', lighterColor);
+  
+  // Theme-Color für PWA
+  document.getElementById('theme-color').setAttribute('content', color);
+}
+
+function resetPrimaryColor() {
+  savePrimaryColor(DEFAULT_PRIMARY_COLOR);
+  document.getElementById('primary-color').value = DEFAULT_PRIMARY_COLOR;
+}
+
+// ==================== HILFSFUNKTION FÜR UMLAUTE ====================
+function generateUsername(name) {
+  return name
+    .toLowerCase()
+    .replace(/ä/g, 'ae')
+    .replace(/ö/g, 'oe')
+    .replace(/ü/g, 'ue')
+    .replace(/ß/g, 'ss')
+    .replace(/[^a-z0-9]/g, '-')
+    .replace(/--+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
 // ==================== SPLASH SCREEN FUNKTIONEN ====================
 function hideSplash() {
   const splash = document.getElementById('splash-screen');
@@ -663,12 +794,10 @@ function closeToast(toastId) {
 }
 
 // ==================== HELPER FUNKTIONEN FÜR INSTALLATION ====================
-// Prüfen ob iOS Gerät
 function isIOS() {
   return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 }
 
-// Prüfen ob App bereits installiert ist
 function isAppInstalled() {
   return window.matchMedia('(display-mode: standalone)').matches || 
          window.navigator.standalone === true;
@@ -682,6 +811,20 @@ let _pushInitialized = false;
 
 // 🔍 DEBUG-ZÄHLER für Push
 let pushCounter = 0;
+
+// 🔥 NEU: ZENTRALE De-Duplizierung für ALLE Push-Typen
+const _processedPushIds = new Set();
+
+// Alle 10 Sekunden aufräumen
+setInterval(() => {
+  _processedPushIds.clear();
+  console.log("🧹 Zentrale Push-IDs geleert");
+}, 10000);
+
+// 🔥 NEU: Eindeutige ID für jeden Push generieren
+function generatePushId(userId, title, body) {
+  return `${userId}-${title}-${body}-${Date.now()}`;
+}
 
 // 🔥 NEU: Persistent Alert statt Toast
 function showPersistentAlert(message) {
@@ -727,15 +870,6 @@ function showPersistentAlert(message) {
   if (messageEl) messageEl.textContent = message;
 }
 
-// 🔥 NEU: ID-basierte De-Duplizierung für Vordergrund
-const _processedForegroundIds = new Set();
-
-// Alle 10 Sekunden aufräumen
-setInterval(() => {
-  _processedForegroundIds.clear();
-  console.log("🧹 Vordergrund: processedForegroundIds geleert");
-}, 10000);
-
 // iOS "Zum Home-Bildschirm" Anleitung zeigen
 function showIOSInstructions() {
   showToast(
@@ -769,7 +903,7 @@ async function getAccessToken() {
   }
 }
 
-// 🔥 VERBESSERTE initPushNotifications mit ID-basierter De-Duplizierung
+// 🔥 VERBESSERTE initPushNotifications mit ZENTRALER De-Duplizierung
 async function initPushNotifications() {
   if (_pushInitialized) {
     console.log('⏭️ Push bereits initialisiert, überspringe...');
@@ -803,7 +937,7 @@ async function initPushNotifications() {
         showToast('Push-Token Fehler', 'error');
       }
       
-      // 🔥 Verbesserter onMessage Handler mit PERSISTENTEM ALERT
+      // 🔥 Verbesserter onMessage Handler mit ZENTRALER De-Duplizierung
       messaging.onMessage((payload) => {
         console.log('📨 Push (Vordergrund):', payload);
         
@@ -811,12 +945,12 @@ async function initPushNotifications() {
                           payload.messageId || 
                           `${payload.notification?.title}-${payload.notification?.body}`;
         
-        if (_processedForegroundIds.has(messageId)) {
-          console.log('⏭️ Doppelten Toast verhindert (ID):', messageId);
+        if (_processedPushIds.has(messageId)) {
+          console.log('⏭️ Doppelten Push verhindert (ID):', messageId);
           return;
         }
         
-        _processedForegroundIds.add(messageId);
+        _processedPushIds.add(messageId);
         console.log('✅ Persistent Alert wird angezeigt mit ID:', messageId);
         
         const body = payload.notification?.body || payload.data?.body || 'Neue Nachricht';
@@ -845,26 +979,37 @@ async function savePushToken(token) {
   }
 }
 
-// 🔥 GANZ EINFACHE LÖSUNG FÜR DOPPELTE PUSHES
-let lastPush = null;
+// 🔥 VERBESSERTE sendPushNotification mit ZENTRALER De-Duplizierung
+let lastPushTime = 0;
+let lastPushKey = '';
 
 async function sendPushNotification(userId, title, body) {
   pushCounter++;
-  console.log(`🔥 PUSH AUFRUF #${pushCounter}:`, {userId, title, body});
   
   const now = Date.now();
+  const pushKey = `${userId}-${title}-${body}`;
   
   // Wenn gleicher Push in den letzten 3 Sekunden, ignorieren
-  if (lastPush && 
-      lastPush.userId === userId && 
-      lastPush.title === title && 
-      lastPush.body === body && 
-      now - lastPush.time < 3000) {
-    console.log("⛔ Doppelten Push verhindert");
+  if (pushKey === lastPushKey && now - lastPushTime < 3000) {
+    console.log("⛔ Doppelten sendPushNotification Aufruf verhindert:", pushKey);
     return;
   }
   
-  lastPush = {userId, title, body, time: now};
+  lastPushKey = pushKey;
+  lastPushTime = now;
+  
+  // Eindeutige ID für diesen Push generieren
+  const pushId = generatePushId(userId, title, body);
+  
+  console.log(`🔥 PUSH AUFRUF #${pushCounter}:`, {userId, title, body, pushId});
+  
+  // Prüfen ob dieser Push bereits in den letzten 10 Sekunden gesendet wurde
+  if (_processedPushIds.has(pushId)) {
+    console.log("⛔ Doppelten Push verhindert (zentral):", pushId);
+    return;
+  }
+  
+  _processedPushIds.add(pushId);
   
   console.log("📨 Sende Push:", {userId, title, body});
   
@@ -901,7 +1046,8 @@ async function sendPushNotification(userId, title, body) {
               },
               data: {
                 click_action: 'FLUTTER_NOTIFICATION_CLICK',
-                screen: 'home'
+                screen: 'home',
+                message_id: pushId
               },
               android: {
                 priority: 'high'
@@ -933,7 +1079,8 @@ async function sendPushNotification(userId, title, body) {
       }
     }
     
-    showToast(`✅ Push gesendet`, 'success', 2000);
+    // Kein Toast hier - nur der Push selbst!
+    
   } catch (error) {
     console.log('⚠️ Push konnte nicht gesendet werden:', error);
     showToast('Fehler beim Push-Versand', 'error');
@@ -1070,6 +1217,9 @@ window.addEventListener('appinstalled', (evt) => {
 
 // ==================== DATEN ====================
 const seed = {
+  primaryColor: "#156d3b",
+  sponsorLogo: null,
+  
   teams: {
     main: "U8",
     second: "U9",
@@ -1191,9 +1341,9 @@ const seed = {
   selectedReportMatchId: null
 };
 
-// Eltern-Accounts generieren
+// Eltern-Accounts generieren - JETZT MIT UMLAUT-UNTERSTÜTZUNG!
 seed.players.forEach(p => {
-  const username = p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  const username = generateUsername(p.name);
   
   seed.users.push({
     id: "u-" + p.id,
@@ -1221,6 +1371,11 @@ async function save() {
   try {
     await db.collection("app").doc("state").set(state);
     console.log("✅ Gespeichert in Firebase");
+    
+    // Primärfarbe aktualisieren falls geändert
+    if (state.primaryColor) {
+      updatePrimaryColor(state.primaryColor);
+    }
   } catch (error) {
     console.error("❌ Fehler beim Speichern:", error);
     showToast("Fehler beim Speichern: " + error.message, "error");
@@ -1233,16 +1388,31 @@ async function loadState() {
     if (doc.exists) {
       state = doc.data();
       console.log("✅ Daten aus Firebase geladen");
+      
+      // Primärfarbe anwenden
+      if (state.primaryColor) {
+        updatePrimaryColor(state.primaryColor);
+      }
     } else {
       await db.collection("app").doc("state").set(seed);
       state = seed;
       console.log("✅ Erste Firebase-Datenbank angelegt");
+      
+      // Primärfarbe anwenden
+      if (state.primaryColor) {
+        updatePrimaryColor(state.primaryColor);
+      }
     }
     render();
   } catch (error) {
     console.error("❌ Fehler beim Laden:", error);
     showToast("Fehler beim Laden: " + error.message + " - Verwende Seed-Daten", "error");
     state = seed;
+    
+    // Primärfarbe anwenden
+    if (state.primaryColor) {
+      updatePrimaryColor(state.primaryColor);
+    }
     render();
   }
 }
@@ -1252,6 +1422,11 @@ function listenState() {
     if (doc.exists) {
       state = doc.data();
       console.log("🔄 Live-Update von Firebase");
+      
+      // Primärfarbe anwenden
+      if (state.primaryColor) {
+        updatePrimaryColor(state.primaryColor);
+      }
       render();
     }
   }, (error) => {
@@ -1949,7 +2124,7 @@ function addPlayer() {
     photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}
   });
   
-  const username = name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  const username = generateUsername(name);
   
   state.users.push({
     id: "u-" + id, username, password: "1234", role: "parent",
@@ -2134,6 +2309,71 @@ function saveClubLogo() {
   }
 }
 
+// ==================== SPONSOR MANAGEMENT ====================
+function handleSponsorUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  if (!file.type.startsWith('image/')) {
+    showToast("❌ Bitte ein Bild auswählen", "error");
+    return;
+  }
+  
+  showToast("🔄 Lade Sponsor-Logo...", "info", 2000);
+  
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const base64String = e.target.result;
+    
+    // Größe prüfen
+    const sizeInBytes = Math.round((base64String.length * 3) / 4);
+    if (sizeInBytes > 500 * 1024) {
+      showToast("❌ Logo zu groß - bitte manuell verkleinern", "error");
+      return;
+    }
+    
+    document.getElementById('sponsor-logo').value = base64String;
+    document.getElementById('sponsor-preview').innerHTML = `<img src="${base64String}" alt="Sponsor">`;
+    showToast("📷 Sponsor-Logo bereit zum Speichern - Jetzt auf 'Sponsor speichern' klicken!", "success");
+  };
+  reader.readAsDataURL(file);
+}
+
+function saveSponsorLogo() {
+  const sponsorInput = document.getElementById('sponsor-logo');
+  if (sponsorInput && sponsorInput.value) {
+    if (sponsorInput.value.startsWith('data:image')) {
+      state.sponsorLogo = sponsorInput.value;
+      save();
+      showToast("✅ Sponsor-Logo gespeichert!", "success");
+    } else {
+      showToast("❌ Ungültiges Bildformat", "error");
+    }
+  } else {
+    // Sponsor löschen
+    state.sponsorLogo = null;
+    save();
+    showToast("✅ Sponsor-Logo entfernt", "success");
+    document.getElementById('sponsor-preview').innerHTML = '<span>Kein Sponsor</span>';
+  }
+}
+
+function clearSponsorLogo() {
+  document.getElementById('sponsor-logo').value = '';
+  document.getElementById('sponsor-preview').innerHTML = '<span>Kein Sponsor</span>';
+  state.sponsorLogo = null;
+  save();
+  showToast("✅ Sponsor-Logo entfernt", "success");
+}
+
+// ==================== FARB-KONFIGURATION ====================
+function savePrimaryColor(color) {
+  state.primaryColor = color;
+  updatePrimaryColor(color);
+  save();
+  showToast(`✅ Hauptfarbe geändert zu ${color}`, "success");
+}
+
 // ==================== MATCH MANAGEMENT ====================
 function addMatch() {
   const title = document.getElementById("match-title").value.trim();
@@ -2257,7 +2497,7 @@ function addCoach() {
   const name = document.getElementById("coach-name").value.trim();
   if (!name) { showToast("Bitte Namen eingeben!", "warning"); return; }
   
-  const username = name.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-coach";
+  const username = generateUsername(name) + "-coach";
   const id = "c" + Date.now();
   
   state.users.push({
@@ -2655,6 +2895,10 @@ function renderHeader() {
     `<img src="${state.clubLogo}" alt="Vereinslogo">` : 
     '<span>⚽</span>';
   
+  const sponsorHtml = state.sponsorLogo ? 
+    `<img src="${state.sponsorLogo}" alt="Sponsor" class="sponsor-logo">` : 
+    '';
+  
   let notificationBadge = '';
   if (session.role === "admin" && state.attendanceRequests) {
     const pendingRequests = state.attendanceRequests.filter(r => r.status === 'pending').length;
@@ -2665,12 +2909,17 @@ function renderHeader() {
   
   return `
     <div class="header">
-      <div class="brand">
-        <div class="logo">${logoHtml}</div>
-        <div>
-          <small>USV St Andrä Wördern</small>
-          <strong>Team App</strong>
-          <div class="role-badge">${roleName} ${notificationBadge}</div>
+      <div class="header-content">
+        <div class="brand">
+          <div class="logo">${logoHtml}</div>
+          <div>
+            <small>USV St Andrä Wördern</small>
+            <strong>Team App</strong>
+            <div class="role-badge">${roleName} ${notificationBadge}</div>
+          </div>
+        </div>
+        <div class="sponsor-area">
+          ${sponsorHtml}
         </div>
       </div>
       ${session.role !== "parent" ? `
@@ -2680,15 +2929,10 @@ function renderHeader() {
           <button class="pill ${state.currentTeam === 'ALLE' ? 'active' : 'alt'}" onclick="setTeam('ALLE')">ALLE</button>
         </div>
       ` : ''}
-    </div>
-  `;
-}
-
-function renderFooter() {
-  return `
-    <div class="footer">
-      <div class="copyright">
-        © Trainer Stephan Köck, Release 2026 Version 1.0
+      <div class="footer">
+        <div class="copyright">
+          © Trainer Stephan Köck, Release 2026 Version 1.0
+        </div>
       </div>
     </div>
   `;
@@ -2783,7 +3027,7 @@ function renderDashboard() {
     <div class="section">
       ${requestsHtml}
       
-      <div class="card" style="background: linear-gradient(135deg, var(--green), var(--green2)); color: white;">
+      <div class="card" style="background: linear-gradient(135deg, var(--primary), var(--primary-light)); color: white;">
         <h3 style="color: white;">📅 Nächste Spiele</h3>
         ${matches.length > 0 ? matches.map(m => {
           const c = countAttendance(m);
@@ -2821,7 +3065,7 @@ function renderDashboard() {
         ${top3Scorers.map(p => `
           <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--line);">
             <span>${p.name}</span>
-            <span style="font-weight: 600; color: var(--green);">${p.goals} Tore</span>
+            <span style="font-weight: 600; color: var(--primary);">${p.goals} Tore</span>
           </div>
         `).join('')}
         
@@ -2869,7 +3113,7 @@ function renderDashboard() {
           return `
             <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--line);">
               <span>${p.name}</span>
-              <span style="font-weight: 600; color: var(--green);">${percent}%</span>
+              <span style="font-weight: 600; color: var(--primary);">${percent}%</span>
             </div>
           `;
         }).join('')}
@@ -2957,9 +3201,9 @@ function renderStatistics() {
                     return `
                       <tr>
                         <td><strong>${p.name}</strong></td>
-                        <td style="color: var(--green); font-weight: 600; text-align: center;">${p.goals || 0}</td>
+                        <td style="color: var(--primary); font-weight: 600; text-align: center;">${p.goals || 0}</td>
                         <td style="color: var(--blue); font-weight: 600; text-align: center;">${p.assists || 0}</td>
-                        <td style="font-weight: 600; text-align: center; color: ${percent >= 75 ? 'var(--green)' : percent >= 50 ? '#f3a43b' : 'var(--red)'};">${percent}%</td>
+                        <td style="font-weight: 600; text-align: center; color: ${percent >= 75 ? 'var(--primary)' : percent >= 50 ? '#f3a43b' : 'var(--red)'};">${percent}%</td>
                       </tr>
                     `;
                   }).join('')}
@@ -3104,6 +3348,13 @@ function renderCalendar() {
           const showOpponents = isYouthTeam(m.team) && m.opponents && m.opponents.length > 0;
           const isPast = isMatchPast(m);
           
+          let kindClass = '';
+          let kindDisplay = m.kind || '';
+          if (kindDisplay === 'MEISTERSCHAFT') kindClass = 'meisterschaft';
+          else if (kindDisplay === 'TURNIER') kindClass = 'turnier';
+          else if (kindDisplay === 'TESTSPIEL') kindClass = 'testspiel';
+          else if (kindDisplay === 'CUP') kindClass = 'cup';
+          
           let approvalMessage = '';
           if (isParentMode && playerId && state.attendanceRequests) {
             const myRequest = state.attendanceRequests.find(r => 
@@ -3164,6 +3415,7 @@ function renderCalendar() {
               <div class="info">
                 <div class="badges">
                   <span class="badge ${m.team === state.teams.main ? 'team1' : 'team2'}">${m.team}</span>
+                  ${kindClass ? `<span class="badge ${kindClass}">${kindDisplay}</span>` : ''}
                   ${isPast ? '<span class="badge" style="background: #888; color: white;">Abgeschlossen</span>' : ''}
                 </div>
                 <div class="name">${m.title}</div>
@@ -3414,7 +3666,7 @@ function renderMatchReport() {
               <div class="match-report-result">Ergebnis: ${m.result}</div>
               <div style="margin-top: 10px;">
                 ${playersWithGoals.length > 0 ? `
-                  <div style="font-weight: 600; color: var(--green);">⚽ Torschützen:</div>
+                  <div style="font-weight: 600; color: var(--primary);">⚽ Torschützen:</div>
                   ${playersWithGoals.map(([playerId, count]) => {
                     const player = findPlayer(playerId);
                     return `<div style="margin-left: 16px;">${player?.name}: ${count} Tor${count !== 1 ? 'e' : ''}</div>`;
@@ -3921,6 +4173,10 @@ function renderConfig() {
     `<img src="${state.clubLogo}" alt="Vereinslogo">` : 
     '<span>⚽</span>';
   
+  const sponsorHtml = state.sponsorLogo ? 
+    `<img src="${state.sponsorLogo}" alt="Sponsor">` : 
+    '<span>Kein Sponsor</span>';
+  
   return `
     <div class="section">
       <div class="card">
@@ -3935,6 +4191,40 @@ function renderConfig() {
           <input type="hidden" id="club-logo" value="${state.clubLogo || ''}">
           <button class="btn primary" style="width: 100%;" onclick="saveClubLogo()">💾 Logo speichern</button>
           <p class="small" style="margin-top: 10px;">Das Logo wird im Header und auf der Login-Seite angezeigt.</p>
+        </div>
+        
+        <div class="sponsor-upload">
+          <div class="sponsor-preview" id="sponsor-preview">${sponsorHtml}</div>
+          <label class="btn secondary" style="cursor: pointer; margin-bottom: 10px;">
+            📷 Sponsor-Logo auswählen
+            <input type="file" id="sponsor-upload" accept="image/*" style="display:none;" onchange="handleSponsorUpload(event)">
+          </label>
+          <input type="hidden" id="sponsor-logo" value="${state.sponsorLogo || ''}">
+          <div style="display: flex; gap: 8px; width: 100%;">
+            <button class="btn primary" style="flex: 2;" onclick="saveSponsorLogo()">💾 Sponsor speichern</button>
+            <button class="btn danger" style="flex: 1;" onclick="clearSponsorLogo()">🗑️ Entfernen</button>
+          </div>
+          <p class="small" style="margin-top: 10px;">Das Sponsor-Logo erscheint rechts im Header.</p>
+        </div>
+        
+        <h4>🎨 Farbe anpassen</h4>
+        <div style="background: #f5f9f6; padding: 16px; border-radius: 12px; margin-bottom: 24px;">
+          <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 12px;">
+            <div style="flex: 1;">
+              <label>Hauptfarbe</label>
+              <input type="color" id="primary-color" value="${state.primaryColor || DEFAULT_PRIMARY_COLOR}" style="height: 50px; padding: 5px;">
+            </div>
+            <div class="color-preview" style="background: ${state.primaryColor || DEFAULT_PRIMARY_COLOR};"></div>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn primary" style="flex: 2;" onclick="savePrimaryColor(document.getElementById('primary-color').value)">
+              Farbe speichern
+            </button>
+            <button class="btn reset" style="flex: 1;" onclick="resetPrimaryColor()">
+              🔄 Zurücksetzen
+            </button>
+          </div>
+          <p class="small" style="margin-top: 10px;">Ändert die Hauptfarbe der App (Header, Buttons, etc.)</p>
         </div>
         
         <h4>Team-Namen</h4>
@@ -3962,6 +4252,9 @@ function renderConfig() {
           </select>
         </div>
         
+        <div class="section-divider"><span>➕ Spielermanagement</span></div>
+        <div class="spacer"></div>
+        
         <h4>➕ Neuen Spieler anlegen</h4>
         <div class="grid2">
           <div>
@@ -3976,7 +4269,7 @@ function renderConfig() {
             </select>
           </div>
         </div>
-        <p class="small">Login-Name wird automatisch aus Vor- und Nachname generiert (z.B. max-mustermann)</p>
+        <p class="small">Login-Name wird automatisch aus Vor- und Nachname generiert (z.B. max-mustermann) - Umlaute werden zu ae, oe, ue</p>
         <button class="btn primary" style="width: 100%; margin-bottom: 24px;" onclick="addPlayer()">Spieler anlegen</button>
         
         <h4>⚽ Neues Spiel anlegen</h4>
@@ -4006,6 +4299,7 @@ function renderConfig() {
               <option>TESTSPIEL</option>
               <option>MEISTERSCHAFT</option>
               <option>CUP</option>
+              <option>TURNIER</option>
             </select>
           </div>
           <div>
@@ -4025,7 +4319,7 @@ function renderConfig() {
           <p class="small">Maximal 5 Gegner möglich</p>
         </div>
         
-        <button class="btn primary" style="width: 100%; margin-top: 16px;" onclick="addMatch()">Spiel anlegen</button>
+        <button class="btn primary" style="width: 100%; margin-top: 16px; margin-bottom: 40px;" onclick="addMatch()">Spiel anlegen</button>
         
         <h4>📊 Leistungstests</h4>
         ${(state.testConfig || []).map(t => `
@@ -4923,7 +5217,6 @@ function render() {
     else content += renderDashboard();
   }
   
-  content = renderFooter() + content; 
   content += renderNav();
   
   app.innerHTML = content;
@@ -4992,6 +5285,11 @@ window.savePlayerData = savePlayerData;
 window.handlePhotoUpload = handlePhotoUpload;
 window.handleLogoUpload = handleLogoUpload;
 window.saveClubLogo = saveClubLogo;
+window.handleSponsorUpload = handleSponsorUpload;
+window.saveSponsorLogo = saveSponsorLogo;
+window.clearSponsorLogo = clearSponsorLogo;
+window.savePrimaryColor = savePrimaryColor;
+window.resetPrimaryColor = resetPrimaryColor;
 window.addMatch = addMatch;
 window.deleteMatch = deleteMatch;
 window.editMatch = editMatch;
