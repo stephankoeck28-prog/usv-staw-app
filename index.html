@@ -6,7 +6,7 @@
 <title>USV St Andrä Wördern - Team App</title>
 <!-- PWA Manifest -->
 <link rel="manifest" href="manifest.json">
-  <!-- NATIVEN SPLASH DEAKTIVIEREN -->
+<!-- NATIVEN SPLASH DEAKTIVIEREN -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <!-- KEINE splash Bilder! -->
@@ -89,8 +89,15 @@ html, body {
   align-items: center;
   justify-content: center;
   z-index: 10000;
-  animation: fadeSplash var(--splash-duration, 1.8s) ease-in-out forwards;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
   pointer-events: none;
+}
+
+.splash-screen.hidden {
+  opacity: 0;
+  visibility: hidden;
 }
 
 .splash-screen img {
@@ -115,12 +122,6 @@ html, body {
   font-size: 14px;
   margin-top: 8px;
   animation: textFade 1s ease-out;
-}
-
-@keyframes fadeSplash {
-  0% { opacity: 1; visibility: visible; }
-  70% { opacity: 1; visibility: visible; }
-  100% { opacity: 0; visibility: hidden; }
 }
 
 @keyframes logoPop {
@@ -494,13 +495,14 @@ input, select, textarea { width: 100%; padding: 12px; border: 1px solid #dce6de;
 </head>
 <body>
 <!-- ==================== SPLASH SCREEN ==================== -->
-<div class="splash-screen" id="splash-screen" style="display: none;">
+<!-- Direkt sichtbar, bevor JavaScript lädt! -->
+<div class="splash-screen" id="splash-screen">
   <img id="splash-image" src="icon-192.png" alt="USV">
   <div class="splash-title" id="splash-title">USV St Andrä</div>
   <div class="splash-subtitle" id="splash-subtitle">Team App</div>
 </div>
 
-<div class="app" id="app"></div>
+<div class="app" id="app" style="opacity: 0; transition: opacity 0.3s ease;"></div>
 
 <!-- Toast Container für moderne Alerts -->
 <div id="toast-container" class="toast-container"></div>
@@ -512,73 +514,105 @@ input, select, textarea { width: 100%; padding: 12px; border: 1px solid #dce6de;
 
 <script>
 // ==================== SPLASH SCREEN FUNKTIONEN ====================
+function hideSplash() {
+  const splash = document.getElementById('splash-screen');
+  const app = document.getElementById('app');
+  if (splash) splash.classList.add('hidden');
+  if (app) app.style.opacity = '1';
+}
+
 function showSplashScreen() {
   const splash = document.getElementById('splash-screen');
-  if (!splash || !state.splashConfig || state.splashConfig.duration === 0) return;
+  if (!splash || !state.splashConfig || state.splashConfig.duration === 0) {
+    hideSplash();
+    return;
+  }
   
   // Aktuelles Datum für automatische Auswahl
   const today = new Date();
   const month = today.getMonth() + 1;
   const day = today.getDate();
   
+  // Priorität: 1. Geburtstag, 2. Eigene Events, 3. Feiertage
+  let selectedSplash = null;
+  
   // Prüfen ob jemand Geburtstag hat (höchste Priorität)
-  let birthdayPlayer = null;
   if (state.splashConfig.birthday?.active) {
-    birthdayPlayer = state.players?.find(p => {
+    const birthdayPlayer = state.players?.find(p => {
       if (!p.birthday) return false;
       const bd = new Date(p.birthday);
       return bd.getMonth() + 1 === month && bd.getDate() === day;
     });
+    if (birthdayPlayer) {
+      selectedSplash = {
+        image: state.splashConfig.birthday.image,
+        title: (state.splashConfig.birthday.text || 'Happy Birthday, NAME! 🎂').replace('NAME', birthdayPlayer.name),
+        subtitle: '🎉🎉🎉'
+      };
+    }
   }
   
-  // Welcher Splash soll gezeigt werden?
-  let splashImage = state.splashConfig.defaultImage || 'icon-192.png';
-  let splashTitle = 'USV St Andrä';
-  let splashSubtitle = 'Team App';
-  
-  if (birthdayPlayer && state.splashConfig.birthday?.active) {
-    // GEBURTSTAG!
-    splashImage = state.splashConfig.birthday.image || splashImage;
-    splashTitle = (state.splashConfig.birthday.text || 'Happy Birthday, NAME! 🎂').replace('NAME', birthdayPlayer.name);
-    splashSubtitle = '🎉🎉🎉';
-  } else if (state.splashConfig.christmas?.active && month === 12 && day >= 24 && day <= 26) {
-    // WEIHNACHTEN
-    splashImage = state.splashConfig.christmas.image || splashImage;
-    splashTitle = state.splashConfig.christmas.text || 'Frohe Weihnachten!';
-    splashSubtitle = '🎄🎄🎄';
-  } else if (state.splashConfig.easter?.active) {
-    // OSTERN (vereinfacht - zwischen 22.3 und 25.4)
-    const easterStart = new Date(today.getFullYear(), 2, 22);
-    const easterEnd = new Date(today.getFullYear(), 3, 25);
-    if (today >= easterStart && today <= easterEnd) {
-      splashImage = state.splashConfig.easter.image || splashImage;
-      splashTitle = state.splashConfig.easter.text || 'Frohe Ostern!';
-      splashSubtitle = '🐰🐰🐰';
+  // Eigene Events prüfen (z.B. Meisterschaft)
+  if (!selectedSplash && state.splashConfig.customEvents) {
+    const todayStr = `${today.getFullYear()}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const activeEvent = state.splashConfig.customEvents.find(e => 
+      e.active && e.date === todayStr
+    );
+    if (activeEvent) {
+      selectedSplash = {
+        image: activeEvent.image,
+        title: activeEvent.text || 'Besonderer Tag!',
+        subtitle: activeEvent.emoji || '🎉'
+      };
     }
-  } else if (state.splashConfig.halloween?.active && month === 10 && day === 31) {
-    // HALLOWEEN
-    splashImage = state.splashConfig.halloween.image || splashImage;
-    splashTitle = state.splashConfig.halloween.text || 'Happy Halloween!';
-    splashSubtitle = '🎃🎃🎃';
-  } else if (state.splashConfig.newyear?.active && month === 12 && day === 31) {
-    // SILVESTER
-    splashImage = state.splashConfig.newyear.image || splashImage;
-    splashTitle = state.splashConfig.newyear.text || 'Guten Rutsch!';
-    splashSubtitle = '🎆🎆🎆';
+  }
+  
+  // Feiertage prüfen
+  if (!selectedSplash) {
+    if (state.splashConfig.christmas?.active && month === 12 && day >= 24 && day <= 26) {
+      selectedSplash = {
+        image: state.splashConfig.christmas.image,
+        title: state.splashConfig.christmas.text || 'Frohe Weihnachten!',
+        subtitle: '🎄🎄🎄'
+      };
+    } else if (state.splashConfig.easter?.active) {
+      const easterStart = new Date(today.getFullYear(), 2, 22);
+      const easterEnd = new Date(today.getFullYear(), 3, 25);
+      if (today >= easterStart && today <= easterEnd) {
+        selectedSplash = {
+          image: state.splashConfig.easter.image,
+          title: state.splashConfig.easter.text || 'Frohe Ostern!',
+          subtitle: '🐰🐰🐰'
+        };
+      }
+    } else if (state.splashConfig.halloween?.active && month === 10 && day === 31) {
+      selectedSplash = {
+        image: state.splashConfig.halloween.image,
+        title: state.splashConfig.halloween.text || 'Happy Halloween!',
+        subtitle: '🎃🎃🎃'
+      };
+    } else if (state.splashConfig.newyear?.active && month === 12 && day === 31) {
+      selectedSplash = {
+        image: state.splashConfig.newyear.image,
+        title: state.splashConfig.newyear.text || 'Guten Rutsch!',
+        subtitle: '🎆🎆🎆'
+      };
+    }
+  }
+  
+  // Splash aktualisieren
+  if (selectedSplash) {
+    if (selectedSplash.image) document.getElementById('splash-image').src = selectedSplash.image;
+    document.getElementById('splash-title').textContent = selectedSplash.title;
+    document.getElementById('splash-subtitle').textContent = selectedSplash.subtitle;
   }
   
   // Splash anzeigen
-  document.getElementById('splash-image').src = splashImage;
-  document.getElementById('splash-title').textContent = splashTitle;
-  document.getElementById('splash-subtitle').textContent = splashSubtitle;
-  
-  // Dauer setzen
-  splash.style.setProperty('--splash-duration', state.splashConfig.duration + 's');
-  splash.style.display = 'flex';
+  splash.classList.remove('hidden');
   
   // Nach der Dauer ausblenden
   setTimeout(() => {
-    splash.style.display = 'none';
+    hideSplash();
   }, state.splashConfig.duration * 1000);
 }
 
@@ -1048,7 +1082,7 @@ const seed = {
   pushTokens: {},
   reminderDays: 0,
   
-  // 🔥 NEU: Splash-Screen Konfiguration
+  // 🔥 NEU: Splash-Screen Konfiguration mit eigenen Events
   splashConfig: {
     duration: 2,  // Sekunden (0 = aus)
     defaultImage: 'icon-192.png',
@@ -1076,7 +1110,8 @@ const seed = {
       active: false,
       image: null,
       text: 'Happy Birthday, NAME! 🎂'
-    }
+    },
+    customEvents: [] // Hier kommen eigene Events rein
   },
   
   users: [
@@ -2538,6 +2573,77 @@ function handleSplashImageUpload(event, eventType) {
   }
 }
 
+// 🔥 NEU: Funktionen für eigene Events
+function addCustomEvent() {
+  if (!state.splashConfig.customEvents) state.splashConfig.customEvents = [];
+  
+  const newEvent = {
+    id: 'event-' + Date.now(),
+    name: 'Mein Event',
+    date: new Date().toISOString().split('T')[0],
+    active: true,
+    image: null,
+    text: 'Besonderer Tag!',
+    emoji: '🎉'
+  };
+  
+  state.splashConfig.customEvents.push(newEvent);
+  save();
+  showToast('✅ Neues Event erstellt', 'success');
+  renderSplashConfig(); // Neu rendern
+}
+
+function deleteCustomEvent(eventId) {
+  if (!state.splashConfig.customEvents) return;
+  state.splashConfig.customEvents = state.splashConfig.customEvents.filter(e => e.id !== eventId);
+  save();
+  showToast('✅ Event gelöscht', 'success');
+  renderSplashConfig();
+}
+
+function updateCustomEvent(eventId, field, value) {
+  const event = state.splashConfig.customEvents?.find(e => e.id === eventId);
+  if (event) {
+    event[field] = value;
+    save();
+  }
+}
+
+function handleCustomEventImageUpload(event, eventId) {
+  const file = event.target.files[0];
+  if (file) {
+    if (file.size > 500 * 1024) {
+      showToast("❌ Bild zu groß (max 500KB)", "error");
+      return;
+    }
+    
+    if (!file.type.startsWith('image/')) {
+      showToast("❌ Bitte ein Bild auswählen", "error");
+      return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const base64String = e.target.result;
+      const customEvent = state.splashConfig.customEvents?.find(ev => ev.id === eventId);
+      if (customEvent) {
+        customEvent.image = base64String;
+        save();
+        
+        // Vorschau aktualisieren
+        const previewId = `custom-preview-${eventId}`;
+        const preview = document.getElementById(previewId);
+        if (preview) {
+          preview.innerHTML = `<img src="${base64String}" alt="Vorschau" style="width: 60px; height: 60px; border-radius: 12px; object-fit: cover;">`;
+        }
+        
+        showToast('✅ Bild gespeichert', 'success');
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+}
+
 // ==================== VIEW RENDERING ====================
 function renderHeader() {
   const roleLabels = { admin: "Haupttrainer", coach: "Co-Trainer", parent: "Eltern" };
@@ -3576,7 +3682,8 @@ function renderSplashConfig() {
     easter: { active: false, image: null, text: 'Frohe Ostern!' },
     halloween: { active: false, image: null, text: 'Happy Halloween!' },
     newyear: { active: false, image: null, text: 'Guten Rutsch!' },
-    birthday: { active: false, image: null, text: 'Happy Birthday, NAME! 🎂' }
+    birthday: { active: false, image: null, text: 'Happy Birthday, NAME! 🎂' },
+    customEvents: []
   };
   
   function getPreviewHtml(eventType) {
@@ -3735,6 +3842,57 @@ function renderSplashConfig() {
             <input type="file" accept="image/*" style="display:none;" onchange="handleSplashImageUpload(event, 'birthday')">
           </label>
         </div>
+        
+        <h4 style="margin-top: 30px;">📅 EIGENE EVENTS</h4>
+        <p class="small">Erstelle eigene Splash-Screens für besondere Anlässe (Meisterschaft, Turniere, etc.)</p>
+        
+        <button class="btn primary" style="margin-bottom: 20px;" onclick="addCustomEvent()">
+          ➕ NEUES EVENT
+        </button>
+        
+        ${config.customEvents && config.customEvents.length > 0 ? config.customEvents.map(event => `
+          <div style="background: #f5f9f6; padding: 16px; border-radius: 12px; margin-bottom: 16px; border-left: 4px solid var(--blue);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <input type="text" value="${event.name}" style="width: auto; flex: 1; margin-right: 8px;"
+                     onchange="updateCustomEvent('${event.id}', 'name', this.value)">
+              <button class="btn danger small" onclick="deleteCustomEvent('${event.id}')">✗</button>
+            </div>
+            
+            <label style="display: flex; align-items: center; gap: 8px;">
+              <input type="checkbox" ${event.active ? 'checked' : ''} 
+                     onchange="updateCustomEvent('${event.id}', 'active', this.checked)"> Aktiv
+            </label>
+            
+            <div class="grid2" style="margin: 12px 0;">
+              <div>
+                <label>Datum</label>
+                <input type="date" value="${event.date}" onchange="updateCustomEvent('${event.id}', 'date', this.value)">
+              </div>
+              <div>
+                <label>Emoji</label>
+                <input type="text" value="${event.emoji || '🎉'}" onchange="updateCustomEvent('${event.id}', 'emoji', this.value)">
+              </div>
+            </div>
+            
+            <div style="display: flex; gap: 16px; align-items: center; margin: 12px 0;">
+              <div style="flex: 1;">
+                <label>Text</label>
+                <input type="text" value="${event.text || ''}" onchange="updateCustomEvent('${event.id}', 'text', this.value)">
+              </div>
+              <div style="text-align: center;">
+                <div style="margin-bottom: 4px;">Vorschau</div>
+                <div id="custom-preview-${event.id}">
+                  ${event.image ? `<img src="${event.image}" alt="Vorschau" style="width: 60px; height: 60px; border-radius: 12px; object-fit: cover;">` : '<span style="color: var(--muted);">Kein Bild</span>'}
+                </div>
+              </div>
+            </div>
+            
+            <label class="btn secondary" style="cursor: pointer; display: inline-block;">
+              📷 Bild hochladen
+              <input type="file" accept="image/*" style="display:none;" onchange="handleCustomEventImageUpload(event, '${event.id}')">
+            </label>
+          </div>
+        `).join('') : '<p class="small" style="text-align: center;">Noch keine eigenen Events erstellt</p>'}
         
         <div style="display: flex; gap: 12px; justify-content: center; margin-top: 24px;">
           <button class="btn primary" onclick="setAdminView('config')">Fertig</button>
@@ -3928,7 +4086,7 @@ function renderConfig() {
         
         <h4 style="margin-top: 30px;">🎨 SPLASH-SCREEN</h4>
         <div style="background: #e8f0fe; padding: 16px; border-radius: 12px; margin-bottom: 24px; border-left: 4px solid var(--blue);">
-          <p style="margin-bottom: 16px;">Konfiguriere hier deine individuellen Splash-Screens für Weihnachten, Ostern, Geburtstage und mehr!</p>
+          <p style="margin-bottom: 16px;">Konfiguriere hier deine individuellen Splash-Screens für Weihnachten, Ostern, Geburtstage und eigene Events!</p>
           <button class="btn primary" style="width: 100%;" onclick="setAdminView('splash')">
             🎨 ZUR SPLASH-ZENTRALE
           </button>
@@ -4779,22 +4937,24 @@ function render() {
 // ==================== START ====================
 async function startApp() {
   console.log("🚀 App wird gestartet...");
+  
+  // Erst Daten laden, dann rendern
   await loadState();
   listenState();
   render();
   
-  // Splash-Screen anzeigen (kurze Verzögerung damit der Render fertig ist)
+  // Nach dem Rendern den Splash konfigurieren (aber nicht verstecken!)
   setTimeout(() => {
     showSplashScreen();
   }, 100);
   
-  // 🔥 NEU: Erinnerungen einmal täglich prüfen (um 8:00 Uhr)
+  // Erinnerungen
   const now = new Date();
   const nextCheck = new Date();
-  nextCheck.setHours(8, 0, 0, 0); // Nächste Prüfung um 8:00
+  nextCheck.setHours(8, 0, 0, 0);
   
   if (now > nextCheck) {
-    nextCheck.setDate(nextCheck.getDate() + 1); // Wenn schon nach 8:00, dann morgen
+    nextCheck.setDate(nextCheck.getDate() + 1);
   }
   
   const timeUntilCheck = nextCheck - now;
@@ -4802,7 +4962,6 @@ async function startApp() {
   
   setTimeout(() => {
     checkAndSendReminders();
-    // Dann alle 24 Stunden wiederholen
     setInterval(checkAndSendReminders, 24 * 60 * 60 * 1000);
   }, timeUntilCheck);
   
@@ -4861,6 +5020,10 @@ window.saveReminderDays = saveReminderDays;
 window.saveSplashDuration = saveSplashDuration;
 window.saveSplashEvent = saveSplashEvent;
 window.handleSplashImageUpload = handleSplashImageUpload;
+window.addCustomEvent = addCustomEvent;
+window.deleteCustomEvent = deleteCustomEvent;
+window.updateCustomEvent = updateCustomEvent;
+window.handleCustomEventImageUpload = handleCustomEventImageUpload;
 window.installApp = installApp;
 
 // App starten
