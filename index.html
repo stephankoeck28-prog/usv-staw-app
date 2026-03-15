@@ -57,6 +57,10 @@
   --toast-error: #d45d4a;
   --toast-info: #5e8fe8;
   --toast-warning: #f3a43b;
+  --badge-meisterschaft: #3b82f6;
+  --badge-turnier: #8b5cf6;
+  --badge-testspiel: #14b8a6;
+  --badge-cup: #f97316;
 }
 
 * { 
@@ -240,9 +244,9 @@ html, body {
 .brand strong { display: block; font-size: 18px; }
 .role-badge { background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 20px; font-size: 11px; margin-top: 4px; display: inline-block; }
 
-/* Footer */
-.footer { background: linear-gradient(180deg, #1f7f47, var(--green)); color: white; padding: 12px 16px; border-top-left-radius: 24px; border-top-right-radius: 24px; text-align: center; font-size: 12px; width: 100%; margin-top: 20px; }
-.footer .copyright { opacity: 0.9; letter-spacing: 0.5px; }
+/* Footer - jetzt im Header! */
+.footer { background: transparent; color: rgba(255,255,255,0.5); padding: 4px 0 0; text-align: left; font-size: 9px; width: 100%; margin-top: 8px; border-top: 1px solid rgba(255,255,255,0.1); }
+.footer .copyright { opacity: 0.7; letter-spacing: 0.3px; }
 
 /* Tabs */
 .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
@@ -325,8 +329,12 @@ input, select, textarea { width: 100%; padding: 12px; border: 1px solid #dce6de;
 .info { flex: 1; padding: 12px; }
 .name { font-size: 16px; font-weight: 600; margin: 4px 0; }
 .time { font-size: 14px; color: #44514a; }
-.badges { display: flex; gap: 6px; margin-bottom: 6px; }
+.badges { display: flex; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; }
 .badge { padding: 4px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+.badge.meisterschaft { background: var(--badge-meisterschaft); color: white; }
+.badge.turnier { background: var(--badge-turnier); color: white; }
+.badge.testspiel { background: var(--badge-testspiel); color: white; }
+.badge.cup { background: var(--badge-cup); color: white; }
 .team1 { background: var(--yellow); color: #214b2f; }
 .team2 { background: #52bf74; color: white; }
 .status.home { color: #2d9c4b; font-weight: 600; }
@@ -484,6 +492,24 @@ input, select, textarea { width: 100%; padding: 12px; border: 1px solid #dce6de;
 .milestone-stat .value { font-size: 28px; font-weight: 800; color: var(--green); }
 .milestone-stat .label { font-size: 12px; color: var(--muted); }
 
+/* Section Divider */
+.section-divider { 
+  margin: 30px 0 20px; 
+  border-top: 2px solid var(--line); 
+  position: relative; 
+}
+.section-divider span { 
+  position: absolute; 
+  top: -12px; 
+  left: 20px; 
+  background: var(--bg); 
+  padding: 0 10px; 
+  font-weight: 600; 
+  color: var(--green); 
+  font-size: 14px; 
+}
+.spacer { height: 20px; }
+
 /* Utils */
 .small { font-size: 12px; color: var(--muted); }
 .hidden { display: none !important; }
@@ -491,6 +517,7 @@ input, select, textarea { width: 100%; padding: 12px; border: 1px solid #dce6de;
 .mt-3 { margin-top: 12px; }
 .mt-4 { margin-top: 16px; }
 .mb-2 { margin-bottom: 8px; }
+.mb-3 { margin-bottom: 16px; }
 </style>
 </head>
 <body>
@@ -512,6 +539,19 @@ input, select, textarea { width: 100%; padding: 12px; border: 1px solid #dce6de;
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js"></script>
 
 <script>
+// ==================== HILFSFUNKTION FÜR UMLAUTE ====================
+function generateUsername(name) {
+  return name
+    .toLowerCase()
+    .replace(/ä/g, 'ae')
+    .replace(/ö/g, 'oe')
+    .replace(/ü/g, 'ue')
+    .replace(/ß/g, 'ss')
+    .replace(/[^a-z0-9]/g, '-')
+    .replace(/--+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
 // ==================== SPLASH SCREEN FUNKTIONEN ====================
 function hideSplash() {
   const splash = document.getElementById('splash-screen');
@@ -662,12 +702,10 @@ function closeToast(toastId) {
 }
 
 // ==================== HELPER FUNKTIONEN FÜR INSTALLATION ====================
-// Prüfen ob iOS Gerät
 function isIOS() {
   return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 }
 
-// Prüfen ob App bereits installiert ist
 function isAppInstalled() {
   return window.matchMedia('(display-mode: standalone)').matches || 
          window.navigator.standalone === true;
@@ -1190,9 +1228,9 @@ const seed = {
   selectedReportMatchId: null
 };
 
-// Eltern-Accounts generieren
+// Eltern-Accounts generieren - JETZT MIT UMLAUT-UNTERSTÜTZUNG!
 seed.players.forEach(p => {
-  const username = p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  const username = generateUsername(p.name);
   
   seed.users.push({
     id: "u-" + p.id,
@@ -1948,7 +1986,7 @@ function addPlayer() {
     photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}
   });
   
-  const username = name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  const username = generateUsername(name);
   
   state.users.push({
     id: "u-" + id, username, password: "1234", role: "parent",
@@ -2256,7 +2294,7 @@ function addCoach() {
   const name = document.getElementById("coach-name").value.trim();
   if (!name) { showToast("Bitte Namen eingeben!", "warning"); return; }
   
-  const username = name.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-coach";
+  const username = generateUsername(name) + "-coach";
   const id = "c" + Date.now();
   
   state.users.push({
@@ -2679,15 +2717,10 @@ function renderHeader() {
           <button class="pill ${state.currentTeam === 'ALLE' ? 'active' : 'alt'}" onclick="setTeam('ALLE')">ALLE</button>
         </div>
       ` : ''}
-    </div>
-  `;
-}
-
-function renderFooter() {
-  return `
-    <div class="footer">
-      <div class="copyright">
-        © Trainer Stephan Köck, Release 2026 Version 1.0
+      <div class="footer">
+        <div class="copyright">
+          © Trainer Stephan Köck, Release 2026 Version 1.0
+        </div>
       </div>
     </div>
   `;
@@ -3103,6 +3136,13 @@ function renderCalendar() {
           const showOpponents = isYouthTeam(m.team) && m.opponents && m.opponents.length > 0;
           const isPast = isMatchPast(m);
           
+          let kindClass = '';
+          let kindDisplay = m.kind || '';
+          if (kindDisplay === 'MEISTERSCHAFT') kindClass = 'meisterschaft';
+          else if (kindDisplay === 'TURNIER') kindClass = 'turnier';
+          else if (kindDisplay === 'TESTSPIEL') kindClass = 'testspiel';
+          else if (kindDisplay === 'CUP') kindClass = 'cup';
+          
           let approvalMessage = '';
           if (isParentMode && playerId && state.attendanceRequests) {
             const myRequest = state.attendanceRequests.find(r => 
@@ -3163,6 +3203,7 @@ function renderCalendar() {
               <div class="info">
                 <div class="badges">
                   <span class="badge ${m.team === state.teams.main ? 'team1' : 'team2'}">${m.team}</span>
+                  ${kindClass ? `<span class="badge ${kindClass}">${kindDisplay}</span>` : ''}
                   ${isPast ? '<span class="badge" style="background: #888; color: white;">Abgeschlossen</span>' : ''}
                 </div>
                 <div class="name">${m.title}</div>
@@ -3961,6 +4002,9 @@ function renderConfig() {
           </select>
         </div>
         
+        <div class="section-divider"><span>➕ Spielermanagement</span></div>
+        <div class="spacer"></div>
+        
         <h4>➕ Neuen Spieler anlegen</h4>
         <div class="grid2">
           <div>
@@ -3975,7 +4019,7 @@ function renderConfig() {
             </select>
           </div>
         </div>
-        <p class="small">Login-Name wird automatisch aus Vor- und Nachname generiert (z.B. max-mustermann)</p>
+        <p class="small">Login-Name wird automatisch aus Vor- und Nachname generiert (z.B. max-mustermann) - Umlaute werden zu ae, oe, ue</p>
         <button class="btn primary" style="width: 100%; margin-bottom: 24px;" onclick="addPlayer()">Spieler anlegen</button>
         
         <h4>⚽ Neues Spiel anlegen</h4>
@@ -4005,6 +4049,7 @@ function renderConfig() {
               <option>TESTSPIEL</option>
               <option>MEISTERSCHAFT</option>
               <option>CUP</option>
+              <option>TURNIER</option>
             </select>
           </div>
           <div>
@@ -4024,7 +4069,7 @@ function renderConfig() {
           <p class="small">Maximal 5 Gegner möglich</p>
         </div>
         
-        <button class="btn primary" style="width: 100%; margin-top: 16px;" onclick="addMatch()">Spiel anlegen</button>
+        <button class="btn primary" style="width: 100%; margin-top: 16px; margin-bottom: 40px;" onclick="addMatch()">Spiel anlegen</button>
         
         <h4>📊 Leistungstests</h4>
         ${(state.testConfig || []).map(t => `
@@ -4922,7 +4967,6 @@ function render() {
     else content += renderDashboard();
   }
   
-  content += renderFooter();
   content += renderNav();
   
   app.innerHTML = content;
