@@ -579,7 +579,7 @@ input, select, textarea { width: 100%; padding: 12px; border: 1px solid #dce6de;
 <!-- ==================== SPLASH SCREEN ==================== -->
 <div class="splash-screen" id="splash-screen">
   <img id="splash-image" src="icon-192.png" alt="USV">
-  <div class="splash-title" id="splash-title">USV St Andrä</div>
+  <div class="splash-title" id="splash-title">USV St Andrä Wördern</div>
   <div class="splash-subtitle" id="splash-subtitle">Team App</div>
 </div>
 
@@ -619,6 +619,16 @@ if ('serviceWorker' in navigator) {
 function resetBadge() {
   if ('setAppBadge' in navigator) {
     navigator.setAppBadge(0).catch(e => console.log('Badge reset', e));
+  }
+}
+
+function updateBadge(count){
+  if (!('setAppBadge' in navigator)) return;
+
+  if(count <= 0){
+    navigator.clearAppBadge().catch(()=>{});
+  }else{
+    navigator.setAppBadge(count).catch(()=>{});
   }
 }
 
@@ -881,10 +891,15 @@ function showPersistentAlert(message) {
   if (messageEl) messageEl.textContent = message;
   
   // Badge erhöhen
-  if ('setAppBadge' in navigator) {
-    navigator.setAppBadge(1).catch(e => console.log('Badge gesetzt', e));
+if ('setAppBadge' in navigator) {
+  try {
+    navigator.setAppBadge(1);
+  } catch(e) {
+    console.log("Badge Fehler", e);
   }
 }
+  }
+  
 
 // ==================== PUSH BENACHRICHTIGUNGEN ====================
 let messaging = null;
@@ -968,24 +983,25 @@ async function initPushNotifications() {
         showToast('Push-Token Fehler', 'error');
       }
       
-      messaging.onMessage((payload) => {
-        console.log('📨 Push (Vordergrund):', payload);
-        
-        const messageId = payload.data?.message_id || 
-                          payload.messageId || 
-                          `${payload.notification?.title}-${payload.notification?.body}`;
-        
-        if (_processedForegroundIds.has(messageId)) {
-          console.log('⏭️ Doppelten Toast verhindert (ID):', messageId);
-          return;
-        }
-        
-        _processedForegroundIds.add(messageId);
-        console.log('✅ Persistent Alert wird angezeigt mit ID:', messageId);
-        
-        const body = payload.notification?.body || payload.data?.body || 'Neue Nachricht';
-        showPersistentAlert(body);
-      });
+messaging.onMessage((payload) => {
+
+  const messageId =
+    payload.data?.message_id ||
+    payload.messageId ||
+    payload.notification?.title + payload.notification?.body;
+
+  if (_processedForegroundIds.has(messageId)) return;
+
+  _processedForegroundIds.add(messageId);
+
+  const body =
+    payload.notification?.body ||
+    payload.data?.body ||
+    "Neue Nachricht";
+
+  showPersistentAlert(body);
+
+});
     }
   } catch (error) {
     console.log('⚠️ Push Fehler:', error);
@@ -1017,11 +1033,13 @@ async function sendPushNotification(userId, title, body) {
   
   const now = Date.now();
   
-  if (lastPush && 
-      lastPush.userId === userId && 
-      lastPush.title === title && 
-      lastPush.body === body && 
-      now - lastPush.time < 3000) {
+if (
+  lastPush &&
+  lastPush.userId === userId &&
+  lastPush.body === body &&
+  now - lastPush.time < 5000
+)
+{
     console.log("⛔ Doppelten Push verhindert");
     return;
   }
@@ -1057,7 +1075,7 @@ async function sendPushNotification(userId, title, body) {
           body: JSON.stringify({
             message: {
               token: token,
-              notification: {
+              data: {
                 title: title,
                 body: body
               },
@@ -2059,6 +2077,8 @@ function approveAttendanceRequest(requestId, approved) {
       
       const parentUser = findUserForPlayer(request.playerId);
       if (parentUser) {
+        if (request.pushSent) return;
+request.pushSent = true;
         sendPushNotification(parentUser.id, "Antrag genehmigt", `Deine Änderung für ${request.matchTitle} wurde genehmigt!`);
       }
     }
@@ -2925,7 +2945,7 @@ function renderHeader() {
       ` : ''}
       <div class="footer">
         <div class="copyright">
-          © Trainer Stephan Köck, Release 2026 Version 1.0
+          © Trainer Stephan Köck, Release 2026 Version 1.10
         </div>
       </div>
     </div>
@@ -2966,7 +2986,7 @@ function renderLogin() {
         </div>
         
         <div style="margin-top: 30px; text-align: center; color: #888; font-size: 11px; border-top: 1px solid #eee; padding-top: 15px;">
-          © Trainer Stephan Köck, Release 2026 Version 1.0
+          © Trainer Stephan Köck, Release 2026 Version 1.10
         </div>
       </div>
     </div>
