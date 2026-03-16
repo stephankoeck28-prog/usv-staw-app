@@ -804,6 +804,7 @@ function isAppInstalled() {
 }
 
 // ==================== PUSH BENACHRICHTIGUNGEN ====================
+// 🔥 NEU: AUS DER FUNKTIONIERENDEN VERSION ÜBERNOMMEN
 let messaging = null;
 let pushSupported = false;
 let deferredPrompt;
@@ -812,21 +813,7 @@ let _pushInitialized = false;
 // 🔍 DEBUG-ZÄHLER für Push
 let pushCounter = 0;
 
-// 🔥 ZENTRALE De-Duplizierung für ALLE Push-Typen
-const _processedPushIds = new Set();
-
-// Alle 10 Sekunden aufräumen
-setInterval(() => {
-  _processedPushIds.clear();
-  console.log("🧹 Zentrale Push-IDs geleert");
-}, 10000);
-
-// 🔥 Eindeutige ID für jeden Push generieren
-function generatePushId(userId, title, body) {
-  return `${userId}-${title}-${body}-${Date.now()}`;
-}
-
-// 🔥 Persistent Alert statt Toast
+// 🔥 NEU: Persistent Alert statt Toast
 function showPersistentAlert(message) {
   let alertBox = document.getElementById('persistent-alert');
   
@@ -870,6 +857,15 @@ function showPersistentAlert(message) {
   if (messageEl) messageEl.textContent = message;
 }
 
+// 🔥 NEU: ID-basierte De-Duplizierung für Vordergrund
+const _processedForegroundIds = new Set();
+
+// Alle 10 Sekunden aufräumen
+setInterval(() => {
+  _processedForegroundIds.clear();
+  console.log("🧹 Vordergrund: processedForegroundIds geleert");
+}, 10000);
+
 // iOS "Zum Home-Bildschirm" Anleitung zeigen
 function showIOSInstructions() {
   showToast(
@@ -903,7 +899,7 @@ async function getAccessToken() {
   }
 }
 
-// 🔥 initPushNotifications mit ZENTRALER De-Duplizierung
+// 🔥 VERBESSERTE initPushNotifications mit ID-basierter De-Duplizierung
 async function initPushNotifications() {
   if (_pushInitialized) {
     console.log('⏭️ Push bereits initialisiert, überspringe...');
@@ -937,7 +933,7 @@ async function initPushNotifications() {
         showToast('Push-Token Fehler', 'error');
       }
       
-      // 🔥 onMessage Handler mit ZENTRALER De-Duplizierung
+      // 🔥 Verbesserter onMessage Handler mit PERSISTENTEM ALERT
       messaging.onMessage((payload) => {
         console.log('📨 Push (Vordergrund):', payload);
         
@@ -945,12 +941,12 @@ async function initPushNotifications() {
                           payload.messageId || 
                           `${payload.notification?.title}-${payload.notification?.body}`;
         
-        if (_processedPushIds.has(messageId)) {
-          console.log('⏭️ Doppelten Push verhindert (ID):', messageId);
+        if (_processedForegroundIds.has(messageId)) {
+          console.log('⏭️ Doppelten Toast verhindert (ID):', messageId);
           return;
         }
         
-        _processedPushIds.add(messageId);
+        _processedForegroundIds.add(messageId);
         console.log('✅ Persistent Alert wird angezeigt mit ID:', messageId);
         
         const body = payload.notification?.body || payload.data?.body || 'Neue Nachricht';
@@ -979,37 +975,26 @@ async function savePushToken(token) {
   }
 }
 
-// 🔥 VERBESSERTE sendPushNotification mit doppelter Absicherung
-let lastPushTime = 0;
-let lastPushKey = '';
+// 🔥 GANZ EINFACHE LÖSUNG FÜR DOPPELTE PUSHES
+let lastPush = null;
 
 async function sendPushNotification(userId, title, body) {
   pushCounter++;
+  console.log(`🔥 PUSH AUFRUF #${pushCounter}:`, {userId, title, body});
   
   const now = Date.now();
-  const pushKey = `${userId}-${title}-${body}`;
   
   // Wenn gleicher Push in den letzten 3 Sekunden, ignorieren
-  if (pushKey === lastPushKey && now - lastPushTime < 3000) {
-    console.log("⛔ Doppelten sendPushNotification Aufruf verhindert:", pushKey);
+  if (lastPush && 
+      lastPush.userId === userId && 
+      lastPush.title === title && 
+      lastPush.body === body && 
+      now - lastPush.time < 3000) {
+    console.log("⛔ Doppelten Push verhindert");
     return;
   }
   
-  lastPushKey = pushKey;
-  lastPushTime = now;
-  
-  // Eindeutige ID für diesen Push generieren
-  const pushId = generatePushId(userId, title, body);
-  
-  console.log(`🔥 PUSH AUFRUF #${pushCounter}:`, {userId, title, body, pushId});
-  
-  // Prüfen ob dieser Push bereits in den letzten 10 Sekunden gesendet wurde
-  if (_processedPushIds.has(pushId)) {
-    console.log("⛔ Doppelten Push verhindert (zentral):", pushId);
-    return;
-  }
-  
-  _processedPushIds.add(pushId);
+  lastPush = {userId, title, body, time: now};
   
   console.log("📨 Sende Push:", {userId, title, body});
   
@@ -1046,8 +1031,7 @@ async function sendPushNotification(userId, title, body) {
               },
               data: {
                 click_action: 'FLUTTER_NOTIFICATION_CLICK',
-                screen: 'home',
-                message_id: pushId
+                screen: 'home'
               },
               android: {
                 priority: 'high'
@@ -1079,6 +1063,7 @@ async function sendPushNotification(userId, title, body) {
       }
     }
     
+    showToast(`✅ Push gesendet`, 'success', 2000);
   } catch (error) {
     console.log('⚠️ Push konnte nicht gesendet werden:', error);
     showToast('Fehler beim Push-Versand', 'error');
