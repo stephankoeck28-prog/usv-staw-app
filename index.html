@@ -616,11 +616,29 @@ if ('serviceWorker' in navigator) {
 }
 
 // ==================== PERSISTENT ALERT FÜR ELTERN ====================
-let alertCount = 0; // Globaler Zähler für ungelesene Nachrichten
+// 🔥 NEU: Globale Funktion zum Aktualisieren des Badges
+window.updateBadgeAfterClose = function() {
+  const alertBox = document.getElementById('persistent-alert');
+  if (!alertBox) {
+    // Kein Alert mehr da -> Badge auf 0
+    if ('setAppBadge' in navigator) {
+      navigator.setAppBadge(0).catch(e => console.log('Badge reset', e));
+    }
+  } else {
+    // Alert ist noch da -> Nachrichten zählen
+    const messageEl = document.getElementById('alert-message');
+    if (messageEl) {
+      const messages = messageEl.innerHTML.split('<br>');
+      const count = messages.length;
+      if ('setAppBadge' in navigator) {
+        navigator.setAppBadge(count).catch(e => console.log('Badge gesetzt', e));
+      }
+    }
+  }
+};
 
 function showPersistentAlert(message) {
   let alertBox = document.getElementById('persistent-alert');
-  alertCount++; // Eine neue Nachricht kommt hinzu
   
   if (!alertBox) {
     alertBox = document.createElement('div');
@@ -640,321 +658,31 @@ function showPersistentAlert(message) {
       <div style="display: flex; align-items: center; gap: 12px;">
         <span style="font-size: 24px;">🔔</span>
         <div style="flex: 1;">
-          <strong style="color: var(--text);">Neue Nachrichten</strong>
+          <strong style="color: var(--text);">Neue Nachricht</strong>
           <div id="alert-message" style="margin-top: 4px; color: var(--text);"></div>
         </div>
-        <button onclick="closeSingleAlert(this)" 
+        <button onclick="this.parentElement.parentElement.remove(); window.updateBadgeAfterClose && window.updateBadgeAfterClose();" 
           style="background: none; border: none; font-size: 20px; cursor: pointer; color: var(--muted); padding: 5px 10px;">
           ✕
         </button>
       </div>
     `;
     
+    // 🔥 FIX: Immer ans .app anhängen, nicht nur an .section
     const app = document.querySelector('.app');
     if (app) {
+      // Ganz oben einfügen, vor allem anderen
       app.insertBefore(alertBox, app.firstChild);
     }
-    
-    // Erste Nachricht
-    const messageEl = document.getElementById('alert-message');
-    if (messageEl) {
-      messageEl.innerHTML = '• ' + message;
-    }
-  } else {
-    // Weitere Nachricht anhängen
-    const messageEl = document.getElementById('alert-message');
-    if (messageEl) {
-      messageEl.innerHTML = messageEl.innerHTML + '<br>• ' + message;
-    }
   }
-  
-  // Badge aktualisieren = Anzahl der ungelesenen Nachrichten
-  if ('setAppBadge' in navigator) {
-    navigator.setAppBadge(alertCount).catch(e => console.log('Badge gesetzt', e));
-  }
-  
-  console.log(`📊 Alert Count: ${alertCount}, Badge gesetzt auf ${alertCount}`);
-}
-
-// Funktion zum Schließen EINER Nachricht
-window.closeSingleAlert = function(button) {
-  const alertBox = document.getElementById('persistent-alert');
-  if (!alertBox) return;
   
   const messageEl = document.getElementById('alert-message');
-  if (!messageEl) return;
+  if (messageEl) messageEl.textContent = message;
   
-  // Aktuelle Nachrichten als Array
-  const messages = messageEl.innerHTML.split('<br>');
-  
-  if (messages.length <= 1) {
-    // Letzte Nachricht -> ganzen Alert schließen
-    alertBox.remove();
-    alertCount = 0;
-    console.log('🗑️ Letzte Nachricht gelöscht, Alert geschlossen');
-  } else {
-    // Erste Nachricht entfernen
-    messages.shift();
-    messageEl.innerHTML = messages.join('<br>');
-    alertCount--;
-    console.log(`🗑️ Eine Nachricht gelöscht, verbleibend: ${alertCount}`);
-  }
-  
-  // Badge aktualisieren
+  // Badge erhöhen
   if ('setAppBadge' in navigator) {
-    if (alertCount > 0) {
-      navigator.setAppBadge(alertCount).catch(e => console.log('Badge gesetzt', e));
-    } else {
-      navigator.setAppBadge(0).catch(e => console.log('Badge reset', e));
-    }
+    navigator.setAppBadge(1).catch(e => console.log('Badge gesetzt', e));
   }
-};
-
-// Beim App-Start: Prüfen ob es gespeicherte Nachrichten gibt
-document.addEventListener('DOMContentLoaded', () => {
-  const alertBox = document.getElementById('persistent-alert');
-  if (!alertBox) {
-    alertCount = 0;
-    if ('setAppBadge' in navigator) {
-      navigator.setAppBadge(0).catch(e => console.log('Badge reset', e));
-    }
-  } else {
-    // Falls Alert schon da ist, zählen wir die Nachrichten
-    const messageEl = document.getElementById('alert-message');
-    if (messageEl) {
-      const messages = messageEl.innerHTML.split('<br>');
-      alertCount = messages.length;
-      if ('setAppBadge' in navigator) {
-        navigator.setAppBadge(alertCount).catch(e => console.log('Badge gesetzt', e));
-      }
-    }
-  }
-});
-
-// Bei Seitenwechsel prüfen
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') {
-    const alertBox = document.getElementById('persistent-alert');
-    if (!alertBox && 'setAppBadge' in navigator) {
-      // Nur zurücksetzen wenn wirklich kein Alert mehr da ist
-      navigator.setAppBadge(0).catch(e => console.log('Badge reset', e));
-      alertCount = 0;
-    } else if (alertBox) {
-      // Alert ist noch da, Badge wiederherstellen falls nötig
-      if ('setAppBadge' in navigator && alertCount > 0) {
-        navigator.setAppBadge(alertCount).catch(e => console.log('Badge wiederhergestellt', e));
-      }
-    }
-  }
-});
-
-// ==================== HILFSFUNKTION FÜR FARBEN ====================
-const DEFAULT_PRIMARY_COLOR = "#156d3b";
-
-function updatePrimaryColor(color) {
-  document.documentElement.style.setProperty('--primary', color);
-  
-  // Dunklere Variante berechnen
-  const r = parseInt(color.slice(1,3), 16);
-  const g = parseInt(color.slice(3,5), 16);
-  const b = parseInt(color.slice(5,7), 16);
-  
-  const darkerR = Math.max(0, Math.floor(r * 0.8));
-  const darkerG = Math.max(0, Math.floor(g * 0.8));
-  const darkerB = Math.max(0, Math.floor(b * 0.8));
-  
-  const darkerColor = `#${darkerR.toString(16).padStart(2,'0')}${darkerG.toString(16).padStart(2,'0')}${darkerB.toString(16).padStart(2,'0')}`;
-  
-  document.documentElement.style.setProperty('--primary-dark', darkerColor);
-  
-  // Helle Variante berechnen
-  const lighterR = Math.min(255, Math.floor(r + (255 - r) * 0.3));
-  const lighterG = Math.min(255, Math.floor(g + (255 - g) * 0.3));
-  const lighterB = Math.min(255, Math.floor(b + (255 - b) * 0.3));
-  
-  const lighterColor = `#${lighterR.toString(16).padStart(2,'0')}${lighterG.toString(16).padStart(2,'0')}${lighterB.toString(16).padStart(2,'0')}`;
-  
-  document.documentElement.style.setProperty('--primary-light', lighterColor);
-  
-  // Theme-Color für PWA
-  document.getElementById('theme-color').setAttribute('content', color);
-}
-
-function resetPrimaryColor() {
-  savePrimaryColor(DEFAULT_PRIMARY_COLOR);
-  document.getElementById('primary-color').value = DEFAULT_PRIMARY_COLOR;
-}
-
-// ==================== HILFSFUNKTION FÜR UMLAUTE ====================
-function generateUsername(name) {
-  return name
-    .toLowerCase()
-    .replace(/ä/g, 'ae')
-    .replace(/ö/g, 'oe')
-    .replace(/ü/g, 'ue')
-    .replace(/ß/g, 'ss')
-    .replace(/[^a-z0-9]/g, '-')
-    .replace(/--+/g, '-')
-    .replace(/^-|-$/g, '');
-}
-
-// ==================== SPLASH SCREEN FUNKTIONEN ====================
-function hideSplash() {
-  const splash = document.getElementById('splash-screen');
-  const app = document.getElementById('app');
-  if (splash) splash.classList.add('hidden');
-  if (app) app.style.opacity = '1';
-}
-
-function showSplashScreen() {
-  const splash = document.getElementById('splash-screen');
-  if (!splash || !state.splashConfig || state.splashConfig.duration === 0) {
-    hideSplash();
-    return;
-  }
-  
-  // Aktuelles Datum für automatische Auswahl
-  const today = new Date();
-  const month = today.getMonth() + 1;
-  const day = today.getDate();
-  
-  // Priorität: 1. Geburtstag, 2. Eigene Events, 3. Feiertage
-  let selectedSplash = null;
-  
-  // Prüfen ob jemand Geburtstag hat (höchste Priorität)
-  if (state.splashConfig.birthday?.active) {
-    const birthdayPlayer = state.players?.find(p => {
-      if (!p.birthday) return false;
-      const bd = new Date(p.birthday);
-      return bd.getMonth() + 1 === month && bd.getDate() === day;
-    });
-    if (birthdayPlayer) {
-      selectedSplash = {
-        image: state.splashConfig.birthday.image,
-        title: (state.splashConfig.birthday.text || 'Happy Birthday, NAME! 🎂').replace('NAME', birthdayPlayer.name),
-        subtitle: '🎉🎉🎉'
-      };
-    }
-  }
-  
-  // Eigene Events prüfen (z.B. Meisterschaft)
-  if (!selectedSplash && state.splashConfig.customEvents) {
-    const todayStr = `${today.getFullYear()}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-    const activeEvent = state.splashConfig.customEvents.find(e => 
-      e.active && e.date === todayStr
-    );
-    if (activeEvent) {
-      selectedSplash = {
-        image: activeEvent.image,
-        title: activeEvent.text || 'Besonderer Tag!',
-        subtitle: activeEvent.emoji || '🎉'
-      };
-    }
-  }
-  
-  // Feiertage prüfen
-  if (!selectedSplash) {
-    if (state.splashConfig.christmas?.active && month === 12 && day >= 24 && day <= 26) {
-      selectedSplash = {
-        image: state.splashConfig.christmas.image,
-        title: state.splashConfig.christmas.text || 'Frohe Weihnachten!',
-        subtitle: '🎄🎄🎄'
-      };
-    } else if (state.splashConfig.easter?.active) {
-      const easterStart = new Date(today.getFullYear(), 2, 22);
-      const easterEnd = new Date(today.getFullYear(), 3, 25);
-      if (today >= easterStart && today <= easterEnd) {
-        selectedSplash = {
-          image: state.splashConfig.easter.image,
-          title: state.splashConfig.easter.text || 'Frohe Ostern!',
-          subtitle: '🐰🐰🐰'
-        };
-      }
-    } else if (state.splashConfig.halloween?.active && month === 10 && day === 31) {
-      selectedSplash = {
-        image: state.splashConfig.halloween.image,
-        title: state.splashConfig.halloween.text || 'Happy Halloween!',
-        subtitle: '🎃🎃🎃'
-      };
-    } else if (state.splashConfig.newyear?.active && month === 12 && day === 31) {
-      selectedSplash = {
-        image: state.splashConfig.newyear.image,
-        title: state.splashConfig.newyear.text || 'Guten Rutsch!',
-        subtitle: '🎆🎆🎆'
-      };
-    }
-  }
-  
-  // Splash aktualisieren
-  if (selectedSplash) {
-    if (selectedSplash.image) document.getElementById('splash-image').src = selectedSplash.image;
-    document.getElementById('splash-title').textContent = selectedSplash.title;
-    document.getElementById('splash-subtitle').textContent = selectedSplash.subtitle;
-  }
-  
-  // Splash anzeigen
-  splash.classList.remove('hidden');
-  
-  // Nach der Dauer ausblenden
-  setTimeout(() => {
-    hideSplash();
-  }, state.splashConfig.duration * 1000);
-}
-
-// ==================== MODERNE ALERT FUNKTION ====================
-function showToast(message, type = 'success', duration = 3000) {
-  const container = document.getElementById('toast-container');
-  if (!container) return;
-  
-  const toastId = 'toast-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-  
-  const icons = {
-    success: '✅',
-    error: '❌',
-    info: 'ℹ️',
-    warning: '⚠️'
-  };
-  
-  const toast = document.createElement('div');
-  toast.className = `toast ${type}`;
-  toast.id = toastId;
-  toast.innerHTML = `
-    <span class="toast-icon">${icons[type] || '📱'}</span>
-    <span class="toast-content">${message}</span>
-    <button class="toast-close" onclick="closeToast('${toastId}')">✕</button>
-  `;
-  
-  container.appendChild(toast);
-  
-  if (duration > 0) {
-    setTimeout(() => {
-      closeToast(toastId);
-    }, duration);
-  }
-  
-  return toastId;
-}
-
-function closeToast(toastId) {
-  const toast = document.getElementById(toastId);
-  if (toast) {
-    toast.classList.add('closing');
-    setTimeout(() => {
-      if (toast && toast.parentNode) {
-        toast.parentNode.removeChild(toast);
-      }
-    }, 300);
-  }
-}
-
-// ==================== HELPER FUNKTIONEN FÜR INSTALLATION ====================
-function isIOS() {
-  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-}
-
-function isAppInstalled() {
-  return window.matchMedia('(display-mode: standalone)').matches || 
-         window.navigator.standalone === true;
 }
 
 // ==================== PUSH BENACHRICHTIGUNGEN ====================
@@ -1352,25 +1080,24 @@ const seed = {
         2025: { goals: 12, assists: 8, trainings: 24, percentage: 95 },
         2024: { goals: 5, assists: 3, trainings: 18, percentage: 82 },
         2023: { goals: 2, assists: 1, trainings: 12, percentage: 75 }
-      },
-      canVote: true
+      }
     },
-    { id: "p2", name: "Oliver A.", team: "U8", birthday: "2017-06-08", position: "Verteidiger", jersey: 4, parentName: "Eltern Oliver", since: "2024", nextTeam: "U9", note: "Gute Mitarbeit", games: 11, goals: 12, assists: 2, trainingCount: 12, speed: 6.4, dribbling: 6.8, passing: 6.9, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}, canVote: true },
-    { id: "p3", name: "Oliver B.", team: "U9", birthday: "2016-01-03", position: "Mittelfeld", jersey: 10, parentName: "Eltern Oliver B.", since: "2023", nextTeam: "U10", note: "Gute Übersicht", games: 10, goals: 5, assists: 5, trainingCount: 15, speed: 7.0, dribbling: 7.0, passing: 7.5, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}, canVote: true },
-    { id: "p4", name: "Lukas", team: "U8", birthday: "2017-10-14", position: "Verteidiger", jersey: 5, parentName: "Eltern Lukas", since: "2024", nextTeam: "U9", note: "Konstant", games: 9, goals: 3, assists: 1, trainingCount: 10, speed: 6.6, dribbling: 6.0, passing: 6.6, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}, canVote: true },
-    { id: "p5", name: "Luca", team: "U8", birthday: "2017-04-16", position: "Flügel", jersey: 11, parentName: "Eltern Luca", since: "2023", nextTeam: "U9", note: "Viel Tempo", games: 12, goals: 4, assists: 3, trainingCount: 13, speed: 8.0, dribbling: 7.1, passing: 6.3, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}, canVote: true },
-    { id: "p6", name: "Angelo", team: "U9", birthday: "2016-09-22", position: "Mittelfeld", jersey: 8, parentName: "Eltern Angelo", since: "2022", nextTeam: "U10", note: "Stark im Passspiel", games: 13, goals: 7, assists: 6, trainingCount: 16, speed: 7.1, dribbling: 7.5, passing: 8.4, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}, canVote: true },
-    { id: "p7", name: "Alexander", team: "U9", birthday: "2016-07-11", position: "Verteidiger", jersey: 3, parentName: "Eltern Alexander", since: "2022", nextTeam: "U10", note: "Sehr zuverlässig", games: 14, goals: 1, assists: 1, trainingCount: 15, speed: 6.4, dribbling: 6.2, passing: 7.2, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}, canVote: true },
-    { id: "p8", name: "Teo A.", team: "U8", birthday: "2017-02-05", position: "Stürmer", jersey: 9, parentName: "Eltern Teo A.", since: "2024", nextTeam: "U9", note: "Torgefährlich", games: 10, goals: 6, assists: 3, trainingCount: 12, speed: 7.3, dribbling: 7.2, passing: 6.5, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}, canVote: true },
-    { id: "p9", name: "Teo B.", team: "U9", birthday: "2016-12-28", position: "Mittelfeld", jersey: 6, parentName: "Eltern Teo B.", since: "2024", nextTeam: "U10", note: "Mutig am Ball", games: 9, goals: 2, assists: 2, trainingCount: 11, speed: 6.9, dribbling: 7.0, passing: 6.8, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}, canVote: true },
-    { id: "p10", name: "Wolfi", team: "U8", birthday: "2017-03-07", position: "Verteidiger", jersey: 2, parentName: "Eltern Wolfi", since: "2025", nextTeam: "U9", note: "Lernwillig", games: 8, goals: 0, assists: 0, trainingCount: 8, speed: 5.9, dribbling: 5.5, passing: 5.8, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}, canVote: true },
-    { id: "p11", name: "Loric", team: "U9", birthday: "2016-11-02", position: "Flügel", jersey: 12, parentName: "Eltern Loric", since: "2024", nextTeam: "U10", note: "Soll mehr Mut haben", games: 8, goals: 1, assists: 1, trainingCount: 9, speed: 6.7, dribbling: 6.5, passing: 6.2, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}, canVote: true },
-    { id: "p12", name: "Anna", team: "U9", birthday: "2016-04-14", position: "Mittelfeld", jersey: 14, parentName: "Eltern Anna", since: "2022", nextTeam: "U10", note: "Sehr aufmerksam", games: 14, goals: 4, assists: 7, trainingCount: 17, speed: 7.2, dribbling: 7.7, passing: 7.6, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}, canVote: true },
-    { id: "p13", name: "Max", team: "U8", birthday: "2017-08-01", position: "Mittelfeld", jersey: 13, parentName: "Eltern Max", since: "2023", nextTeam: "U9", note: "Stark im Dribbling", games: 13, goals: 7, assists: 4, trainingCount: 15, speed: 7.7, dribbling: 8.5, passing: 7.0, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}, canVote: true },
-    { id: "p14", name: "Fredi", team: "U8", birthday: "2017-05-26", position: "Tor", jersey: 15, parentName: "Eltern Fredi", since: "2024", nextTeam: "U9", note: "Gute Reflexe", games: 9, goals: 0, assists: 0, trainingCount: 10, speed: 5.5, dribbling: 5.2, passing: 5.9, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}, canVote: true },
-    { id: "p15", name: "Urs", team: "U9", birthday: "2016-06-17", position: "Tor", jersey: 1, parentName: "Eltern Urs", since: "2023", nextTeam: "U10", note: "Ruhig im Tor", games: 11, goals: 0, assists: 0, trainingCount: 12, speed: 5.6, dribbling: 5.4, passing: 6.0, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}, canVote: true },
-    { id: "p16", name: "Mario", team: "U8", birthday: "2017-01-19", position: "Flügel", jersey: 16, parentName: "Eltern Mario", since: "2025", nextTeam: "U9", note: "Wenig Einsatzzeit", games: 7, goals: 1, assists: 1, trainingCount: 7, speed: 6.0, dribbling: 5.8, passing: 5.6, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}, canVote: true },
-    { id: "p17", name: "David", team: "U9", birthday: "2016-03-30", position: "Verteidiger", jersey: 17, parentName: "Eltern David", since: "2025", nextTeam: "U10", note: "Braucht mehr Spielminuten", games: 7, goals: 0, assists: 0, trainingCount: 7, speed: 6.1, dribbling: 5.5, passing: 5.9, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}, canVote: true }
+    { id: "p2", name: "Oliver A.", team: "U8", birthday: "2017-06-08", position: "Verteidiger", jersey: 4, parentName: "Eltern Oliver", since: "2024", nextTeam: "U9", note: "Gute Mitarbeit", games: 11, goals: 12, assists: 2, trainingCount: 12, speed: 6.4, dribbling: 6.8, passing: 6.9, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {} },
+    { id: "p3", name: "Oliver B.", team: "U9", birthday: "2016-01-03", position: "Mittelfeld", jersey: 10, parentName: "Eltern Oliver B.", since: "2023", nextTeam: "U10", note: "Gute Übersicht", games: 10, goals: 5, assists: 5, trainingCount: 15, speed: 7.0, dribbling: 7.0, passing: 7.5, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {} },
+    { id: "p4", name: "Lukas", team: "U8", birthday: "2017-10-14", position: "Verteidiger", jersey: 5, parentName: "Eltern Lukas", since: "2024", nextTeam: "U9", note: "Konstant", games: 9, goals: 3, assists: 1, trainingCount: 10, speed: 6.6, dribbling: 6.0, passing: 6.6, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {} },
+    { id: "p5", name: "Luca", team: "U8", birthday: "2017-04-16", position: "Flügel", jersey: 11, parentName: "Eltern Luca", since: "2023", nextTeam: "U9", note: "Viel Tempo", games: 12, goals: 4, assists: 3, trainingCount: 13, speed: 8.0, dribbling: 7.1, passing: 6.3, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {} },
+    { id: "p6", name: "Angelo", team: "U9", birthday: "2016-09-22", position: "Mittelfeld", jersey: 8, parentName: "Eltern Angelo", since: "2022", nextTeam: "U10", note: "Stark im Passspiel", games: 13, goals: 7, assists: 6, trainingCount: 16, speed: 7.1, dribbling: 7.5, passing: 8.4, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {} },
+    { id: "p7", name: "Alexander", team: "U9", birthday: "2016-07-11", position: "Verteidiger", jersey: 3, parentName: "Eltern Alexander", since: "2022", nextTeam: "U10", note: "Sehr zuverlässig", games: 14, goals: 1, assists: 1, trainingCount: 15, speed: 6.4, dribbling: 6.2, passing: 7.2, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {} },
+    { id: "p8", name: "Teo A.", team: "U8", birthday: "2017-02-05", position: "Stürmer", jersey: 9, parentName: "Eltern Teo A.", since: "2024", nextTeam: "U9", note: "Torgefährlich", games: 10, goals: 6, assists: 3, trainingCount: 12, speed: 7.3, dribbling: 7.2, passing: 6.5, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {} },
+    { id: "p9", name: "Teo B.", team: "U9", birthday: "2016-12-28", position: "Mittelfeld", jersey: 6, parentName: "Eltern Teo B.", since: "2024", nextTeam: "U10", note: "Mutig am Ball", games: 9, goals: 2, assists: 2, trainingCount: 11, speed: 6.9, dribbling: 7.0, passing: 6.8, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {} },
+    { id: "p10", name: "Wolfi", team: "U8", birthday: "2017-03-07", position: "Verteidiger", jersey: 2, parentName: "Eltern Wolfi", since: "2025", nextTeam: "U9", note: "Lernwillig", games: 8, goals: 0, assists: 0, trainingCount: 8, speed: 5.9, dribbling: 5.5, passing: 5.8, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {} },
+    { id: "p11", name: "Loric", team: "U9", birthday: "2016-11-02", position: "Flügel", jersey: 12, parentName: "Eltern Loric", since: "2024", nextTeam: "U10", note: "Soll mehr Mut haben", games: 8, goals: 1, assists: 1, trainingCount: 9, speed: 6.7, dribbling: 6.5, passing: 6.2, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {} },
+    { id: "p12", name: "Anna", team: "U9", birthday: "2016-04-14", position: "Mittelfeld", jersey: 14, parentName: "Eltern Anna", since: "2022", nextTeam: "U10", note: "Sehr aufmerksam", games: 14, goals: 4, assists: 7, trainingCount: 17, speed: 7.2, dribbling: 7.7, passing: 7.6, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {} },
+    { id: "p13", name: "Max", team: "U8", birthday: "2017-08-01", position: "Mittelfeld", jersey: 13, parentName: "Eltern Max", since: "2023", nextTeam: "U9", note: "Stark im Dribbling", games: 13, goals: 7, assists: 4, trainingCount: 15, speed: 7.7, dribbling: 8.5, passing: 7.0, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {} },
+    { id: "p14", name: "Fredi", team: "U8", birthday: "2017-05-26", position: "Tor", jersey: 15, parentName: "Eltern Fredi", since: "2024", nextTeam: "U9", note: "Gute Reflexe", games: 9, goals: 0, assists: 0, trainingCount: 10, speed: 5.5, dribbling: 5.2, passing: 5.9, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {} },
+    { id: "p15", name: "Urs", team: "U9", birthday: "2016-06-17", position: "Tor", jersey: 1, parentName: "Eltern Urs", since: "2023", nextTeam: "U10", note: "Ruhig im Tor", games: 11, goals: 0, assists: 0, trainingCount: 12, speed: 5.6, dribbling: 5.4, passing: 6.0, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {} },
+    { id: "p16", name: "Mario", team: "U8", birthday: "2017-01-19", position: "Flügel", jersey: 16, parentName: "Eltern Mario", since: "2025", nextTeam: "U9", note: "Wenig Einsatzzeit", games: 7, goals: 1, assists: 1, trainingCount: 7, speed: 6.0, dribbling: 5.8, passing: 5.6, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {} },
+    { id: "p17", name: "David", team: "U9", birthday: "2016-03-30", position: "Verteidiger", jersey: 17, parentName: "Eltern David", since: "2025", nextTeam: "U10", note: "Braucht mehr Spielminuten", games: 7, goals: 0, assists: 0, trainingCount: 7, speed: 6.1, dribbling: 5.5, passing: 5.9, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {} }
   ],
   
   matches: [
@@ -1978,11 +1705,6 @@ function requestAttendanceChange(matchId, newStatus) {
   }
   
   const player = findPlayer(playerId);
-  if (player && player.canVote === false) {
-    showToast("⛔ Du hast kein Abstimmrecht! Bitte Trainer kontaktieren.", "error");
-    return false;
-  }
-  
   const match = state.matches?.find(m => m.id === matchId);
   if (!match || !player) return false;
   
@@ -2042,15 +1764,10 @@ function updateMatchAttendance(matchId, status) {
     return;
   }
   
-  const player = findPlayer(playerId);
-  if (player && player.canVote === false) {
-    showToast("⛔ Du hast kein Abstimmrecht! Bitte Trainer kontaktieren.", "error");
-    return;
-  }
-  
   const match = state.matches?.find(m => m.id === matchId);
   if (!match) return;
   
+  const player = findPlayer(playerId);
   const playerTeamNumber = getTeamNumber(player.team);
   const matchTeamNumber = getTeamNumber(match.team);
   
@@ -2078,30 +1795,6 @@ function updateMatchAttendance(matchId, status) {
   }
   
   save();
-}
-
-function toggleVoteRight(playerId) {
-  const player = findPlayer(playerId);
-  if (!player) return;
-  
-  const password = prompt("🔒 Bitte Trainer-Passwort eingeben:");
-  if (password === null) return;
-  
-  const admin = state.users?.find(u => u.role === "admin");
-  if (password !== admin.password) {
-    showToast("❌ Falsches Passwort!", "error");
-    return;
-  }
-  
-  player.canVote = !player.canVote;
-  
-  if (!player.canVote && state.attendanceRequests) {
-    state.attendanceRequests = state.attendanceRequests.filter(r => r.playerId !== playerId);
-  }
-  
-  save();
-  showToast(`✅ Abstimmrecht für ${player.name} ${player.canVote ? 'aktiviert' : 'deaktiviert'}`, "success");
-  render();
 }
 
 function approveAttendanceRequest(requestId, approved) {
@@ -2200,8 +1893,7 @@ function addPlayer() {
     id, name, team, birthday: "", position: "", jersey: 0, parentName: "",
     since: new Date().getFullYear().toString(), nextTeam: "", note: "",
     games: 0, goals: 0, assists: 0, trainingCount: 0, speed: "", dribbling: "", passing: "",
-    photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {},
-    canVote: true
+    photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}
   });
   
   const username = generateUsername(name);
@@ -3505,39 +3197,28 @@ function renderCalendar() {
                 
                 ${approvalMessage}
                 
-                ${isParentMode && !isPast ? (() => {
-                  const player = findPlayer(playerId);
-                  if (player?.canVote === false) {
-                    return `
-                      <div class="small" style="margin-top: 8px; color: var(--muted); text-align: center; padding: 8px; background: #f5f9f6; border-radius: 8px;">
-                        ⛔ Kein Abstimmrecht (keine Spielberechtigung)
-                      </div>
-                    `;
-                  } else {
-                    return `
-                      <div class="attendance-buttons" onclick="event.stopPropagation()">
-                        <button class="btn ${myStatus === 'coming' ? 'yes' : 'secondary'}" 
-                          onclick="updateMatchAttendance('${m.id}','coming')">
-                          ✓ Kommen
-                        </button>
-                        <button class="btn ${myStatus === 'maybe' ? 'maybe' : 'secondary'}" 
-                          onclick="updateMatchAttendance('${m.id}','maybe')">
-                          ? Vielleicht
-                        </button>
-                        <button class="btn ${myStatus === 'missing' ? 'no' : 'secondary'}" 
-                          onclick="updateMatchAttendance('${m.id}','missing')">
-                          ✗ Nicht
-                        </button>
-                      </div>
-                      
-                      ${myStatus === 'coming' ? `
-                        <div class="small" style="margin-top: 8px; color: var(--muted); text-align: center;">
-                          Änderung nur mit Trainer-Genehmigung möglich
-                        </div>
-                      ` : ''}
-                    `;
-                  }
-                })() : ''}
+                ${isParentMode && !isPast ? `
+                  <div class="attendance-buttons" onclick="event.stopPropagation()">
+                    <button class="btn ${myStatus === 'coming' ? 'yes' : 'secondary'}" 
+                      onclick="updateMatchAttendance('${m.id}','coming')">
+                      ✓ Kommen
+                    </button>
+                    <button class="btn ${myStatus === 'maybe' ? 'maybe' : 'secondary'}" 
+                      onclick="updateMatchAttendance('${m.id}','maybe')">
+                      ? Vielleicht
+                    </button>
+                    <button class="btn ${myStatus === 'missing' ? 'no' : 'secondary'}" 
+                      onclick="updateMatchAttendance('${m.id}','missing')">
+                      ✗ Nicht
+                    </button>
+                  </div>
+                  
+                  ${myStatus === 'coming' ? `
+                    <div class="small" style="margin-top: 8px; color: var(--muted); text-align: center;">
+                      Änderung nur mit Trainer-Genehmigung möglich
+                    </div>
+                  ` : ''}
+                ` : ''}
                 
                 ${m.result ? `<div style="margin-top: 8px; font-weight: 600;">Ergebnis: ${m.result}</div>` : ''}
                 
@@ -3920,22 +3601,6 @@ function renderPlayers() {
               <label>Nächstes Team</label>
               <input id="player-nextTeam" value="${selectedPlayer.nextTeam || ''}">
             </div>
-          </div>
-          
-          <!-- 🔥 NEU: Abstimmrecht Toggle -->
-          <div style="margin-top: 16px; padding: 12px; background: #f5f9f6; border-radius: 12px;">
-            <label style="display: flex; align-items: center; gap: 12px; cursor: pointer;">
-              <span style="font-weight: 600; flex: 1;">⚽ Abstimmrecht:</span>
-              <span style="color: var(--muted); margin-right: 8px;" id="vote-status-${selectedPlayer.id}">${selectedPlayer.canVote ? 'Aktiv' : 'Inaktiv'}</span>
-              <button class="btn ${selectedPlayer.canVote ? 'yes' : 'secondary'}" 
-                      style="min-width: 80px;"
-                      onclick="toggleVoteRight('${selectedPlayer.id}')">
-                ${selectedPlayer.canVote ? '✅ Aktiv' : '⛔ Inaktiv'}
-              </button>
-            </label>
-            <p class="small" style="margin-top: 8px; color: var(--muted);">
-              ${selectedPlayer.canVote ? 'Spieler darf bei Spielen abstimmen' : 'Spieler kann Spiele nur sehen, aber nicht abstimmen'}
-            </p>
           </div>
           
           <label>Trainer-Notiz</label>
@@ -5392,7 +5057,6 @@ window.deleteCustomEvent = deleteCustomEvent;
 window.updateCustomEvent = updateCustomEvent;
 window.handleCustomEventImageUpload = handleCustomEventImageUpload;
 window.installApp = installApp;
-window.toggleVoteRight = toggleVoteRight;
 
 startApp();
 </script>
