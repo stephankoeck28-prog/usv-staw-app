@@ -2077,6 +2077,8 @@ function approveAttendanceRequest(requestId, approved) {
       
       const parentUser = findUserForPlayer(request.playerId);
       if (parentUser) {
+        if (request.pushSent) return;
+request.pushSent = true;
         sendPushNotification(parentUser.id, "Antrag genehmigt", `Deine Änderung für ${request.matchTitle} wurde genehmigt!`);
       }
     }
