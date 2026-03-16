@@ -1075,13 +1075,9 @@ if (
           body: JSON.stringify({
             message: {
               token: token,
-              notification: {
+              data: {
                 title: title,
                 body: body
-              },
-              data: {
-                click_action: 'FLUTTER_NOTIFICATION_CLICK',
-                screen: 'home'
               },
               android: {
                 priority: 'high'
