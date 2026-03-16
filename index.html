@@ -812,7 +812,7 @@ let _pushInitialized = false;
 // 🔍 DEBUG-ZÄHLER für Push
 let pushCounter = 0;
 
-// 🔥 NEU: ZENTRALE De-Duplizierung für ALLE Push-Typen
+// 🔥 ZENTRALE De-Duplizierung für ALLE Push-Typen
 const _processedPushIds = new Set();
 
 // Alle 10 Sekunden aufräumen
@@ -821,12 +821,12 @@ setInterval(() => {
   console.log("🧹 Zentrale Push-IDs geleert");
 }, 10000);
 
-// 🔥 NEU: Eindeutige ID für jeden Push generieren
+// 🔥 Eindeutige ID für jeden Push generieren
 function generatePushId(userId, title, body) {
   return `${userId}-${title}-${body}-${Date.now()}`;
 }
 
-// 🔥 NEU: Persistent Alert statt Toast
+// 🔥 Persistent Alert statt Toast
 function showPersistentAlert(message) {
   let alertBox = document.getElementById('persistent-alert');
   
@@ -903,7 +903,7 @@ async function getAccessToken() {
   }
 }
 
-// 🔥 VERBESSERTE initPushNotifications mit ZENTRALER De-Duplizierung
+// 🔥 initPushNotifications mit ZENTRALER De-Duplizierung
 async function initPushNotifications() {
   if (_pushInitialized) {
     console.log('⏭️ Push bereits initialisiert, überspringe...');
@@ -937,7 +937,7 @@ async function initPushNotifications() {
         showToast('Push-Token Fehler', 'error');
       }
       
-      // 🔥 Verbesserter onMessage Handler mit ZENTRALER De-Duplizierung
+      // 🔥 onMessage Handler mit ZENTRALER De-Duplizierung
       messaging.onMessage((payload) => {
         console.log('📨 Push (Vordergrund):', payload);
         
@@ -979,7 +979,7 @@ async function savePushToken(token) {
   }
 }
 
-// 🔥 VERBESSERTE sendPushNotification mit ZENTRALER De-Duplizierung
+// 🔥 VERBESSERTE sendPushNotification mit doppelter Absicherung
 let lastPushTime = 0;
 let lastPushKey = '';
 
@@ -1078,8 +1078,6 @@ async function sendPushNotification(userId, title, body) {
         console.log('❌ Fehler bei Token', token, tokenError);
       }
     }
-    
-    // Kein Toast hier - nur der Push selbst!
     
   } catch (error) {
     console.log('⚠️ Push konnte nicht gesendet werden:', error);
@@ -1185,11 +1183,12 @@ function installApp() {
 }
 
 // ==================== FIREBASE INIT ====================
+// 🔥 KONSISTENTE CONFIG - GLEICH WIE IM SERVICE WORKER!
 const firebaseConfig = {
   apiKey: "AIzaSyAemNwKerXt-hvtikIIACR4oBTb72VjL_U",
   authDomain: "usv-staw-app.firebaseapp.com",
   projectId: "usv-staw-app",
-  storageBucket: "usv-staw-app.appspot.com",
+  storageBucket: "usv-staw-app.firebasestorage.app",  // ← WICHTIG: Gleicher Wert wie im Service Worker!
   messagingSenderId: "983106867178",
   appId: "1:983106867178:web:90234121a5833e7e396c93"
 };
@@ -1232,9 +1231,9 @@ const seed = {
   pushTokens: {},
   reminderDays: 0,
   
-  // 🔥 NEU: Splash-Screen Konfiguration mit eigenen Events
+  // 🔥 Splash-Screen Konfiguration mit eigenen Events
   splashConfig: {
-    duration: 2,  // Sekunden (0 = aus)
+    duration: 2,
     defaultImage: 'icon-192.png',
     christmas: {
       active: false,
@@ -1261,7 +1260,7 @@ const seed = {
       image: null,
       text: 'Happy Birthday, NAME! 🎂'
     },
-    customEvents: [] // Hier kommen eigene Events rein
+    customEvents: []
   },
   
   users: [
@@ -1341,7 +1340,7 @@ const seed = {
   selectedReportMatchId: null
 };
 
-// Eltern-Accounts generieren - JETZT MIT UMLAUT-UNTERSTÜTZUNG!
+// Eltern-Accounts generieren - MIT UMLAUT-UNTERSTÜTZUNG!
 seed.players.forEach(p => {
   const username = generateUsername(p.name);
   
@@ -2165,7 +2164,7 @@ function resetCoachPassword(coachId) {
   showToast(`✅ Passwort für ${coach.name} zurückgesetzt auf "4321"`, "success");
 }
 
-// 🔥 VERBESSERTE savePlayerData MIT FOTO-FIX
+// 🔥 savePlayerData MIT FOTO-FIX
 function savePlayerData() {
   const playerId = state.selectedPlayerId;
   const player = findPlayer(playerId);
@@ -2201,7 +2200,7 @@ function savePlayerData() {
   showToast("✅ Spielerdaten gespeichert!", "success");
 }
 
-// 🔥 VERBESSERTE handlePhotoUpload MIT GRÖßENBEGRENZUNG
+// 🔥 handlePhotoUpload MIT GRÖßENBEGRENZUNG
 function handlePhotoUpload(event) {
   const file = event.target.files[0];
   if (file) {
@@ -2260,20 +2259,20 @@ function handleLogoUpload(event) {
       
       const ctx = canvas.getContext('2d');
       
-      // 🔥 1. ALLES LÖSCHEN (macht den Canvas transparent)
+      // 1. ALLES LÖSCHEN (macht den Canvas transparent)
       ctx.clearRect(0, 0, width, height);
       
-      // 🔥 2. BEI JPEG: Weissen Hintergrund setzen
+      // 2. BEI JPEG: Weissen Hintergrund setzen
       if (file.type === 'image/jpeg' || file.type === 'image/jpg') {
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, width, height);
       }
       // Bei PNG: bleibt transparent (clearRect hat schon alles gelöscht)
       
-      // 🔥 3. BILD MIT ERHALTENER TRANSPARENZ ZEICHNEN
+      // 3. BILD MIT ERHALTENER TRANSPARENZ ZEICHNEN
       ctx.drawImage(img, 0, 0, width, height);
       
-      // 🔥 4. IMMER ALS PNG SPEICHERN (für Transparenz)
+      // 4. IMMER ALS PNG SPEICHERN (für Transparenz)
       const compressedBase64 = canvas.toDataURL('image/png');
       
       // Größe prüfen
@@ -2409,7 +2408,7 @@ function addMatch() {
   
   save();
   
-  // 🔥 Push-Benachrichtigungen an Eltern mit korrekter Sichtbarkeits-Logik
+  // Push-Benachrichtigungen an Eltern mit korrekter Sichtbarkeits-Logik
   if (state.users && state.players) {
     const parentUsers = state.users.filter(u => u.role === "parent");
     const matchTeamNumber = getTeamNumber(team);
@@ -2813,7 +2812,7 @@ function handleSplashImageUpload(event, eventType) {
   }
 }
 
-// 🔥 NEU: Funktionen für eigene Events
+// Funktionen für eigene Events
 function addCustomEvent() {
   if (!state.splashConfig.customEvents) state.splashConfig.customEvents = [];
   
