@@ -812,20 +812,6 @@ let _pushInitialized = false;
 // 🔍 DEBUG-ZÄHLER für Push
 let pushCounter = 0;
 
-// 🔥 NEU: ZENTRALE De-Duplizierung für ALLE Push-Typen
-const _processedPushIds = new Set();
-
-// Alle 10 Sekunden aufräumen
-setInterval(() => {
-  _processedPushIds.clear();
-  console.log("🧹 Zentrale Push-IDs geleert");
-}, 10000);
-
-// 🔥 NEU: Eindeutige ID für jeden Push generieren
-function generatePushId(userId, title, body) {
-  return `${userId}-${title}-${body}-${Date.now()}`;
-}
-
 // 🔥 NEU: Persistent Alert statt Toast
 function showPersistentAlert(message) {
   let alertBox = document.getElementById('persistent-alert');
@@ -870,6 +856,15 @@ function showPersistentAlert(message) {
   if (messageEl) messageEl.textContent = message;
 }
 
+// 🔥 NEU: ID-basierte De-Duplizierung für Vordergrund
+const _processedForegroundIds = new Set();
+
+// Alle 10 Sekunden aufräumen
+setInterval(() => {
+  _processedForegroundIds.clear();
+  console.log("🧹 Vordergrund: processedForegroundIds geleert");
+}, 10000);
+
 // iOS "Zum Home-Bildschirm" Anleitung zeigen
 function showIOSInstructions() {
   showToast(
@@ -903,7 +898,7 @@ async function getAccessToken() {
   }
 }
 
-// 🔥 VERBESSERTE initPushNotifications mit ZENTRALER De-Duplizierung
+// 🔥 VERBESSERTE initPushNotifications mit ID-basierter De-Duplizierung
 async function initPushNotifications() {
   if (_pushInitialized) {
     console.log('⏭️ Push bereits initialisiert, überspringe...');
@@ -937,7 +932,7 @@ async function initPushNotifications() {
         showToast('Push-Token Fehler', 'error');
       }
       
-      // 🔥 Verbesserter onMessage Handler mit ZENTRALER De-Duplizierung
+      // 🔥 Verbesserter onMessage Handler mit PERSISTENTEM ALERT
       messaging.onMessage((payload) => {
         console.log('📨 Push (Vordergrund):', payload);
         
@@ -945,12 +940,12 @@ async function initPushNotifications() {
                           payload.messageId || 
                           `${payload.notification?.title}-${payload.notification?.body}`;
         
-        if (_processedPushIds.has(messageId)) {
-          console.log('⏭️ Doppelten Push verhindert (ID):', messageId);
+        if (_processedForegroundIds.has(messageId)) {
+          console.log('⏭️ Doppelten Toast verhindert (ID):', messageId);
           return;
         }
         
-        _processedPushIds.add(messageId);
+        _processedForegroundIds.add(messageId);
         console.log('✅ Persistent Alert wird angezeigt mit ID:', messageId);
         
         const body = payload.notification?.body || payload.data?.body || 'Neue Nachricht';
@@ -979,15 +974,15 @@ async function savePushToken(token) {
   }
 }
 
-// 🔥 VERBESSERTE sendPushNotification mit ZENTRALER De-Duplizierung
+// 🔥 VERBESSERTE sendPushNotification mit ACTION und MATCHID
 let lastPushTime = 0;
 let lastPushKey = '';
 
-async function sendPushNotification(userId, title, body) {
+async function sendPushNotification(userId, title, body, action = '', matchId = '') {
   pushCounter++;
   
   const now = Date.now();
-  const pushKey = `${userId}-${title}-${body}`;
+  const pushKey = `${userId}-${action}-${matchId}-${title}-${body}`;
   
   // Wenn gleicher Push in den letzten 3 Sekunden, ignorieren
   if (pushKey === lastPushKey && now - lastPushTime < 3000) {
@@ -998,20 +993,7 @@ async function sendPushNotification(userId, title, body) {
   lastPushKey = pushKey;
   lastPushTime = now;
   
-  // Eindeutige ID für diesen Push generieren
-  const pushId = generatePushId(userId, title, body);
-  
-  console.log(`🔥 PUSH AUFRUF #${pushCounter}:`, {userId, title, body, pushId});
-  
-  // Prüfen ob dieser Push bereits in den letzten 10 Sekunden gesendet wurde
-  if (_processedPushIds.has(pushId)) {
-    console.log("⛔ Doppelten Push verhindert (zentral):", pushId);
-    return;
-  }
-  
-  _processedPushIds.add(pushId);
-  
-  console.log("📨 Sende Push:", {userId, title, body});
+  console.log(`🔥 PUSH AUFRUF #${pushCounter}:`, {userId, title, body, action, matchId});
   
   try {
     if (!state.pushTokens || !state.pushTokens[userId]) {
@@ -1047,7 +1029,10 @@ async function sendPushNotification(userId, title, body) {
               data: {
                 click_action: 'FLUTTER_NOTIFICATION_CLICK',
                 screen: 'home',
-                message_id: pushId
+                userId: userId,
+                action: action,
+                matchId: matchId,
+                timestamp: now.toString()
               },
               android: {
                 priority: 'high'
@@ -1079,8 +1064,7 @@ async function sendPushNotification(userId, title, body) {
       }
     }
     
-    // Kein Toast hier - nur der Push selbst!
-    
+    showToast(`✅ Push gesendet`, 'success', 2000);
   } catch (error) {
     console.log('⚠️ Push konnte nicht gesendet werden:', error);
     showToast('Fehler beim Push-Versand', 'error');
@@ -1139,7 +1123,9 @@ async function checkAndSendReminders() {
             await sendPushNotification(
               parentUser.id,
               "⚽ Bitte abstimmen!",
-              `${match.title} am ${match.date} - Bitte sag uns ob du kommst!`
+              `${match.title} am ${match.date} - Bitte sag uns ob du kommst!`,
+              "reminder",
+              match.id
             );
           }
         }
@@ -1961,7 +1947,13 @@ function requestAttendanceChange(matchId, newStatus) {
   
   showToast("✅ Änderungsantrag wurde an den Trainer gesendet!", "success");
   
-  sendPushNotification("u1", "Neuer Änderungsantrag", `${player.name} möchte Status ändern`);
+  sendPushNotification(
+    "u1", 
+    "Neuer Änderungsantrag", 
+    `${player.name} möchte Status ändern`,
+    "request",
+    matchId
+  );
   
   return true;
 }
@@ -2038,7 +2030,13 @@ function approveAttendanceRequest(requestId, approved) {
       
       const parentUser = findUserForPlayer(request.playerId);
       if (parentUser) {
-        sendPushNotification(parentUser.id, "Antrag genehmigt", `Deine Änderung für ${request.matchTitle} wurde genehmigt!`);
+        sendPushNotification(
+          parentUser.id, 
+          "Antrag genehmigt", 
+          `Deine Änderung für ${request.matchTitle} wurde genehmigt!`,
+          "approve",
+          request.matchId
+        );
       }
     }
   } else {
@@ -2047,7 +2045,13 @@ function approveAttendanceRequest(requestId, approved) {
     
     const parentUser = findUserForPlayer(request.playerId);
     if (parentUser) {
-      sendPushNotification(parentUser.id, "Antrag abgelehnt", `Deine Änderung für ${request.matchTitle} wurde leider abgelehnt.`);
+      sendPushNotification(
+        parentUser.id, 
+        "Antrag abgelehnt", 
+        `Deine Änderung für ${request.matchTitle} wurde leider abgelehnt.`,
+        "reject",
+        request.matchId
+      );
     }
   }
   
@@ -2433,7 +2437,9 @@ function addMatch() {
         sendPushNotification(
           parent.id, 
           "⚽ Neues Spiel", 
-          `${player.name}: ${title} am ${date}`
+          `${player.name}: ${title} am ${date}`,
+          "newmatch",
+          state.matches[state.matches.length - 1]?.id || ""
         );
       }
     });
