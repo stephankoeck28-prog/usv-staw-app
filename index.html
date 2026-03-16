@@ -579,7 +579,7 @@ input, select, textarea { width: 100%; padding: 12px; border: 1px solid #dce6de;
 <!-- ==================== SPLASH SCREEN ==================== -->
 <div class="splash-screen" id="splash-screen">
   <img id="splash-image" src="icon-192.png" alt="USV">
-  <div class="splash-title" id="splash-title">USV St Andrä Wördern</div>
+  <div class="splash-title" id="splash-title">USV St Andrä</div>
   <div class="splash-subtitle" id="splash-subtitle">Team App</div>
 </div>
 
@@ -615,20 +615,138 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-/*
-// ==================== BADGE RESET BEIM ÖFFNEN ====================
-function resetBadge() {
-  if ('setAppBadge' in navigator) {
-    navigator.setAppBadge(0).catch(e => console.log('Badge reset', e));
+// ==================== PERSISTENT ALERT FÜR ELTERN ====================
+let alertCount = 0; // Globaler Zähler für ungelesene Nachrichten
+
+function showPersistentAlert(message) {
+  let alertBox = document.getElementById('persistent-alert');
+  alertCount++; // Eine neue Nachricht kommt hinzu
+  
+  if (!alertBox) {
+    alertBox = document.createElement('div');
+    alertBox.id = 'persistent-alert';
+    alertBox.className = 'card';
+    alertBox.style.cssText = `
+      margin: 16px;
+      background: var(--notification-bg);
+      border-left: 8px solid var(--notification-border);
+      animation: none;
+      position: sticky;
+      top: 80px;
+      z-index: 999;
+    `;
+    
+    alertBox.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span style="font-size: 24px;">🔔</span>
+        <div style="flex: 1;">
+          <strong style="color: var(--text);">Neue Nachrichten</strong>
+          <div id="alert-message" style="margin-top: 4px; color: var(--text);"></div>
+        </div>
+        <button onclick="closeSingleAlert(this)" 
+          style="background: none; border: none; font-size: 20px; cursor: pointer; color: var(--muted); padding: 5px 10px;">
+          ✕
+        </button>
+      </div>
+    `;
+    
+    const app = document.querySelector('.app');
+    if (app) {
+      app.insertBefore(alertBox, app.firstChild);
+    }
+    
+    // Erste Nachricht
+    const messageEl = document.getElementById('alert-message');
+    if (messageEl) {
+      messageEl.innerHTML = '• ' + message;
+    }
+  } else {
+    // Weitere Nachricht anhängen
+    const messageEl = document.getElementById('alert-message');
+    if (messageEl) {
+      messageEl.innerHTML = messageEl.innerHTML + '<br>• ' + message;
+    }
   }
+  
+  // Badge aktualisieren = Anzahl der ungelesenen Nachrichten
+  if ('setAppBadge' in navigator) {
+    navigator.setAppBadge(alertCount).catch(e => console.log('Badge gesetzt', e));
+  }
+  
+  console.log(`📊 Alert Count: ${alertCount}, Badge gesetzt auf ${alertCount}`);
 }
 
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') {
-    resetBadge();
+// Funktion zum Schließen EINER Nachricht
+window.closeSingleAlert = function(button) {
+  const alertBox = document.getElementById('persistent-alert');
+  if (!alertBox) return;
+  
+  const messageEl = document.getElementById('alert-message');
+  if (!messageEl) return;
+  
+  // Aktuelle Nachrichten als Array
+  const messages = messageEl.innerHTML.split('<br>');
+  
+  if (messages.length <= 1) {
+    // Letzte Nachricht -> ganzen Alert schließen
+    alertBox.remove();
+    alertCount = 0;
+    console.log('🗑️ Letzte Nachricht gelöscht, Alert geschlossen');
+  } else {
+    // Erste Nachricht entfernen
+    messages.shift();
+    messageEl.innerHTML = messages.join('<br>');
+    alertCount--;
+    console.log(`🗑️ Eine Nachricht gelöscht, verbleibend: ${alertCount}`);
+  }
+  
+  // Badge aktualisieren
+  if ('setAppBadge' in navigator) {
+    if (alertCount > 0) {
+      navigator.setAppBadge(alertCount).catch(e => console.log('Badge gesetzt', e));
+    } else {
+      navigator.setAppBadge(0).catch(e => console.log('Badge reset', e));
+    }
+  }
+};
+
+// Beim App-Start: Prüfen ob es gespeicherte Nachrichten gibt
+document.addEventListener('DOMContentLoaded', () => {
+  const alertBox = document.getElementById('persistent-alert');
+  if (!alertBox) {
+    alertCount = 0;
+    if ('setAppBadge' in navigator) {
+      navigator.setAppBadge(0).catch(e => console.log('Badge reset', e));
+    }
+  } else {
+    // Falls Alert schon da ist, zählen wir die Nachrichten
+    const messageEl = document.getElementById('alert-message');
+    if (messageEl) {
+      const messages = messageEl.innerHTML.split('<br>');
+      alertCount = messages.length;
+      if ('setAppBadge' in navigator) {
+        navigator.setAppBadge(alertCount).catch(e => console.log('Badge gesetzt', e));
+      }
+    }
   }
 });
-*/
+
+// Bei Seitenwechsel prüfen
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    const alertBox = document.getElementById('persistent-alert');
+    if (!alertBox && 'setAppBadge' in navigator) {
+      // Nur zurücksetzen wenn wirklich kein Alert mehr da ist
+      navigator.setAppBadge(0).catch(e => console.log('Badge reset', e));
+      alertCount = 0;
+    } else if (alertBox) {
+      // Alert ist noch da, Badge wiederherstellen falls nötig
+      if ('setAppBadge' in navigator && alertCount > 0) {
+        navigator.setAppBadge(alertCount).catch(e => console.log('Badge wiederhergestellt', e));
+      }
+    }
+  }
+});
 
 // ==================== HILFSFUNKTION FÜR FARBEN ====================
 const DEFAULT_PRIMARY_COLOR = "#156d3b";
@@ -838,86 +956,6 @@ function isAppInstalled() {
   return window.matchMedia('(display-mode: standalone)').matches || 
          window.navigator.standalone === true;
 }
-
-// ==================== PERSISTENT ALERT FÜR ELTERN ====================
-function showPersistentAlert(message) {
-  let alertBox = document.getElementById('persistent-alert');
-  
-  if (!alertBox) {
-    alertBox = document.createElement('div');
-    alertBox.id = 'persistent-alert';
-    alertBox.className = 'card';
-    alertBox.style.cssText = `
-      margin: 16px;
-      background: var(--notification-bg);
-      border-left: 8px solid var(--notification-border);
-      animation: none;
-      position: sticky;
-      top: 80px;
-      z-index: 999;
-    `;
-    
-    alertBox.innerHTML = `
-      <div style="display: flex; align-items: center; gap: 12px;">
-        <span style="font-size: 24px;">🔔</span>
-        <div style="flex: 1;">
-          <strong style="color: var(--text);">Neue Nachricht</strong>
-          <div id="alert-message" style="margin-top: 4px; color: var(--text);"></div>
-        </div>
-        <button onclick="this.parentElement.parentElement.remove(); window.closePersistentAlert && window.closePersistentAlert();" 
-          style="background: none; border: none; font-size: 20px; cursor: pointer; color: var(--muted); padding: 5px 10px;">
-          ✕
-        </button>
-      </div>
-    `;
-    
-    const app = document.querySelector('.app');
-    if (app) {
-      app.insertBefore(alertBox, app.firstChild);
-    }
-  } else {
-    const existingMessage = document.getElementById('alert-message');
-    if (existingMessage) {
-      existingMessage.innerHTML = existingMessage.innerHTML + '<br>• ' + message;
-    }
-  }
-  
-  const messageEl = document.getElementById('alert-message');
-  if (messageEl && alertBox && !alertBox.dataset.messages) {
-    messageEl.textContent = '• ' + message;
-    alertBox.dataset.messages = '1';
-  } else if (messageEl) {
-    messageEl.innerHTML = messageEl.innerHTML + '<br>• ' + message;
-    alertBox.dataset.messages = parseInt(alertBox.dataset.messages || 1) + 1;
-  }
-  
-  if ('setAppBadge' in navigator) {
-    const currentCount = parseInt(alertBox?.dataset.messages || 1);
-    navigator.setAppBadge(currentCount).catch(e => console.log('Badge gesetzt', e));
-  }
-}
-
-window.closePersistentAlert = function() {
-  const alertBox = document.getElementById('persistent-alert');
-  if (alertBox) {
-    if ('setAppBadge' in navigator) {
-      navigator.setAppBadge(0).catch(e => console.log('Badge reset', e));
-    }
-    alertBox.remove();
-  }
-};
-
-// NICHT beim Öffnen zurücksetzen! Nur beim Schließen des Alerts
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') {
-    const alertBox = document.getElementById('persistent-alert');
-    if (!alertBox && 'setAppBadge' in navigator) {
-      // Nur zurücksetzen wenn wirklich kein Alert mehr da ist
-      // (z.B. nach App-Neustart)
-      navigator.setAppBadge(0).catch(e => console.log('Badge reset', e));
-    }
-  }
-});
 
 // ==================== PUSH BENACHRICHTIGUNGEN ====================
 let messaging = null;
@@ -1315,7 +1353,7 @@ const seed = {
         2024: { goals: 5, assists: 3, trainings: 18, percentage: 82 },
         2023: { goals: 2, assists: 1, trainings: 12, percentage: 75 }
       },
-      canVote: true // 🔥 NEU: Abstimmrecht standardmäßig aktiv
+      canVote: true
     },
     { id: "p2", name: "Oliver A.", team: "U8", birthday: "2017-06-08", position: "Verteidiger", jersey: 4, parentName: "Eltern Oliver", since: "2024", nextTeam: "U9", note: "Gute Mitarbeit", games: 11, goals: 12, assists: 2, trainingCount: 12, speed: 6.4, dribbling: 6.8, passing: 6.9, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}, canVote: true },
     { id: "p3", name: "Oliver B.", team: "U9", birthday: "2016-01-03", position: "Mittelfeld", jersey: 10, parentName: "Eltern Oliver B.", since: "2023", nextTeam: "U10", note: "Gute Übersicht", games: 10, goals: 5, assists: 5, trainingCount: 15, speed: 7.0, dribbling: 7.0, passing: 7.5, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}, canVote: true },
@@ -1491,17 +1529,14 @@ function getEligiblePlayersForMatch(match) {
   if (!state.players) return [];
   const matchTeamNumber = getTeamNumber(match.team);
   
-  let players = [];
   if (matchTeamNumber <= 8) {
-    players = state.players.filter(p => p.team === match.team);
+    return state.players.filter(p => p.team === match.team);
   } else {
-    players = state.players.filter(p => {
+    return state.players.filter(p => {
       const playerTeamNumber = getTeamNumber(p.team);
       return playerTeamNumber !== null && playerTeamNumber <= matchTeamNumber;
     });
   }
-  
-  return players; // Alle Spieler anzeigen, Abstimmrecht wird später geprüft
 }
 
 function getVisibleMatchesForParent(playerId) {
@@ -1739,7 +1774,6 @@ function getStarsHtml(stars) {
   return html;
 }
 
-// ==================== SPIELBERICHT FUNKTIONEN ====================
 function setSelectedReportMatch(matchId) {
   state.selectedReportMatchId = matchId;
   save();
@@ -1861,7 +1895,6 @@ function saveMatchReport(matchId) {
   showToast("✅ Spielbericht gespeichert!", "success");
 }
 
-// ==================== LOGIN / LOGOUT ====================
 function login() {
   const username = document.getElementById("login-username").value.trim();
   const password = document.getElementById("login-password").value.trim();
@@ -1908,14 +1941,12 @@ function logout() {
   showToast("👋 Auf Wiedersehen!", "info");
 }
 
-// ==================== TEAM ====================
 function setTeam(team) {
   state.currentTeam = team;
   state.expandedMatch = null;
   save();
 }
 
-// ==================== KALENDER EXPAND ====================
 function toggleMatchExpand(matchId) {
   if (state.expandedMatch === matchId) {
     state.expandedMatch = null;
@@ -1925,7 +1956,6 @@ function toggleMatchExpand(matchId) {
   save();
 }
 
-// ==================== ATTENDANCE MIT GENEHMIGUNG ====================
 function requestAttendanceChange(matchId, newStatus) {
   if (!session) return false;
   
@@ -1948,7 +1978,6 @@ function requestAttendanceChange(matchId, newStatus) {
   }
   
   const player = findPlayer(playerId);
-  // 🔥 NEU: Prüfen ob Spieler abstimmen darf
   if (player && player.canVote === false) {
     showToast("⛔ Du hast kein Abstimmrecht! Bitte Trainer kontaktieren.", "error");
     return false;
@@ -2014,7 +2043,6 @@ function updateMatchAttendance(matchId, status) {
   }
   
   const player = findPlayer(playerId);
-  // 🔥 NEU: Prüfen ob Spieler abstimmen darf
   if (player && player.canVote === false) {
     showToast("⛔ Du hast kein Abstimmrecht! Bitte Trainer kontaktieren.", "error");
     return;
@@ -2052,7 +2080,6 @@ function updateMatchAttendance(matchId, status) {
   save();
 }
 
-// ==================== ABSTIMMRECHT TOGGLE ====================
 function toggleVoteRight(playerId) {
   const player = findPlayer(playerId);
   if (!player) return;
@@ -2108,7 +2135,6 @@ function approveAttendanceRequest(requestId, approved) {
   save();
 }
 
-// ==================== TRAINING ====================
 function finishTraining() {
   const dateInput = document.getElementById("training-date");
   const date = dateInput.value;
@@ -2158,7 +2184,6 @@ function setTodayForTraining() {
   if (el) el.value = new Date().toISOString().split("T")[0];
 }
 
-// ==================== PLAYER MANAGEMENT ====================
 function setSelectedPlayer(id) {
   state.selectedPlayerId = id;
   save();
@@ -2176,7 +2201,7 @@ function addPlayer() {
     since: new Date().getFullYear().toString(), nextTeam: "", note: "",
     games: 0, goals: 0, assists: 0, trainingCount: 0, speed: "", dribbling: "", passing: "",
     photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {},
-    canVote: true // 🔥 NEU: Standardmäßig aktiv
+    canVote: true
   });
   
   const username = generateUsername(name);
@@ -2911,7 +2936,6 @@ function handleCustomEventImageUpload(event, eventId) {
   }
 }
 
-// ==================== VIEW RENDERING ====================
 function renderHeader() {
   const roleLabels = { admin: "Haupttrainer", coach: "Co-Trainer", parent: "Eltern" };
   const roleName = session.role === "parent" ? 
@@ -5368,7 +5392,7 @@ window.deleteCustomEvent = deleteCustomEvent;
 window.updateCustomEvent = updateCustomEvent;
 window.handleCustomEventImageUpload = handleCustomEventImageUpload;
 window.installApp = installApp;
-window.toggleVoteRight = toggleVoteRight; // 🔥 NEU: Global verfügbar machen
+window.toggleVoteRight = toggleVoteRight;
 
 startApp();
 </script>
