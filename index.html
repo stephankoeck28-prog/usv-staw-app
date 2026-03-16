@@ -674,22 +674,10 @@ function showPersistentAlert(message) {
       // Ganz oben einfügen, vor allem anderen
       app.insertBefore(alertBox, app.firstChild);
     }
-  } else {
-    // Weitere Nachricht anhängen
-    const messageEl = document.getElementById('alert-message');
-    if (messageEl) {
-      messageEl.innerHTML = messageEl.innerHTML + '<br>• ' + message;
-      // Badge aktualisieren
-      if ('setAppBadge' in navigator) {
-        const messages = messageEl.innerHTML.split('<br>');
-        navigator.setAppBadge(messages.length).catch(e => console.log('Badge aktualisiert', e));
-      }
-    }
-    return;
   }
   
   const messageEl = document.getElementById('alert-message');
-  if (messageEl) messageEl.textContent = '• ' + message;
+  if (messageEl) messageEl.textContent = message;
   
   // Badge erhöhen
   if ('setAppBadge' in navigator) {
@@ -1197,12 +1185,6 @@ async function loadState() {
       }
     }
     render();
-    
-    // 🔥 FIX: Splash erst anzeigen, wenn Daten geladen und gerendert sind
-    setTimeout(() => {
-      showSplashScreen();
-    }, 100);
-    
   } catch (error) {
     console.error("❌ Fehler beim Laden:", error);
     showToast("Fehler beim Laden: " + error.message + " - Verwende Seed-Daten", "error");
@@ -1212,10 +1194,6 @@ async function loadState() {
       updatePrimaryColor(state.primaryColor);
     }
     render();
-    
-    setTimeout(() => {
-      showSplashScreen();
-    }, 100);
   }
 }
 
@@ -4995,7 +4973,10 @@ async function startApp() {
   listenState();
   render();
   
-  // 🔥 FIX: Splash wird jetzt in loadState angezeigt, nicht hier
+  // Nach dem Rendern den Splash konfigurieren (aber nicht verstecken!)
+  setTimeout(() => {
+    showSplashScreen();
+  }, 100);
   
   const now = new Date();
   const nextCheck = new Date();
