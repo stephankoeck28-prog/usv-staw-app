@@ -594,6 +594,17 @@ input, select, textarea { width: 100%; padding: 12px; border: 1px solid #dce6de;
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js"></script>
 
 <script>
+// ==================== SERVICE WORKER REGISTRIERUNG MIT KORREKTEM SCOPE ====================
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/usv-staw-app/firebase-messaging-sw.js', {
+    scope: '/usv-staw-app/'
+  }).then((registration) => {
+    console.log('✅ Service Worker registriert:', registration);
+  }).catch((error) => {
+    console.log('❌ Service Worker Fehler:', error);
+  });
+}
+
 // ==================== HILFSFUNKTION FÜR FARBEN ====================
 const DEFAULT_PRIMARY_COLOR = "#156d3b";
 
