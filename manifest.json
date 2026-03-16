@@ -3,7 +3,7 @@
   "short_name": "USV App",
   "start_url": "/usv-staw-app/",
   "display": "standalone",
-  "background_color": "#156d3b",
+  "background_color": "#003305",
   "theme_color": "#156d3b",
   "icons": [
     {
