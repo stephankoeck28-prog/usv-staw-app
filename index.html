@@ -615,6 +615,7 @@ if ('serviceWorker' in navigator) {
   });
 }
 
+/*
 // ==================== BADGE RESET BEIM ÖFFNEN ====================
 function resetBadge() {
   if ('setAppBadge' in navigator) {
@@ -627,6 +628,7 @@ document.addEventListener('visibilitychange', () => {
     resetBadge();
   }
 });
+*/
 
 // ==================== HILFSFUNKTION FÜR FARBEN ====================
 const DEFAULT_PRIMARY_COLOR = "#156d3b";
@@ -862,29 +864,60 @@ function showPersistentAlert(message) {
           <strong style="color: var(--text);">Neue Nachricht</strong>
           <div id="alert-message" style="margin-top: 4px; color: var(--text);"></div>
         </div>
-        <button onclick="this.parentElement.parentElement.remove(); if ('setAppBadge' in navigator) navigator.setAppBadge(0);" 
+        <button onclick="this.parentElement.parentElement.remove(); window.closePersistentAlert && window.closePersistentAlert();" 
           style="background: none; border: none; font-size: 20px; cursor: pointer; color: var(--muted); padding: 5px 10px;">
           ✕
         </button>
       </div>
     `;
     
-    // 🔥 FIX: Immer ans .app anhängen, nicht nur an .section
     const app = document.querySelector('.app');
     if (app) {
-      // Ganz oben einfügen, vor allem anderen
       app.insertBefore(alertBox, app.firstChild);
+    }
+  } else {
+    const existingMessage = document.getElementById('alert-message');
+    if (existingMessage) {
+      existingMessage.innerHTML = existingMessage.innerHTML + '<br>• ' + message;
     }
   }
   
   const messageEl = document.getElementById('alert-message');
-  if (messageEl) messageEl.textContent = message;
+  if (messageEl && alertBox && !alertBox.dataset.messages) {
+    messageEl.textContent = '• ' + message;
+    alertBox.dataset.messages = '1';
+  } else if (messageEl) {
+    messageEl.innerHTML = messageEl.innerHTML + '<br>• ' + message;
+    alertBox.dataset.messages = parseInt(alertBox.dataset.messages || 1) + 1;
+  }
   
-  // Badge erhöhen
   if ('setAppBadge' in navigator) {
-    navigator.setAppBadge(1).catch(e => console.log('Badge gesetzt', e));
+    const currentCount = parseInt(alertBox?.dataset.messages || 1);
+    navigator.setAppBadge(currentCount).catch(e => console.log('Badge gesetzt', e));
   }
 }
+
+window.closePersistentAlert = function() {
+  const alertBox = document.getElementById('persistent-alert');
+  if (alertBox) {
+    if ('setAppBadge' in navigator) {
+      navigator.setAppBadge(0).catch(e => console.log('Badge reset', e));
+    }
+    alertBox.remove();
+  }
+};
+
+// NICHT beim Öffnen zurücksetzen! Nur beim Schließen des Alerts
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    const alertBox = document.getElementById('persistent-alert');
+    if (!alertBox && 'setAppBadge' in navigator) {
+      // Nur zurücksetzen wenn wirklich kein Alert mehr da ist
+      // (z.B. nach App-Neustart)
+      navigator.setAppBadge(0).catch(e => console.log('Badge reset', e));
+    }
+  }
+});
 
 // ==================== PUSH BENACHRICHTIGUNGEN ====================
 let messaging = null;
