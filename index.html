@@ -891,17 +891,12 @@ function showPersistentAlert(message) {
   if (messageEl) messageEl.textContent = message;
   
   // Badge erhöhen
-let currentBadge = 0;
-
 if ('setAppBadge' in navigator) {
-
-  navigator.getAppBadge?.().then(v=>{
-    currentBadge = v || 0;
-    navigator.setAppBadge(currentBadge + 1);
-  }).catch(()=>{
+  try {
     navigator.setAppBadge(1);
-  });
-
+  } catch(e) {
+    console.log("Badge Fehler", e);
+  }
 }
 
 // ==================== PUSH BENACHRICHTIGUNGEN ====================
