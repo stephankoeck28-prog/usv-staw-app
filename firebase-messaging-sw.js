@@ -5,10 +5,12 @@ firebase.initializeApp({
   apiKey: "AIzaSyAemNwKerXt-hvtikIIACR4oBTb72VjL_U",
   authDomain: "usv-staw-app.firebaseapp.com",
   projectId: "usv-staw-app",
-  storageBucket: "usv-staw-app.appspot.com",
+  storageBucket: "usv-staw-app.firebasestorage.app",  // ← HIER ÄNDERN!
   messagingSenderId: "983106867178",
   appId: "1:983106867178:web:90234121a5833e7e396c93"
 });
+
+// Restlicher Code bleibt gleich...
 
 const messaging = firebase.messaging();
 
