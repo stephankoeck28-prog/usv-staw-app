@@ -704,6 +704,7 @@ input, select, textarea { width: 100%; padding: 12px; border: 1px solid #dce6de;
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js"></script>
 
 <script>
+  let state = {};
 // ==================== SERVICE WORKER REGISTRIERUNG MIT KORREKTEM SCOPE ====================
 if ('serviceWorker' in navigator) {
   // Alte Service Worker löschen
