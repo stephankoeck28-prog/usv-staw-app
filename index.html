@@ -700,6 +700,7 @@ input, select, textarea { width: 100%; padding: 12px; border: 1px solid #dce6de;
 <!-- Firebase Imports -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js"></script>
 
 <script>
@@ -861,6 +862,95 @@ function renderPendingPushes() {
       `).join('')}
     </div>
   `;
+}
+
+// ==================== FIREBASE STORAGE FUNKTIONEN ====================
+const storage = firebase.storage();
+
+// Bild in Firebase Storage hochladen
+async function uploadImageToStorage(file, path) {
+  try {
+    showToast('🔄 Lade Bild hoch...', 'info', 0); // Unendlich bis fertig
+    
+    const storageRef = storage.ref();
+    const imageRef = storageRef.child(path);
+    
+    // Bild komprimieren
+    const compressedBase64 = await compressImage(file);
+    
+    // Base64 in Blob umwandeln
+    const fetchResponse = await fetch(compressedBase64);
+    const blob = await fetchResponse.blob();
+    
+    // Hochladen
+    await imageRef.put(blob);
+    
+    // Download-URL holen
+    const downloadUrl = await imageRef.getDownloadURL();
+    
+    showToast('✅ Bild erfolgreich hochgeladen', 'success');
+    return downloadUrl;
+    
+  } catch (error) {
+    console.error('❌ Fehler beim Hochladen:', error);
+    showToast('Fehler beim Hochladen: ' + error.message, 'error');
+    return null;
+  }
+}
+
+// Bild komprimieren (wie gehabt)
+function compressImage(file) {
+  return new Promise((resolve, reject) => {
+    if (!file.type.startsWith('image/')) {
+      reject('Kein Bild');
+      return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const img = new Image();
+      img.onload = function() {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        
+        const maxSize = 800; // Maximal 800px Breite/Höhe
+        if (width > maxSize || height > maxSize) {
+          if (width > height) {
+            height = Math.round((height * maxSize) / width);
+            width = maxSize;
+          } else {
+            width = Math.round((width * maxSize) / height);
+            height = maxSize;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8); // JPEG mit 80% Qualität
+        resolve(compressedBase64);
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+// Bild aus Storage löschen (optional)
+async function deleteImageFromStorage(url) {
+  if (!url || !url.includes('firebasestorage')) return;
+  
+  try {
+    const imageRef = storage.refFromURL(url);
+    await imageRef.delete();
+    console.log('✅ Bild aus Storage gelöscht');
+  } catch (error) {
+    console.log('⚠️ Fehler beim Löschen:', error);
+  }
 }
 
 // ==================== HILFSFUNKTION FÜR FARBEN ====================
@@ -1550,6 +1640,7 @@ window.addEventListener('appinstalled', (evt) => {
 const seed = {
   primaryColor: "#156d3b",
   sponsorLogo: null,
+  defaultPlayerPhoto: null, // 🔥 NEU: Standard-Spielerfoto
   
   teams: {
     main: "U8",
@@ -1601,7 +1692,7 @@ const seed = {
       speed: 7.8, 
       dribbling: 8.2, 
       passing: 7.1, 
-      photo: "", 
+      photo: "", // Wird durch Standard-Foto ersetzt, wenn leer
       trainingScore: 0, 
       tests: [], 
       matchReports: [], 
@@ -1780,6 +1871,12 @@ function matchesForCurrentTeam() {
 function getTeamNumber(teamName) {
   const match = teamName?.match(/^U(\d+)$/i);
   return match ? parseInt(match[1]) : null;
+}
+
+// 🔥 NEU: Für ALLE Teams true (nicht nur U8)
+function isYouthTeam(teamName) {
+  const match = teamName?.match(/^U(\d+)$/i);
+  return match !== null; // Alle U-Teams (U8, U9, U10, ...)
 }
 
 function getEligiblePlayersForMatch(match) {
@@ -1974,15 +2071,6 @@ function getUpcomingBirthdays(count = 3) {
     })
     .sort((a, b) => a.nextBirthday - b.nextBirthday)
     .slice(0, count);
-}
-
-function isYouthTeam(teamName) {
-  const match = teamName?.match(/^U(\d+)$/i);
-  if (match) {
-    const number = parseInt(match[1]);
-    return number <= 8;
-  }
-  return false;
 }
 
 function getGoalRanking(team) {
@@ -2459,6 +2547,7 @@ function setSelectedPlayer(id) {
   save();
 }
 
+// 🔥 ANGEPASST: Standard-Foto beim Anlegen verwenden
 function addPlayer() {
   const name = document.getElementById("new-player-name").value.trim();
   const team = document.getElementById("new-player-team").value;
@@ -2470,7 +2559,8 @@ function addPlayer() {
     id, name, team, birthday: "", position: "", jersey: 0, parentName: "",
     since: new Date().getFullYear().toString(), nextTeam: "", note: "",
     games: 0, goals: 0, assists: 0, trainingCount: 0, speed: "", dribbling: "", passing: "",
-    photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {},
+    photo: state.defaultPlayerPhoto || "", // 🔥 Standard-Foto verwenden!
+    trainingScore: 0, tests: [], matchReports: [], seasonHistory: {},
     canVote: true
   });
   
@@ -2488,6 +2578,14 @@ function addPlayer() {
 
 function deletePlayer(playerId) {
   if (!confirm("Spieler wirklich löschen?")) return;
+  
+  const player = findPlayer(playerId);
+  
+  // 🔥 Bild aus Storage löschen (falls vorhanden)
+  if (player?.photo && player.photo.includes('firebasestorage')) {
+    deleteImageFromStorage(player.photo);
+  }
+  
   state.players = state.players?.filter(p => p.id !== playerId) || [];
   state.users = state.users?.filter(u => u.playerId !== playerId) || [];
   if (state.selectedPlayerId === playerId) {
@@ -2515,7 +2613,8 @@ function resetCoachPassword(coachId) {
   showToast(`✅ Passwort für ${coach.name} zurückgesetzt auf "4321"`, "success");
 }
 
-function savePlayerData() {
+// 🔥 ANGEPASST: Foto in Storage speichern
+async function savePlayerData() {
   const playerId = state.selectedPlayerId;
   const player = findPlayer(playerId);
   if (!player) return;
@@ -2533,12 +2632,23 @@ function savePlayerData() {
   player.passing = document.getElementById(`player-passing`)?.value || '';
   player.nextTeam = document.getElementById(`player-nextTeam`)?.value || '';
   
+  // 🔥 Foto aus Storage hochladen (falls neu)
   const photoInput = document.getElementById(`player-photo`);
-  if (photoInput && photoInput.value) {
-    if (photoInput.value.startsWith('data:image')) {
-      player.photo = photoInput.value;
-    } else {
-      console.log('⚠️ Ungültiges Foto-Format');
+  if (photoInput && photoInput.value && photoInput.value.startsWith('data:image')) {
+    // Altes Bild löschen (falls aus Storage)
+    if (player.photo && player.photo.includes('firebasestorage')) {
+      await deleteImageFromStorage(player.photo);
+    }
+    
+    // Neues Bild hochladen
+    const fileName = `players/${playerId}/${Date.now()}.jpg`;
+    const downloadUrl = await uploadImageToStorage(
+      await (await fetch(photoInput.value)).blob(), 
+      fileName
+    );
+    
+    if (downloadUrl) {
+      player.photo = downloadUrl;
     }
   }
   
@@ -2550,11 +2660,12 @@ function savePlayerData() {
   showToast("✅ Spielerdaten gespeichert!", "success");
 }
 
+// 🔥 ANGEPASST: Foto-Hochlade-Funktion
 function handlePhotoUpload(event) {
   const file = event.target.files[0];
   if (file) {
-    if (file.size > 500 * 1024) {
-      showToast("❌ Foto zu groß (max 500KB)", "error");
+    if (file.size > 5 * 1024 * 1024) { // 5MB (Storage kann mehr)
+      showToast("❌ Foto zu groß (max 5MB)", "error");
       return;
     }
     
@@ -2569,7 +2680,8 @@ function handlePhotoUpload(event) {
   }
 }
 
-function handleLogoUpload(event) {
+// ==================== LOGO & SPONSOR FUNKTIONEN (angepasst für Storage) ====================
+async function handleLogoUpload(event) {
   const file = event.target.files[0];
   if (!file) return;
   
@@ -2582,71 +2694,41 @@ function handleLogoUpload(event) {
   
   const reader = new FileReader();
   reader.onload = function(e) {
-    const img = new Image();
-    img.onload = function() {
-      const canvas = document.createElement('canvas');
-      let width = img.width;
-      let height = img.height;
-      
-      const maxSize = 200;
-      if (width > maxSize || height > maxSize) {
-        if (width > height) {
-          height = Math.round((height * maxSize) / width);
-          width = maxSize;
-        } else {
-          width = Math.round((width * maxSize) / height);
-          height = maxSize;
-        }
-      }
-      
-      canvas.width = width;
-      canvas.height = height;
-      
-      const ctx = canvas.getContext('2d');
-      
-      ctx.clearRect(0, 0, width, height);
-      
-      if (file.type === 'image/jpeg' || file.type === 'image/jpg') {
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, width, height);
-      }
-      
-      ctx.drawImage(img, 0, 0, width, height);
-      
-      const compressedBase64 = canvas.toDataURL('image/png');
-      
-      const sizeInBytes = Math.round((compressedBase64.length * 3) / 4);
-      if (sizeInBytes > 500 * 1024) {
-        showToast("❌ Logo zu groß - bitte manuell verkleinern", "error");
-        return;
-      }
-      
-      document.getElementById('club-logo').value = compressedBase64;
-      document.getElementById('logo-preview').innerHTML = `<img src="${compressedBase64}" alt="Vereinslogo">`;
-      showToast("📷 Logo bereit zum Speichern - Jetzt auf 'Logo speichern' klicken!", "success");
-    };
-    img.src = e.target.result;
+    const base64String = e.target.result;
+    document.getElementById('club-logo').value = base64String;
+    document.getElementById('logo-preview').innerHTML = `<img src="${base64String}" alt="Vereinslogo">`;
+    showToast("📷 Logo bereit zum Speichern - Jetzt auf 'Logo speichern' klicken!", "success");
   };
   reader.readAsDataURL(file);
 }
 
-function saveClubLogo() {
+async function saveClubLogo() {
   const logoInput = document.getElementById('club-logo');
-  if (logoInput && logoInput.value) {
-    if (logoInput.value.startsWith('data:image')) {
-      state.clubLogo = logoInput.value;
+  if (logoInput && logoInput.value && logoInput.value.startsWith('data:image')) {
+    
+    // Altes Logo aus Storage löschen
+    if (state.clubLogo && state.clubLogo.includes('firebasestorage')) {
+      await deleteImageFromStorage(state.clubLogo);
+    }
+    
+    // Neues Logo hochladen
+    const fileName = `club/logo-${Date.now()}.jpg`;
+    const downloadUrl = await uploadImageToStorage(
+      await (await fetch(logoInput.value)).blob(),
+      fileName
+    );
+    
+    if (downloadUrl) {
+      state.clubLogo = downloadUrl;
       save();
       showToast("✅ Vereinslogo gespeichert!", "success");
-    } else {
-      console.log('⚠️ Ungültiges Logo-Format');
-      showToast("❌ Ungültiges Bildformat", "error");
     }
   } else {
     showToast("❌ Kein Bild ausgewählt", "warning");
   }
 }
 
-function handleSponsorUpload(event) {
+async function handleSponsorUpload(event) {
   const file = event.target.files[0];
   if (!file) return;
   
@@ -2660,13 +2742,6 @@ function handleSponsorUpload(event) {
   const reader = new FileReader();
   reader.onload = function(e) {
     const base64String = e.target.result;
-    
-    const sizeInBytes = Math.round((base64String.length * 3) / 4);
-    if (sizeInBytes > 500 * 1024) {
-      showToast("❌ Logo zu groß - bitte manuell verkleinern", "error");
-      return;
-    }
-    
     document.getElementById('sponsor-logo').value = base64String;
     document.getElementById('sponsor-preview').innerHTML = `<img src="${base64String}" alt="Sponsor">`;
     showToast("📷 Sponsor-Logo bereit zum Speichern - Jetzt auf 'Sponsor speichern' klicken!", "success");
@@ -2674,15 +2749,26 @@ function handleSponsorUpload(event) {
   reader.readAsDataURL(file);
 }
 
-function saveSponsorLogo() {
+async function saveSponsorLogo() {
   const sponsorInput = document.getElementById('sponsor-logo');
-  if (sponsorInput && sponsorInput.value) {
-    if (sponsorInput.value.startsWith('data:image')) {
-      state.sponsorLogo = sponsorInput.value;
+  if (sponsorInput && sponsorInput.value && sponsorInput.value.startsWith('data:image')) {
+    
+    // Altes Sponsor-Logo löschen
+    if (state.sponsorLogo && state.sponsorLogo.includes('firebasestorage')) {
+      await deleteImageFromStorage(state.sponsorLogo);
+    }
+    
+    // Neues Sponsor-Logo hochladen
+    const fileName = `sponsor/logo-${Date.now()}.jpg`;
+    const downloadUrl = await uploadImageToStorage(
+      await (await fetch(sponsorInput.value)).blob(),
+      fileName
+    );
+    
+    if (downloadUrl) {
+      state.sponsorLogo = downloadUrl;
       save();
       showToast("✅ Sponsor-Logo gespeichert!", "success");
-    } else {
-      showToast("❌ Ungültiges Bildformat", "error");
     }
   } else {
     state.sponsorLogo = null;
@@ -2700,6 +2786,77 @@ function clearSponsorLogo() {
   showToast("✅ Sponsor-Logo entfernt", "success");
 }
 
+// ==================== STANDARD-SPIELERFOTO FUNKTIONEN ====================
+async function handleDefaultPhotoUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  if (!file.type.startsWith('image/')) {
+    showToast("❌ Bitte ein Bild auswählen", "error");
+    return;
+  }
+  
+  showToast("🔄 Lade Standard-Foto hoch...", "info", 0);
+  
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    const base64String = e.target.result;
+    
+    // Altes Standard-Foto löschen
+    if (state.defaultPlayerPhoto && state.defaultPlayerPhoto.includes('firebasestorage')) {
+      await deleteImageFromStorage(state.defaultPlayerPhoto);
+    }
+    
+    // Neues Standard-Foto hochladen
+    const fileName = `default/player-${Date.now()}.jpg`;
+    const downloadUrl = await uploadImageToStorage(
+      await (await fetch(base64String)).blob(),
+      fileName
+    );
+    
+    if (downloadUrl) {
+      state.defaultPlayerPhoto = downloadUrl;
+      
+      // Bei allen Spielern ohne eigenes Foto das Standard-Foto setzen
+      state.players?.forEach(player => {
+        if (!player.photo) {
+          player.photo = downloadUrl;
+        }
+      });
+      
+      await save();
+      
+      // Vorschau aktualisieren
+      const preview = document.getElementById('default-photo-preview');
+      if (preview) {
+        preview.innerHTML = `<img src="${downloadUrl}" alt="Standard-Foto" style="width: 60px; height: 60px; border-radius: 12px; object-fit: cover;">`;
+      }
+      
+      showToast("✅ Standard-Foto gespeichert!", "success");
+      render();
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+function resetDefaultPhoto() {
+  if (!confirm("Standard-Foto wirklich zurücksetzen?")) return;
+  
+  state.defaultPlayerPhoto = null;
+  
+  // Bei allen Spielern ohne eigenes Foto das Foto entfernen
+  state.players?.forEach(player => {
+    if (!player.photo) {
+      player.photo = "";
+    }
+  });
+  
+  save();
+  showToast("✅ Standard-Foto zurückgesetzt", "success");
+  render();
+}
+
+// ==================== SAVE PRIMARY COLOR ====================
 function savePrimaryColor(color) {
   state.primaryColor = color;
   updatePrimaryColor(color);
@@ -2707,6 +2864,7 @@ function savePrimaryColor(color) {
   showToast(`✅ Hauptfarbe geändert zu ${color}`, "success");
 }
 
+// ==================== MATCH FUNKTIONEN ====================
 function addMatch() {
   const title = document.getElementById("match-title").value.trim();
   const team = document.getElementById("match-team").value;
@@ -2717,7 +2875,7 @@ function addMatch() {
   const meeting = document.getElementById("match-meeting").value.trim();
   
   let opponents = [];
-  if (isYouthTeam(team)) {
+  if (isYouthTeam(team)) { // 🔥 Jetzt für ALLE U-Teams
     const opponentsInput = document.getElementById("match-opponents")?.value.trim();
     if (opponentsInput) {
       opponents = opponentsInput.split(',').map(o => o.trim()).filter(o => o.length > 0);
@@ -2788,6 +2946,7 @@ function deleteMatch(matchId) {
   showToast("✅ Spiel gelöscht!", "success");
 }
 
+// 🔥 ANGEPASST: Gegner-Feld im Bearbeiten-Dialog für ALLE Teams
 function editMatch(matchId) {
   const match = state.matches?.find(m => m.id === matchId);
   if (!match) return;
@@ -2801,12 +2960,11 @@ function editMatch(matchId) {
   const newMeeting = prompt("Treffpunkt", match.meeting);
   if (newMeeting === null) return;
   
-  if (isYouthTeam(match.team)) {
-    const opponentsStr = match.opponents ? match.opponents.join(', ') : '';
-    const newOpponents = prompt("Gegner (durch Komma getrennt)", opponentsStr);
-    if (newOpponents !== null) {
-      match.opponents = newOpponents.split(',').map(o => o.trim()).filter(o => o.length > 0);
-    }
+  // 🔥 NEU: Gegner-Feld für ALLE Teams (immer anzeigen)
+  const opponentsStr = match.opponents ? match.opponents.join(', ') : '';
+  const newOpponents = prompt("Gegner (durch Komma getrennt)", opponentsStr);
+  if (newOpponents !== null) {
+    match.opponents = newOpponents.split(',').map(o => o.trim()).filter(o => o.length > 0);
   }
   
   match.title = newTitle;
@@ -3641,7 +3799,7 @@ function renderStatistics() {
   `;
 }
 
-// 🔥 VERBESSERTE VERSION: renderCalendar mit Gegner-Anzeige
+// 🔥 VERBESSERTE VERSION: renderCalendar mit Gegner-Anzeige für ALLE Teams
 function renderCalendar() {
   let matches;
   let playerId;
@@ -3737,7 +3895,7 @@ function renderCalendar() {
           
           const matchClass = isPast ? 'match past' : 'match';
           
-          // 🔥 GEGNER-ANZEIGE für Eltern und Trainer
+          // 🔥 GEGNER-ANZEIGE für Eltern und Trainer (für ALLE Teams)
           let opponentsHtml = '';
           if (showOpponents) {
             if (m.location === 'Heim') {
@@ -4529,6 +4687,41 @@ function renderSplashConfig() {
   `;
 }
 
+// 🔥 NEU: Standard-Foto in der Config anzeigen
+function renderDefaultPhotoConfig() {
+  const defaultPhoto = state.defaultPlayerPhoto;
+  const previewHtml = defaultPhoto ? 
+    `<img src="${defaultPhoto}" alt="Standard-Foto" style="width: 60px; height: 60px; border-radius: 12px; object-fit: cover;">` : 
+    '<span style="color: var(--muted);">Kein Standard-Foto</span>';
+  
+  return `
+    <div style="background: #f5f9f6; padding: 16px; border-radius: 12px; margin-bottom: 24px; border-left: 4px solid var(--blue);">
+      <h4 style="margin: 0 0 12px 0; color: var(--blue);">📸 STANDARD-SPIELERFOTO</h4>
+      <p class="small" style="margin-bottom: 12px;">Dieses Foto wird automatisch für ALLE Spieler verwendet, die kein eigenes Foto haben.</p>
+      
+      <div style="display: flex; gap: 16px; align-items: center; margin-bottom: 16px;">
+        <div style="text-align: center;">
+          <div style="margin-bottom: 4px;">Aktuelles Foto:</div>
+          <div id="default-photo-preview">${previewHtml}</div>
+        </div>
+        <div style="flex: 1;">
+          <label class="btn secondary" style="cursor: pointer; display: inline-block;">
+            📷 Neues Standard-Foto hochladen
+            <input type="file" accept="image/*" style="display:none;" onchange="handleDefaultPhotoUpload(event)">
+          </label>
+          ${defaultPhoto ? `
+            <button class="btn danger small" style="margin-left: 8px;" onclick="resetDefaultPhoto()">
+              ❌ Zurücksetzen
+            </button>
+          ` : ''}
+        </div>
+      </div>
+      <p class="small">Tipp: Ein neutrales Vereins-Foto oder Logo eignet sich gut als Standard.</p>
+    </div>
+  `;
+}
+
+// 🔥 ANGEPASST: renderConfig mit Standard-Foto Bereich
 function renderConfig() {
   if (session.role !== "admin") {
     return `
@@ -4556,6 +4749,8 @@ function renderConfig() {
     <div class="section">
       <div class="card">
         <h3>⚙️ Konfiguration</h3>
+        
+        ${renderDefaultPhotoConfig()}
         
         <div class="logo-upload">
           <div class="logo-preview" id="logo-preview">${logoHtml}</div>
@@ -4688,10 +4883,10 @@ function renderConfig() {
         <label>Treffpunkt</label>
         <input id="match-meeting" placeholder="z.B. 13:15 Sportplatz">
         
-        <div id="opponents-field" style="margin-top: 12px; ${!isYouthTeam(state.teams.main) ? 'display: none;' : ''}">
-          <label>Gegner (durch Komma getrennt) - für U8 und kleiner</label>
+        <div id="opponents-field" style="margin-top: 12px;">
+          <label>Gegner (durch Komma getrennt)</label>
           <input id="match-opponents" placeholder="z.B. SV Klosterneuburg, SC Tulln, ASK Stockerau">
-          <p class="small">Maximal 5 Gegner möglich</p>
+          <p class="small">Bei mehreren Gegnern (Turnier) mit Komma trennen</p>
         </div>
         
         <button class="btn primary" style="width: 100%; margin-top: 16px; margin-bottom: 40px;" onclick="addMatch()">Spiel anlegen</button>
@@ -4822,11 +5017,8 @@ function renderConfig() {
     const opponentsField = document.getElementById('opponents-field');
     if (teamSelect && opponentsField) {
       teamSelect.addEventListener('change', function() {
-        if (isYouthTeam(this.value)) {
-          opponentsField.style.display = 'block';
-        } else {
-          opponentsField.style.display = 'none';
-        }
+        // 🔥 Jetzt immer anzeigen (keine Bedingung mehr nötig)
+        opponentsField.style.display = 'block';
       });
     }
   }, 100);
@@ -5661,11 +5853,13 @@ async function startApp() {
   }, 2000);
 }
 
-// 🔥 NEU: Globale Funktionen für das Push-System
+// 🔥 NEU: Globale Funktionen
 window.saveIncomingPush = saveIncomingPush;
 window.confirmPush = confirmPush;
 window.confirmAllPushes = confirmAllPushes;
 window.repairPushTokens = repairPushTokens;
+window.handleDefaultPhotoUpload = handleDefaultPhotoUpload;
+window.resetDefaultPhoto = resetDefaultPhoto;
 
 window.login = login;
 window.logout = logout;
