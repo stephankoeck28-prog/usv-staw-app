@@ -227,12 +227,12 @@ html, body {
   animation: slideOut 0.3s ease forwards;
 }
 
-/* ==================== MESSAGES ==================== */
-.messages-section {
+/* ==================== PUSH NACHRICHTEN STYLES ==================== */
+.pushes-section {
   margin-bottom: 20px;
 }
 
-.message-card {
+.push-card {
   background: var(--message-bg);
   border: 2px solid var(--message-border);
   border-radius: 16px;
@@ -241,24 +241,24 @@ html, body {
   position: relative;
 }
 
-.message-card.unread {
+.push-card.unread {
   background: var(--message-unread);
   border-color: var(--message-unread-border);
 }
 
-.message-header {
+.push-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 8px;
 }
 
-.message-date {
+.push-date {
   font-size: 12px;
   color: var(--muted);
 }
 
-.message-badge {
+.push-badge {
   background: var(--red);
   color: white;
   padding: 2px 8px;
@@ -267,19 +267,19 @@ html, body {
   font-weight: 600;
 }
 
-.message-title {
+.push-title {
   font-weight: 600;
   font-size: 16px;
   margin-bottom: 8px;
 }
 
-.message-content {
+.push-content {
   font-size: 14px;
   margin-bottom: 12px;
   line-height: 1.5;
 }
 
-.message-actions {
+.push-actions {
   display: flex;
   gap: 12px;
   justify-content: flex-end;
@@ -288,7 +288,7 @@ html, body {
   margin-top: 8px;
 }
 
-.message-confirm-btn {
+.push-confirm-btn {
   background: var(--approval-green);
   color: white;
   border: none;
@@ -298,24 +298,29 @@ html, body {
   cursor: pointer;
 }
 
-.message-confirm-btn:hover {
+.push-confirm-btn:hover {
   opacity: 0.9;
 }
 
-.message-confirmed {
-  color: var(--approval-green);
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.no-messages {
+.no-pushes {
   text-align: center;
   padding: 20px;
   color: var(--muted);
   background: white;
   border-radius: 12px;
+}
+
+/* Header Badge */
+.push-count-badge {
+  background: var(--red);
+  color: white;
+  border-radius: 50%;
+  padding: 2px 6px;
+  font-size: 10px;
+  margin-left: 6px;
+  display: inline-block;
+  min-width: 18px;
+  text-align: center;
 }
 
 /* Header - LOGO FIX */
@@ -365,17 +370,9 @@ html, body {
   border-radius: 20px; 
   font-size: 11px; 
   margin-top: 4px; 
-  display: inline-block;
-  position: relative;
-}
-
-.message-count-badge {
-  background: var(--red);
-  color: white;
-  border-radius: 50%;
-  padding: 2px 6px;
-  font-size: 10px;
-  margin-left: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 /* Sponsor Bereich */
@@ -727,28 +724,144 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// ==================== BADGE RESET BEIM ÖFFNEN ====================
+// ==================== BADGE FUNKTIONEN ====================
+function updateAppBadge(count) {
+  if ('setAppBadge' in navigator) {
+    if (count > 0) {
+      navigator.setAppBadge(count).catch(e => console.log('Badge set error', e));
+    } else {
+      navigator.clearAppBadge().catch(e => console.log('Badge clear error', e));
+    }
+  }
+}
+
 function resetBadge() {
   if ('setAppBadge' in navigator) {
     navigator.setAppBadge(0).catch(e => console.log('Badge reset', e));
   }
 }
 
-function updateBadge(count){
-  if (!('setAppBadge' in navigator)) return;
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    // Beim Öffnen der App Badge zurücksetzen (optional)
+    // resetBadge();
+  }
+});
 
-  if(count <= 0){
-    navigator.clearAppBadge().catch(()=>{});
-  }else{
-    navigator.setAppBadge(count).catch(()=>{});
+// ==================== PUSH-NACHRICHTEN SYSTEM MIT BESTÄTIGUNG ====================
+
+// Push-Nachricht speichern (wird beim Empfang aufgerufen)
+async function saveIncomingPush(userId, title, body, type = 'info') {
+  if (!state.pendingPushes) state.pendingPushes = [];
+  
+  const newPush = {
+    id: 'push-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+    userId: userId,
+    title: title,
+    body: body,
+    type: type,
+    receivedAt: new Date().toISOString(),
+    confirmed: false
+  };
+  
+  state.pendingPushes.push(newPush);
+  await save();
+  
+  // Badge für diesen User aktualisieren
+  if (userId === session?.id) {
+    updateAppBadge(countUnconfirmedPushes(userId));
+  }
+  
+  console.log('📥 Push gespeichert:', newPush);
+}
+
+// Push als bestätigt markieren
+async function confirmPush(pushId) {
+  if (!session) return;
+  
+  if (!state.pendingPushes) state.pendingPushes = [];
+  
+  const pushIndex = state.pendingPushes.findIndex(p => p.id === pushId && p.userId === session.id);
+  if (pushIndex !== -1) {
+    // Aus der Liste entfernen (bestätigt)
+    state.pendingPushes.splice(pushIndex, 1);
+    await save();
+    
+    // Badge aktualisieren
+    updateAppBadge(countUnconfirmedPushes(session.id));
+    
+    showToast('✅ Benachrichtigung bestätigt', 'success');
+    render();
   }
 }
 
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') {
-    resetBadge();
+// Alle Pushes eines Users auf einmal bestätigen
+async function confirmAllPushes() {
+  if (!session) return;
+  
+  if (!state.pendingPushes) state.pendingPushes = [];
+  
+  const beforeCount = state.pendingPushes.length;
+  state.pendingPushes = state.pendingPushes.filter(p => p.userId !== session.id);
+  
+  if (beforeCount !== state.pendingPushes.length) {
+    await save();
+    updateAppBadge(0);
+    showToast(`✅ Alle ${beforeCount - state.pendingPushes.length} Benachrichtigungen bestätigt`, 'success');
+    render();
   }
-});
+}
+
+// Ungelesene Pushes für einen User zählen
+function countUnconfirmedPushes(userId) {
+  if (!state.pendingPushes || !userId) return 0;
+  return state.pendingPushes.filter(p => p.userId === userId && !p.confirmed).length;
+}
+
+// Pushes für Eltern anzeigen
+function renderPendingPushes() {
+  if (!session || session.role !== 'parent') return '';
+  
+  const pushes = state.pendingPushes?.filter(p => p.userId === session.id && !p.confirmed) || [];
+  
+  if (pushes.length === 0) {
+    return '<div class="no-pushes">📭 Keine offenen Benachrichtigungen</div>';
+  }
+  
+  // Nach Datum sortieren (neueste zuerst)
+  const sortedPushes = [...pushes].sort((a,b) => 
+    (b.receivedAt || '').localeCompare(a.receivedAt || '')
+  );
+  
+  return `
+    <div class="pushes-section">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h3 style="margin: 0;">🔔 Offene Benachrichtigungen</h3>
+        <button class="btn secondary small" onclick="confirmAllPushes()">Alle bestätigen</button>
+      </div>
+      <p class="small" style="margin-bottom: 16px;">Diese Benachrichtigungen wurden dir per Push geschickt. Bitte bestätige, dass du sie gelesen hast.</p>
+      
+      ${sortedPushes.map(push => `
+        <div class="push-card unread">
+          <div class="push-header">
+            <span class="push-date">${new Date(push.receivedAt).toLocaleString('de-DE', {
+              day: '2-digit', 
+              month: '2-digit',
+              hour: '2-digit', 
+              minute: '2-digit'
+            })}</span>
+            <span class="push-badge">Neu</span>
+          </div>
+          <div class="push-title">${push.title}</div>
+          <div class="push-content">${push.body}</div>
+          <div class="push-actions">
+            <button class="push-confirm-btn" onclick="confirmPush('${push.id}')">✓ Als gelesen bestätigen</button>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
 
 // ==================== HILFSFUNKTION FÜR FARBEN ====================
 const DEFAULT_PRIMARY_COLOR = "#156d3b";
@@ -981,254 +1094,24 @@ function showPersistentAlert(message) {
       <div style="display: flex; align-items: center; gap: 12px;">
         <span style="font-size: 24px;">🔔</span>
         <div style="flex: 1;">
-          <strong style="color: var(--text);">Neue Nachricht</strong>
+          <strong style="color: var(--text);">Neue Benachrichtigung</strong>
           <div id="alert-message" style="margin-top: 4px; color: var(--text);"></div>
         </div>
-        <button onclick="this.parentElement.parentElement.remove(); if ('setAppBadge' in navigator) navigator.setAppBadge(0);" 
+        <button onclick="this.parentElement.parentElement.remove();" 
           style="background: none; border: none; font-size: 20px; cursor: pointer; color: var(--muted); padding: 5px 10px;">
           ✕
         </button>
       </div>
     `;
     
-    // 🔥 FIX: Immer ans .app anhängen, nicht nur an .section
     const app = document.querySelector('.app');
     if (app) {
-      // Ganz oben einfügen, vor allem anderen
       app.insertBefore(alertBox, app.firstChild);
     }
   }
   
   const messageEl = document.getElementById('alert-message');
   if (messageEl) messageEl.textContent = message;
-  
-  // Badge erhöhen
-if ('setAppBadge' in navigator) {
-  try {
-    navigator.setAppBadge(1);
-  } catch(e) {
-    console.log("Badge Fehler", e);
-  }
-}
-  }
-  
-
-// ==================== NACHRICHTEN-SYSTEM FÜR ELTERN ====================
-// Nachricht an alle Eltern senden (Trainer-Funktion)
-async function sendMessageToAllParents(title, content, requireConfirmation = false) {
-  if (session?.role !== 'admin') {
-    showToast('⛔ Nur der Trainer kann Nachrichten senden', 'error');
-    return;
-  }
-  
-  if (!state.messages) state.messages = [];
-  
-  const message = {
-    id: 'msg-' + Date.now(),
-    title: title,
-    content: content,
-    date: new Date().toISOString().split('T')[0],
-    time: new Date().toTimeString().split(' ')[0].substring(0,5),
-    requireConfirmation: requireConfirmation,
-    createdAt: new Date().toISOString(),
-    confirmedBy: [] // Array mit User-IDs der Eltern, die bestätigt haben
-  };
-  
-  state.messages.push(message);
-  await save();
-  
-  // Push an alle Eltern senden
-  const parentUsers = state.users?.filter(u => u.role === 'parent') || [];
-  for (const parent of parentUsers) {
-    await sendPushNotification(parent.id, '📬 Neue Nachricht', 'Es gibt eine neue Nachricht vom Trainer', 'message');
-  }
-  
-  showToast('✅ Nachricht an alle Eltern gesendet!', 'success');
-}
-
-// Nachricht als gelesen/ bestätigt markieren (Eltern-Funktion)
-function confirmMessage(messageId) {
-  if (!session || session.role !== 'parent') return;
-  
-  if (!state.messages) state.messages = [];
-  
-  const message = state.messages.find(m => m.id === messageId);
-  if (!message) return;
-  
-  if (!message.confirmedBy) message.confirmedBy = [];
-  
-  if (!message.confirmedBy.includes(session.id)) {
-    message.confirmedBy.push(session.id);
-    save();
-    showToast('✅ Nachricht bestätigt', 'success');
-    render();
-  }
-}
-
-// Ungelesene Nachrichten für einen User zählen
-function countUnreadMessages(userId) {
-  if (!state.messages || !userId) return 0;
-  
-  let unread = 0;
-  for (const msg of state.messages) {
-    // Wenn Bestätigung erforderlich und User noch nicht bestätigt hat
-    if (msg.requireConfirmation && (!msg.confirmedBy || !msg.confirmedBy.includes(userId))) {
-      unread++;
-    }
-    // Wenn keine Bestätigung erforderlich, aber User sie noch nicht gesehen hat
-    // Dafür bräuchten wir ein "readBy" Array - optional
-  }
-  
-  return unread;
-}
-
-// Nachrichten für Eltern anzeigen
-function renderMessagesForParent() {
-  if (!session || session.role !== 'parent') return '';
-  
-  const messages = state.messages || [];
-  if (messages.length === 0) {
-    return '<div class="no-messages">📭 Keine Nachrichten vorhanden</div>';
-  }
-  
-  // Sortieren: neueste zuerst
-  const sortedMessages = [...messages].sort((a,b) => 
-    (b.createdAt || '').localeCompare(a.createdAt || '')
-  );
-  
-  return `
-    <div class="messages-section">
-      <h3 style="margin: 0 0 16px 0;">📬 Nachrichten</h3>
-      ${sortedMessages.map(msg => {
-        const isConfirmed = msg.confirmedBy?.includes(session.id);
-        const requiresConfirmation = msg.requireConfirmation;
-        
-        return `
-          <div class="message-card ${requiresConfirmation && !isConfirmed ? 'unread' : ''}">
-            <div class="message-header">
-              <span class="message-date">${msg.date} ${msg.time || ''}</span>
-              ${requiresConfirmation && !isConfirmed ? '<span class="message-badge">Bestätigung erforderlich</span>' : ''}
-            </div>
-            <div class="message-title">${msg.title}</div>
-            <div class="message-content">${msg.content.replace(/\n/g, '<br>')}</div>
-            <div class="message-actions">
-              ${requiresConfirmation && !isConfirmed ? 
-                `<button class="message-confirm-btn" onclick="confirmMessage('${msg.id}')">✓ Als gelesen bestätigen</button>` : 
-                requiresConfirmation && isConfirmed ? 
-                '<span class="message-confirmed">✅ Bestätigt</span>' : 
-                '<span style="color: var(--muted); font-size: 12px;">Bereits gelesen</span>'
-              }
-            </div>
-          </div>
-        `;
-      }).join('')}
-    </div>
-  `;
-}
-
-// Trainer-Ansicht: Nachrichten-Status sehen
-function renderMessageStatusForTrainer() {
-  if (session?.role !== 'admin') return '';
-  
-  const messages = state.messages || [];
-  if (messages.length === 0) {
-    return '<div class="no-messages">📭 Noch keine Nachrichten gesendet</div>';
-  }
-  
-  const parentUsers = state.users?.filter(u => u.role === 'parent') || [];
-  
-  return `
-    <div class="card">
-      <h3>📬 Gesendete Nachrichten</h3>
-      ${messages.sort((a,b) => (b.createdAt || '').localeCompare(a.createdAt || '')).map(msg => {
-        const confirmedCount = msg.confirmedBy?.length || 0;
-        const totalParents = parentUsers.length;
-        const unconfirmed = parentUsers.filter(p => !msg.confirmedBy?.includes(p.id));
-        
-        return `
-          <div style="margin-bottom: 20px; padding: 16px; background: #f5f9f6; border-radius: 12px;">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-              <span style="font-weight: 600;">${msg.date} ${msg.time || ''}</span>
-              <span class="badge" style="background: ${msg.requireConfirmation ? 'var(--blue)' : 'var(--muted)'}; color: white;">
-                ${msg.requireConfirmation ? 'Bestätigung erforderlich' : 'Info'}
-              </span>
-            </div>
-            <div style="font-weight: 600; margin-bottom: 4px;">${msg.title}</div>
-            <div style="margin-bottom: 12px; font-size: 14px;">${msg.content}</div>
-            <div style="margin-top: 12px;">
-              <div style="font-weight: 600;">Bestätigungen: ${confirmedCount}/${totalParents}</div>
-              <div style="height: 8px; background: #e0e0e0; border-radius: 4px; margin: 8px 0;">
-                <div style="height: 8px; width: ${totalParents > 0 ? (confirmedCount/totalParents)*100 : 0}%; background: var(--approval-green); border-radius: 4px;"></div>
-              </div>
-              ${unconfirmed.length > 0 ? `
-                <details>
-                  <summary style="color: var(--muted); cursor: pointer;">Noch nicht bestätigt (${unconfirmed.length})</summary>
-                  <div style="margin-top: 8px; padding: 8px; background: white; border-radius: 8px;">
-                    ${unconfirmed.map(p => {
-                      const player = findPlayer(p.playerId);
-                      return `<div>• ${player?.name || 'Unbekannt'}</div>`;
-                    }).join('')}
-                  </div>
-                </details>
-              ` : ''}
-            </div>
-          </div>
-        `;
-      }).join('')}
-      
-      <button class="btn primary" style="width: 100%; margin-top: 16px;" onclick="showNewMessageForm()">
-        ➕ Neue Nachricht
-      </button>
-    </div>
-  `;
-}
-
-// Formular für neue Nachricht (Trainer)
-function showNewMessageForm() {
-  const formHtml = `
-    <div class="card" id="new-message-form">
-      <h4>Neue Nachricht an alle Eltern</h4>
-      <label>Titel</label>
-      <input id="message-title" placeholder="z.B. Wichtige Information">
-      <label>Nachricht</label>
-      <textarea id="message-content" rows="4" placeholder="Deine Nachricht..."></textarea>
-      <label style="display: flex; align-items: center; gap: 8px; margin: 12px 0;">
-        <input type="checkbox" id="message-require-confirm"> Bestätigung erforderlich (Eltern müssen als gelesen bestätigen)
-      </label>
-      <div style="display: flex; gap: 12px;">
-        <button class="btn primary" style="flex: 2;" onclick="sendMessageFromForm()">Senden</button>
-        <button class="btn secondary" style="flex: 1;" onclick="cancelNewMessageForm()">Abbrechen</button>
-      </div>
-    </div>
-  `;
-  
-  // Entweder an bestehender Stelle einfügen oder als Popup
-  const container = document.querySelector('.section');
-  if (container) {
-    // Vorübergehend das Formular anzeigen
-    const existing = document.getElementById('new-message-form');
-    if (existing) existing.remove();
-    container.insertAdjacentHTML('afterbegin', formHtml);
-  }
-}
-
-function cancelNewMessageForm() {
-  const form = document.getElementById('new-message-form');
-  if (form) form.remove();
-}
-
-function sendMessageFromForm() {
-  const title = document.getElementById('message-title')?.value;
-  const content = document.getElementById('message-content')?.value;
-  const requireConfirm = document.getElementById('message-require-confirm')?.checked || false;
-  
-  if (!title || !content) {
-    showToast('Bitte Titel und Nachricht eingeben', 'warning');
-    return;
-  }
-  
-  sendMessageToAllParents(title, content, requireConfirm);
-  cancelNewMessageForm();
 }
 
 // ==================== PUSH BENACHRICHTIGUNGEN ====================
@@ -1313,25 +1196,33 @@ async function initPushNotifications() {
         showToast('Push-Token Fehler', 'error');
       }
       
-messaging.onMessage((payload) => {
+      messaging.onMessage((payload) => {
+        const messageId =
+          payload.data?.message_id ||
+          payload.messageId ||
+          payload.notification?.title + payload.notification?.body;
 
-  const messageId =
-    payload.data?.message_id ||
-    payload.messageId ||
-    payload.notification?.title + payload.notification?.body;
+        if (_processedForegroundIds.has(messageId)) return;
 
-  if (_processedForegroundIds.has(messageId)) return;
+        _processedForegroundIds.add(messageId);
 
-  _processedForegroundIds.add(messageId);
+        const body =
+          payload.notification?.body ||
+          payload.data?.body ||
+          "Neue Nachricht";
+        
+        const title =
+          payload.notification?.title ||
+          payload.data?.title ||
+          "USV StAW";
 
-  const body =
-    payload.notification?.body ||
-    payload.data?.body ||
-    "Neue Nachricht";
+        // 🔥 NEU: Push in der App speichern
+        if (session) {
+          saveIncomingPush(session.id, title, body, 'info');
+        }
 
-  showPersistentAlert(body);
-
-});
+        showPersistentAlert(body);
+      });
     }
   } catch (error) {
     console.log('⚠️ Push Fehler:', error);
@@ -1427,10 +1318,13 @@ async function repairPushTokens() {
   showToast(`✅ ${repairedCount} Einträge repariert`, 'success');
 }
 
-// 🔥 VERBESSERTE VERSION: sendPushNotification mit besserer Fehlerbehandlung
+// 🔥 ANGEPASSTE VERSION: sendPushNotification mit Speicherung in der App
 async function sendPushNotification(userId, title, body, type = 'info') {
   pushCounter++;
   console.log(`🔥 PUSH AUFRUF #${pushCounter} für User ${userId}:`, {title, body});
+  
+  // 🔥 NEU: Push in der App speichern
+  await saveIncomingPush(userId, title, body, type);
   
   // DIAGNOSE: Zeig mir was in pushTokens steht
   console.log('📊 Aktuelle pushTokens im State:', JSON.stringify(state.pushTokens, null, 2));
@@ -1448,13 +1342,8 @@ async function sendPushNotification(userId, title, body, type = 'info') {
   
   // Prüfen ob es ein Array ist
   if (!Array.isArray(state.pushTokens[userId])) {
-    console.log(`⚠️ pushTokens[${userId}] ist kein Array, versuche zu reparieren...`);
-    if (typeof state.pushTokens[userId] === 'string') {
-      state.pushTokens[userId] = [state.pushTokens[userId]];
-    } else {
-      state.pushTokens[userId] = [];
-    }
-    await save();
+    console.log(`⚠️ pushTokens[${userId}] ist kein Array, überspringe...`);
+    return;
   }
   
   const tokens = state.pushTokens[userId];
@@ -1610,7 +1499,8 @@ async function checkAndSendReminders() {
             await sendPushNotification(
               parentUser.id,
               "⚽ Bitte abstimmen!",
-              `${match.title} am ${match.date} - Bitte sag uns ob du kommst!`
+              `${match.title} am ${match.date} - Bitte sag uns ob du kommst!`,
+              'reminder'
             );
           }
         }
@@ -1673,8 +1563,8 @@ const seed = {
   pushTokens: {},
   reminderDays: 0,
   
-  // 🔥 NEU: Nachrichten-System
-  messages: [],
+  // 🔥 NEU: Push-Nachrichten Speicher
+  pendingPushes: [],
   
   splashConfig: {
     duration: 2,
@@ -1720,7 +1610,7 @@ const seed = {
         2024: { goals: 5, assists: 3, trainings: 18, percentage: 82 },
         2023: { goals: 2, assists: 1, trainings: 12, percentage: 75 }
       },
-      canVote: true // 🔥 NEU: Abstimmrecht standardmäßig aktiv
+      canVote: true
     },
     { id: "p2", name: "Oliver A.", team: "U8", birthday: "2017-06-08", position: "Verteidiger", jersey: 4, parentName: "Eltern Oliver", since: "2024", nextTeam: "U9", note: "Gute Mitarbeit", games: 11, goals: 12, assists: 2, trainingCount: 12, speed: 6.4, dribbling: 6.8, passing: 6.9, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}, canVote: true },
     { id: "p3", name: "Oliver B.", team: "U9", birthday: "2016-01-03", position: "Mittelfeld", jersey: 10, parentName: "Eltern Oliver B.", since: "2023", nextTeam: "U10", note: "Gute Übersicht", games: 10, goals: 5, assists: 5, trainingCount: 15, speed: 7.0, dribbling: 7.0, passing: 7.5, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}, canVote: true },
@@ -1906,7 +1796,7 @@ function getEligiblePlayersForMatch(match) {
     });
   }
   
-  return players; // Alle Spieler anzeigen, Abstimmrecht wird später geprüft
+  return players;
 }
 
 function getVisibleMatchesForParent(playerId) {
@@ -2353,7 +2243,6 @@ function requestAttendanceChange(matchId, newStatus) {
   }
   
   const player = findPlayer(playerId);
-  // 🔥 NEU: Prüfen ob Spieler abstimmen darf
   if (player && player.canVote === false) {
     showToast("⛔ Du hast kein Abstimmrecht! Bitte Trainer kontaktieren.", "error");
     return false;
@@ -2419,7 +2308,6 @@ function updateMatchAttendance(matchId, status) {
   }
   
   const player = findPlayer(playerId);
-  // 🔥 NEU: Prüfen ob Spieler abstimmen darf
   if (player && player.canVote === false) {
     showToast("⛔ Du hast kein Abstimmrecht! Bitte Trainer kontaktieren.", "error");
     return;
@@ -2498,7 +2386,7 @@ function approveAttendanceRequest(requestId, approved) {
       const parentUser = findUserForPlayer(request.playerId);
       if (parentUser) {
         if (request.pushSent) return;
-request.pushSent = true;
+        request.pushSent = true;
         sendPushNotification(parentUser.id, "Antrag genehmigt", `Deine Änderung für ${request.matchTitle} wurde genehmigt!`);
       }
     }
@@ -2583,7 +2471,7 @@ function addPlayer() {
     since: new Date().getFullYear().toString(), nextTeam: "", note: "",
     games: 0, goals: 0, assists: 0, trainingCount: 0, speed: "", dribbling: "", passing: "",
     photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {},
-    canVote: true // 🔥 NEU: Standardmäßig aktiv
+    canVote: true
   });
   
   const username = generateUsername(name);
@@ -3341,12 +3229,12 @@ function renderHeader() {
     }
   }
   
-  // 🔥 NEU: Nachrichten-Badge für Eltern
-  let messageBadge = '';
+  // 🔥 NEU: Push-Badge für Eltern
+  let pushBadge = '';
   if (session.role === 'parent') {
-    const unreadCount = countUnreadMessages(session.id);
+    const unreadCount = countUnconfirmedPushes(session.id);
     if (unreadCount > 0) {
-      messageBadge = `<span class="message-count-badge">${unreadCount}</span>`;
+      pushBadge = `<span class="push-count-badge">${unreadCount}</span>`;
     }
   }
   
@@ -3358,7 +3246,7 @@ function renderHeader() {
           <div>
             <small>USV St Andrä Wördern</small>
             <strong>Team App</strong>
-            <div class="role-badge">${roleName} ${notificationBadge} ${messageBadge}</div>
+            <div class="role-badge">${roleName} ${notificationBadge} ${pushBadge}</div>
           </div>
         </div>
         <div class="sponsor-area">
@@ -3374,7 +3262,7 @@ function renderHeader() {
       ` : ''}
       <div class="footer">
         <div class="copyright">
-          © Trainer Stephan Köck, Release 2026 Version 1.11
+          © Trainer Stephan Köck, Release 2026 Version 1.12
         </div>
       </div>
     </div>
@@ -3415,7 +3303,7 @@ function renderLogin() {
         </div>
         
         <div style="margin-top: 30px; text-align: center; color: #888; font-size: 11px; border-top: 1px solid #eee; padding-top: 15px;">
-          © Trainer Stephan Köck, Release 2026 Version 1.11
+          © Trainer Stephan Köck, Release 2026 Version 1.12
         </div>
       </div>
     </div>
@@ -4664,15 +4552,10 @@ function renderConfig() {
     `<img src="${state.sponsorLogo}" alt="Sponsor">` : 
     '<span>Kein Sponsor</span>';
   
-  // 🔥 NEU: Nachrichten-Bereich für Trainer
-  const messageStatusHtml = renderMessageStatusForTrainer();
-  
   return `
     <div class="section">
       <div class="card">
         <h3>⚙️ Konfiguration</h3>
-        
-        ${messageStatusHtml}
         
         <div class="logo-upload">
           <div class="logo-preview" id="logo-preview">${logoHtml}</div>
@@ -5039,6 +4922,7 @@ function renderMilestones(player) {
   `;
 }
 
+// 🔥 NEUE VERSION: renderParentView mit Push-Tab
 function renderParentView() {
   const player = findPlayer(session.playerId);
   if (!player) return `<div class="section">Fehler: Kein Spieler gefunden</div>`;
@@ -5062,14 +4946,17 @@ function renderParentView() {
   const goalRank = goalRanking[player.id] || '-';
   const assistRank = assistRanking[player.id] || '-';
   
-  // 🔥 NEU: Nachrichten für Eltern
-  const messagesHtml = renderMessagesForParent();
+  // 🔥 NEU: Unbestätigte Pushes anzeigen
+  const pushesHtml = renderPendingPushes();
+  const unreadCount = countUnconfirmedPushes(session.id);
   
   return `
     <div class="section">
       <div class="tabs" style="margin-bottom: 16px;">
         <button class="pill ${parentView === 'kind' ? 'active' : 'alt'}" onclick="setParentView('kind')">👤 Mein Kind</button>
-        <button class="pill ${parentView === 'messages' ? 'active' : 'alt'}" onclick="setParentView('messages')">📬 Nachrichten</button>
+        <button class="pill ${parentView === 'pushes' ? 'active' : 'alt'}" onclick="setParentView('pushes')">
+          🔔 Benachrichtigungen ${unreadCount > 0 ? `<span style="background: var(--red); color: white; border-radius: 50%; padding: 2px 6px; margin-left: 4px; font-size: 10px;">${unreadCount}</span>` : ''}
+        </button>
         <button class="pill ${parentView === 'calendar' ? 'active' : 'alt'}" onclick="setParentView('calendar')">📅 Spiele</button>
         <button class="pill ${parentView === 'tests' ? 'active' : 'alt'}" onclick="setParentView('tests')">📊 Tests</button>
         <button class="pill ${parentView === 'history' ? 'active' : 'alt'}" onclick="setParentView('history')">📋 Training</button>
@@ -5162,7 +5049,7 @@ function renderParentView() {
             </div>
           ` : ''}
         </div>
-      ` : parentView === 'messages' ? messagesHtml :
+      ` : parentView === 'pushes' ? pushesHtml :
          parentView === 'calendar' ? renderCalendar() : 
          parentView === 'tests' ? `
         <div class="card">
@@ -5609,14 +5496,14 @@ function renderCoachView() {
 
 function renderNav() {
   if (session.role === "parent") {
-    const unreadCount = countUnreadMessages(session.id);
-    const messagesBadge = unreadCount > 0 ? `<span style="position: relative; top: -8px; right: -2px; background: var(--red); color: white; border-radius: 50%; padding: 2px 5px; font-size: 10px; margin-left: 2px;">${unreadCount}</span>` : '';
+    const unreadCount = countUnconfirmedPushes(session.id);
+    const pushesBadge = unreadCount > 0 ? `<span style="position: relative; top: -8px; right: -2px; background: var(--red); color: white; border-radius: 50%; padding: 2px 5px; font-size: 10px; margin-left: 2px;">${unreadCount}</span>` : '';
     
     return `
       <div class="nav">
         <div class="nav-inner">
           <button class="${parentView === 'kind' ? 'active' : ''}" onclick="setParentView('kind')">👤</button>
-          <button class="${parentView === 'messages' ? 'active' : ''}" onclick="setParentView('messages')">📬${messagesBadge}</button>
+          <button class="${parentView === 'pushes' ? 'active' : ''}" onclick="setParentView('pushes')">🔔${pushesBadge}</button>
           <button class="${parentView === 'calendar' ? 'active' : ''}" onclick="setParentView('calendar')">📅</button>
           <button class="${parentView === 'tests' ? 'active' : ''}" onclick="setParentView('tests')">📊</button>
           <button class="${parentView === 'history' ? 'active' : ''}" onclick="setParentView('history')">📋</button>
@@ -5774,12 +5661,10 @@ async function startApp() {
   }, 2000);
 }
 
-// 🔥 NEU: Globale Funktionen für das Nachrichten-System
-window.sendMessageToAllParents = sendMessageToAllParents;
-window.confirmMessage = confirmMessage;
-window.showNewMessageForm = showNewMessageForm;
-window.cancelNewMessageForm = cancelNewMessageForm;
-window.sendMessageFromForm = sendMessageFromForm;
+// 🔥 NEU: Globale Funktionen für das Push-System
+window.saveIncomingPush = saveIncomingPush;
+window.confirmPush = confirmPush;
+window.confirmAllPushes = confirmAllPushes;
 window.repairPushTokens = repairPushTokens;
 
 window.login = login;
