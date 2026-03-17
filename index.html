@@ -701,6 +701,7 @@ input, select, textarea { width: 100%; padding: 12px; border: 1px solid #dce6de;
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 
 <script>
 // ==================== SERVICE WORKER REGISTRIERUNG MIT KORREKTEM SCOPE ====================
@@ -1014,6 +1015,93 @@ function showSplashScreen() {
   setTimeout(() => {
     hideSplash();
   }, state.splashConfig.duration * 1000);
+}
+
+  // ==================== FIREBASE STORAGE FUNKTIONEN ====================
+// Bild in Firebase Storage hochladen
+async function uploadImageToStorage(file, path) {
+  try {
+    showToast('🔄 Lade Bild hoch...', 'info', 0); // Unendlich bis fertig
+    
+    const storageRef = storage.ref();
+    const imageRef = storageRef.child(path);
+    
+    // Bild komprimieren
+    const compressedBase64 = await compressImage(file);
+    
+    // Base64 in Blob umwandeln
+    const fetchResponse = await fetch(compressedBase64);
+    const blob = await fetchResponse.blob();
+    
+    // Hochladen
+    await imageRef.put(blob);
+    
+    // Download-URL holen
+    const downloadUrl = await imageRef.getDownloadURL();
+    
+    showToast('✅ Bild erfolgreich hochgeladen', 'success');
+    return downloadUrl;
+    
+  } catch (error) {
+    console.error('❌ Fehler beim Hochladen:', error);
+    showToast('Fehler beim Hochladen: ' + error.message, 'error');
+    return null;
+  }
+}
+
+// Bild komprimieren
+function compressImage(file) {
+  return new Promise((resolve, reject) => {
+    if (!file.type.startsWith('image/')) {
+      reject('Kein Bild');
+      return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const img = new Image();
+      img.onload = function() {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        
+        const maxSize = 800; // Maximal 800px Breite/Höhe
+        if (width > maxSize || height > maxSize) {
+          if (width > height) {
+            height = Math.round((height * maxSize) / width);
+            width = maxSize;
+          } else {
+            width = Math.round((width * maxSize) / height);
+            height = maxSize;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8); // JPEG mit 80% Qualität
+        resolve(compressedBase64);
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+// Bild aus Storage löschen
+async function deleteImageFromStorage(url) {
+  if (!url || !url.includes('firebasestorage')) return;
+  
+  try {
+    const imageRef = storage.refFromURL(url);
+    await imageRef.delete();
+    console.log('✅ Bild aus Storage gelöscht');
+  } catch (error) {
+    console.log('⚠️ Fehler beim Löschen:', error);
+  }
 }
 
 // ==================== MODERNE ALERT FUNKTION ====================
@@ -1528,6 +1616,9 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 window.db = db;
+
+  const storage = firebase.storage();
+window.storage = storage;
 
 // ==================== STANDARD LOGO ====================
 const defaultLogo = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23156d3b'/%3E%3Ctext x='50' y='55' font-size='40' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'%3E⚽%3C/text%3E%3C/svg%3E";
@@ -2515,28 +2606,49 @@ function savePlayerData() {
   const playerId = state.selectedPlayerId;
   const player = findPlayer(playerId);
   if (!player) return;
-  
-  player.birthday = document.getElementById(`player-birthday`)?.value || '';
-  player.since = document.getElementById(`player-since`)?.value || '';
-  player.position = document.getElementById(`player-position`)?.value || '';
-  player.altPosition = document.getElementById(`player-altPosition`)?.value || '';
-  player.jersey = parseInt(document.getElementById(`player-jersey`)?.value) || 0;
-  player.parentName = document.getElementById(`player-parent`)?.value || '';
-  player.phone = document.getElementById(`player-phone`)?.value || '';
-  player.note = document.getElementById(`player-note`)?.value || '';
-  player.speed = document.getElementById(`player-speed`)?.value || '';
-  player.dribbling = document.getElementById(`player-dribbling`)?.value || '';
-  player.passing = document.getElementById(`player-passing`)?.value || '';
-  player.nextTeam = document.getElementById(`player-nextTeam`)?.value || '';
-  
-  const photoInput = document.getElementById(`player-photo`);
-  if (photoInput && photoInput.value) {
-    if (photoInput.value.startsWith('data:image')) {
-      player.photo = photoInput.value;
-    } else {
-      console.log('⚠️ Ungültiges Foto-Format');
+
+  player.birthday = document.getElementById('player-birthday').value || '';
+  player.since = document.getElementById('player-since').value || '';
+  player.position = document.getElementById('player-position').value || '';
+  player.altPosition = document.getElementById('player-altPosition').value || '';
+  player.jersey = parseInt(document.getElementById('player-jersey').value) || 0;
+  player.parentName = document.getElementById('player-parent').value || '';
+  player.phone = document.getElementById('player-phone').value || '';
+  player.note = document.getElementById('player-note').value || '';
+  player.speed = document.getElementById('player-speed').value || '';
+  player.dribbling = document.getElementById('player-dribbling').value || '';
+  player.passing = document.getElementById('player-passing').value || '';
+  player.nextTeam = document.getElementById('player-nextTeam').value || '';
+
+  // Foto in Storage speichern (falls neu)
+  const photoInput = document.getElementById('player-photo');
+  if (photoInput && photoInput.value && photoInput.value.startsWith('data:image')) {
+    // Altes Bild löschen (falls aus Storage)
+    if (player.photo && player.photo.includes('firebasestorage')) {
+      deleteImageFromStorage(player.photo);
     }
+    player.photo = photoInput.value;
   }
+
+  if (!player.tests) player.tests = [];
+  if (!player.matchReports) player.matchReports = [];
+  if (!player.seasonHistory) player.seasonHistory = {};
+
+  save();
+  showToast("✅ Spielerdaten gespeichert!", "success");
+}
+  
+  // Neues Bild hochladen
+  const fileName = `players/${playerId}/${Date.now()}.jpg`;
+  const downloadUrl = await uploadImageToStorage(
+    await (await fetch(photoInput.value)).blob(), 
+    fileName
+  );
+  
+  if (downloadUrl) {
+    player.photo = downloadUrl;
+  }
+}
   
   if (!player.tests) player.tests = [];
   if (!player.matchReports) player.matchReports = [];
@@ -2547,22 +2659,22 @@ function savePlayerData() {
 }
 
 function handlePhotoUpload(event) {
-  const file = event.target.files[0];
-  if (file) {
-    if (file.size > 500 * 1024) {
-      showToast("❌ Foto zu groß (max 500KB)", "error");
-      return;
+    const file = event.target.files[0];
+    if (file) {
+        if (file.size > 5 * 1024 * 1024) {  // 🔥 GEÄNDERT: 5MB statt 500KB
+            showToast("✖ Foto zu groß (max 5MB)", "error");
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const base64String = e.target.result;
+            document.getElementById('player-photo').value = base64String;
+            document.getElementById('photo-preview').innerHTML = `<img src="${base64String}" alt="Foto" style="width: 100%; height: 100%; object-fit: cover;"></img>`;
+            showToast("🎉 Foto bereit zum Speichern - Jetzt auf 'Speichern' klicken!", "info");
+        };
+        reader.readAsDataURL(file);
     }
-    
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      const base64String = e.target.result;
-      document.getElementById('player-photo').value = base64String;
-      document.getElementById('photo-preview').innerHTML = `<img src="${base64String}" alt="Foto" style="width: 100%; height: 100%; object-fit: cover;">`;
-      showToast("📷 Foto bereit zum Speichern - Jetzt auf 'Speichern' klicken!", "info");
-    };
-    reader.readAsDataURL(file);
-  }
 }
 
 function handleLogoUpload(event) {
