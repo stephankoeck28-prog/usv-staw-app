@@ -94,8 +94,9 @@ messaging.onBackgroundMessage((payload) => {
       }
     }, 10000);
     
-    const title = payload.notification?.title || payload.data?.title || "USV StAW";
-    const body = payload.notification?.body || payload.data?.body || "Neue Nachricht";
+    // 🔥 ÄNDERUNG 1: IMMER "Neue Nachricht" anzeigen
+    const title = "📱 USV St Andrä Wördern";
+    const body = "Neue Nachricht";
 
     self.registration.showNotification(title, {
       body: body,
@@ -117,16 +118,21 @@ self.addEventListener('notificationclick', (event) => {
   console.log('🔔 Benachrichtigung geklickt:', event.notification);
   event.notification.close();
   
+  // 🔥 ÄNDERUNG 2: Korrekter Pfad für GitHub Pages
+  const appPath = '/usv-staw-app/';
+  
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true })
       .then((clientList) => {
+        // Schauen ob die App schon in einem Tab offen ist
         for (const client of clientList) {
-          if (client.url.includes('/index.html') && 'focus' in client) {
+          if (client.url.includes(appPath) && 'focus' in client) {
             return client.focus();
           }
         }
+        // Sonst neuen Tab öffnen
         if (clients.openWindow) {
-          return clients.openWindow('/');
+          return clients.openWindow(appPath);
         }
       })
   );
