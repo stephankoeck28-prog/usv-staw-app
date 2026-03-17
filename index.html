@@ -4,16 +4,19 @@
     <title>Storage Test</title>
 </head>
 <body>
+    <h1>🔥 Storage Test</h1>
+    
     <input type="file" id="photoInput" accept="image/*">
     <button onclick="upload()">Hochladen</button>
     <div id="preview"></div>
+    <div id="status"></div>
 
     <!-- Firebase Imports -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 
     <script>
-    // Firebase Config (deine Daten)
+    // Firebase Config
     const firebaseConfig = {
         apiKey: "AIzaSyAemNwKerXt-hvtikIIACR4oBTb72VjL_U",
         authDomain: "usv-staw-app.firebaseapp.com",
@@ -23,12 +26,18 @@
         appId: "1:983106867178:web:90234121a5833e7e396c93"
     };
 
+    console.log("1️⃣ Starte...");
+    
     // Firebase initialisieren
-    firebase.initializeApp(firebaseConfig);
+    const app = firebase.initializeApp(firebaseConfig);
+    console.log("2️⃣ Firebase initialisiert");
+    
     const storage = firebase.storage();
-    console.log("✅ Firebase bereit");
+    console.log("3️⃣ Storage bereit");
 
     async function upload() {
+        console.log("4️⃣ Upload gestartet");
+        
         const file = document.getElementById('photoInput').files[0];
         if (!file) {
             alert("Bitte Datei auswählen!");
@@ -36,23 +45,22 @@
         }
 
         try {
-            console.log("📤 Lade hoch:", file.name);
+            document.getElementById('status').innerText = '📤 Lade hoch...';
             
-            // In Storage hochladen
             const storageRef = storage.ref();
             const imageRef = storageRef.child('test/' + Date.now() + '.jpg');
             
             await imageRef.put(file);
             
-            // URL holen
             const url = await imageRef.getDownloadURL();
             
-            console.log("✅ Erfolg! URL:", url);
+            console.log("5️⃣ Erfolg! URL:", url);
+            document.getElementById('status').innerText = '✅ Erfolg!';
             document.getElementById('preview').innerHTML = `<img src="${url}" width="200">`;
             
         } catch (error) {
             console.error("❌ Fehler:", error);
-            alert("Fehler: " + error.message);
+            document.getElementById('status').innerText = '❌ Fehler: ' + error.message;
         }
     }
     </script>
