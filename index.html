@@ -740,14 +740,12 @@ input, select, textarea { width: 100%; padding: 12px; border: 1px solid #dce6de;
 <script>
 // ==================== SERVICE WORKER REGISTRIERUNG MIT KORREKTEM SCOPE ====================
 if ('serviceWorker' in navigator) {
-  // Alte Service Worker löschen
   navigator.serviceWorker.getRegistrations().then(function(registrations) {
     for(let registration of registrations) {
       registration.unregister();
       console.log('✅ Alter Service Worker gelöscht');
     }
   }).then(function() {
-    // Neuen Service Worker mit korrektem Pfad registrieren
     return navigator.serviceWorker.register('/usv-staw-app/firebase-messaging-sw.js', {
       scope: '/usv-staw-app/'
     });
@@ -770,22 +768,7 @@ function updateAppBadge(count) {
   }
 }
 
-function resetBadge() {
-  if ('setAppBadge' in navigator) {
-    navigator.setAppBadge(0).catch(e => console.log('Badge reset', e));
-  }
-}
-
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') {
-    // Beim Öffnen der App Badge zurücksetzen (optional)
-    // resetBadge();
-  }
-});
-
-// ==================== PUSH-NACHRICHTEN SYSTEM MIT BESTÄTIGUNG ====================
-
-// Push-Nachricht speichern (wird beim Empfang aufgerufen)
+// ==================== PUSH-NACHRICHTEN SYSTEM ====================
 async function saveIncomingPush(userId, title, body, type = 'info') {
   if (!state.pendingPushes) state.pendingPushes = [];
   
@@ -802,15 +785,11 @@ async function saveIncomingPush(userId, title, body, type = 'info') {
   state.pendingPushes.push(newPush);
   await save();
   
-  // Badge für diesen User aktualisieren
   if (userId === session?.id) {
     updateAppBadge(countUnconfirmedPushes(userId));
   }
-  
-  console.log('📥 Push gespeichert:', newPush);
 }
 
-// Push als bestätigt markieren
 async function confirmPush(pushId) {
   if (!session) return;
   
@@ -818,19 +797,14 @@ async function confirmPush(pushId) {
   
   const pushIndex = state.pendingPushes.findIndex(p => p.id === pushId && p.userId === session.id);
   if (pushIndex !== -1) {
-    // Aus der Liste entfernen (bestätigt)
     state.pendingPushes.splice(pushIndex, 1);
     await save();
-    
-    // Badge aktualisieren
     updateAppBadge(countUnconfirmedPushes(session.id));
-    
     showToast('✅ Benachrichtigung bestätigt', 'success');
     render();
   }
 }
 
-// Alle Pushes eines Users auf einmal bestätigen
 async function confirmAllPushes() {
   if (!session) return;
   
@@ -847,13 +821,11 @@ async function confirmAllPushes() {
   }
 }
 
-// Ungelesene Pushes für einen User zählen
 function countUnconfirmedPushes(userId) {
   if (!state.pendingPushes || !userId) return 0;
   return state.pendingPushes.filter(p => p.userId === userId && !p.confirmed).length;
 }
 
-// Pushes für Eltern anzeigen
 function renderPendingPushes() {
   if (!session || session.role !== 'parent') return '';
   
@@ -863,7 +835,6 @@ function renderPendingPushes() {
     return '<div class="no-pushes">📭 Keine offenen Benachrichtigungen</div>';
   }
   
-  // Nach Datum sortieren (neueste zuerst)
   const sortedPushes = [...pushes].sort((a,b) => 
     (b.receivedAt || '').localeCompare(a.receivedAt || '')
   );
@@ -899,7 +870,6 @@ function renderPendingPushes() {
 }
 
 // ==================== FIREBASE STORAGE FUNKTIONEN ====================
-// Bild in Firebase Storage hochladen
 async function uploadImageToStorage(file, path) {
   try {
     showToast('🔄 Lade Bild hoch...', 'info', 0);
@@ -920,7 +890,6 @@ async function uploadImageToStorage(file, path) {
   }
 }
 
-// Bild aus Storage löschen
 async function deleteImageFromStorage(url) {
   if (!url || !url.includes('firebasestorage')) return;
   
@@ -933,7 +902,6 @@ async function deleteImageFromStorage(url) {
   }
 }
 
-// Base64 in File umwandeln
 async function base64ToFile(base64String, fileName) {
   const response = await fetch(base64String);
   const blob = await response.blob();
@@ -962,7 +930,6 @@ async function handleDefaultPlayerPhotoUpload(event) {
     state.defaultPlayerPhoto = downloadUrl;
     await save();
     
-    // Vorschau aktualisieren
     const preview = document.getElementById('default-photo-preview');
     if (preview) {
       preview.innerHTML = `<img src="${downloadUrl}" alt="Standardfoto" style="width: 100%; height: 100%; object-fit: cover;">`;
@@ -992,7 +959,6 @@ const DEFAULT_PRIMARY_COLOR = "#156d3b";
 function updatePrimaryColor(color) {
   document.documentElement.style.setProperty('--primary', color);
   
-  // Dunklere Variante berechnen
   const r = parseInt(color.slice(1,3), 16);
   const g = parseInt(color.slice(3,5), 16);
   const b = parseInt(color.slice(5,7), 16);
@@ -1000,21 +966,15 @@ function updatePrimaryColor(color) {
   const darkerR = Math.max(0, Math.floor(r * 0.8));
   const darkerG = Math.max(0, Math.floor(g * 0.8));
   const darkerB = Math.max(0, Math.floor(b * 0.8));
-  
   const darkerColor = `#${darkerR.toString(16).padStart(2,'0')}${darkerG.toString(16).padStart(2,'0')}${darkerB.toString(16).padStart(2,'0')}`;
-  
   document.documentElement.style.setProperty('--primary-dark', darkerColor);
   
-  // Helle Variante berechnen
   const lighterR = Math.min(255, Math.floor(r + (255 - r) * 0.3));
   const lighterG = Math.min(255, Math.floor(g + (255 - g) * 0.3));
   const lighterB = Math.min(255, Math.floor(b + (255 - b) * 0.3));
-  
   const lighterColor = `#${lighterR.toString(16).padStart(2,'0')}${lighterG.toString(16).padStart(2,'0')}${lighterB.toString(16).padStart(2,'0')}`;
-  
   document.documentElement.style.setProperty('--primary-light', lighterColor);
   
-  // Theme-Color für PWA
   document.getElementById('theme-color').setAttribute('content', color);
 }
 
@@ -1051,15 +1011,12 @@ function showSplashScreen() {
     return;
   }
   
-  // Aktuelles Datum für automatische Auswahl
   const today = new Date();
   const month = today.getMonth() + 1;
   const day = today.getDate();
   
-  // Priorität: 1. Geburtstag, 2. Eigene Events, 3. Feiertage
   let selectedSplash = null;
   
-  // Prüfen ob jemand Geburtstag hat (höchste Priorität)
   if (state.splashConfig.birthday?.active) {
     const birthdayPlayer = state.players?.find(p => {
       if (!p.birthday) return false;
@@ -1075,7 +1032,6 @@ function showSplashScreen() {
     }
   }
   
-  // Eigene Events prüfen (z.B. Meisterschaft)
   if (!selectedSplash && state.splashConfig.customEvents) {
     const todayStr = `${today.getFullYear()}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
     const activeEvent = state.splashConfig.customEvents.find(e => 
@@ -1090,7 +1046,6 @@ function showSplashScreen() {
     }
   }
   
-  // Feiertage prüfen
   if (!selectedSplash) {
     if (state.splashConfig.christmas?.active && month === 12 && day >= 24 && day <= 26) {
       selectedSplash = {
@@ -1123,17 +1078,14 @@ function showSplashScreen() {
     }
   }
   
-  // Splash aktualisieren
   if (selectedSplash) {
     if (selectedSplash.image) document.getElementById('splash-image').src = selectedSplash.image;
     document.getElementById('splash-title').textContent = selectedSplash.title;
     document.getElementById('splash-subtitle').textContent = selectedSplash.subtitle;
   }
   
-  // Splash anzeigen
   splash.classList.remove('hidden');
   
-  // Nach der Dauer ausblenden
   setTimeout(() => {
     hideSplash();
   }, state.splashConfig.duration * 1000);
@@ -1239,7 +1191,6 @@ function showPersistentAlert(message) {
 
 // ==================== PUSH BENACHRICHTIGUNGEN ====================
 let messaging = null;
-let pushSupported = false;
 let deferredPrompt;
 let _pushInitialized = false;
 let pushCounter = 0;
@@ -1247,12 +1198,7 @@ let pushCounter = 0;
 const _processedForegroundIds = new Set();
 setInterval(() => {
   _processedForegroundIds.clear();
-  console.log("🧹 Vordergrund: processedForegroundIds geleert");
 }, 10000);
-
-function showIOSInstructions() {
-  showToast('📱 Tippe auf "Teilen" → "Zum Home-Bildschirm"', 'info', 5000);
-}
 
 async function getAccessToken() {
   try {
@@ -1265,40 +1211,27 @@ async function getAccessToken() {
     
     if (response.ok) {
       const data = await response.json();
-      console.log('🔑 Access-Token erhalten');
       return data.accessToken;
     } else {
-      const errorText = await response.text();
-      console.log('❌ Fehler beim Token:', errorText);
       return 'dummy-token-bitte-durch-echten-ersetzen';
     }
   } catch (error) {
-    console.log('❌ Fehler:', error);
     return 'dummy-token-bitte-durch-echten-ersetzen';
   }
 }
 
 async function initPushNotifications() {
-  if (_pushInitialized) {
-    console.log('⏭️ Push bereits initialisiert, überspringe...');
-    return;
-  }
+  if (_pushInitialized) return;
   
   _pushInitialized = true;
-  console.log('📱 Initialisiere Push...');
   
   try {
-    if (!firebase.messaging) {
-      console.log('⚠️ Firebase Messaging nicht verfügbar');
-      return;
-    }
+    if (!firebase.messaging) return;
     
     messaging = firebase.messaging();
     
     const permission = await Notification.requestPermission();
     if (permission === 'granted') {
-      console.log('✅ Push erlaubt');
-      
       try {
         let token;
         if (window.swRegistration) {
@@ -1311,11 +1244,9 @@ async function initPushNotifications() {
             vapidKey: 'BNff0vnOXCeYPyLxqkCIDRAhaXhC06Xt1Fj6DduVFStn5xQNHdSbXzQHPriwpYySHdx1kQyywdVyTtY4_6TIcvI'
           });
         }
-        console.log('📱 Token:', token);
         await savePushToken(token);
         showToast('✅ Push aktiviert', 'success');
       } catch (e) {
-        console.log('❌ Token Fehler:', e);
         showToast('Push-Token Fehler', 'error');
       }
       
@@ -1339,7 +1270,6 @@ async function initPushNotifications() {
           payload.data?.title ||
           "USV StAW";
 
-        // 🔥 NEU: Push in der App speichern
         if (session) {
           saveIncomingPush(session.id, title, body, 'info');
         }
@@ -1352,132 +1282,72 @@ async function initPushNotifications() {
   }
 }
 
-// 🔥 VERBESSERTE VERSION: savePushToken mit Array-Prüfung
 async function savePushToken(token) {
   try {
-    if (!session || !session.id) {
-      console.log('❌ Keine Session-ID vorhanden');
-      return;
-    }
+    if (!session || !session.id) return;
     
-    console.log(`💾 Speichere Token für User: ${session.id}`, token);
+    if (!state.pushTokens) state.pushTokens = {};
     
-    if (!state.pushTokens) {
-      console.log('📝 pushTokens Objekt neu angelegt');
-      state.pushTokens = {};
-    }
-    
-    // 🔥 WICHTIG: Sicherstellen, dass es ein Array ist!
     if (!state.pushTokens[session.id] || !Array.isArray(state.pushTokens[session.id])) {
-      console.log(`📝 Neuen Array für User ${session.id} angelegt (war:`, state.pushTokens[session.id], ')');
       state.pushTokens[session.id] = [];
     }
     
-    // Prüfen ob Token schon existiert
     if (!state.pushTokens[session.id].includes(token)) {
       state.pushTokens[session.id].push(token);
-      console.log(`✅ Push-Token gespeichert für User ${session.id}. Aktuelle Tokens:`, state.pushTokens[session.id]);
-    } else {
-      console.log(`⏭️ Token existiert bereits für User ${session.id}`);
+      await save();
     }
-    
-    await save();
-    
-    // Nach dem Speichern prüfen
-    setTimeout(() => {
-      console.log(`🔍 Nach dem Speichern - pushTokens[${session.id}]:`, state.pushTokens[session.id]);
-    }, 500);
-    
   } catch (error) {
     console.log('⚠️ Token konnte nicht gespeichert werden:', error);
   }
 }
 
-// 🔥 NEU: Reparatur-Funktion für pushTokens
 async function repairPushTokens() {
   if (session?.role !== 'admin') {
-    console.log('⛔ Nur Trainer kann reparieren');
     showToast('⛔ Nur der Trainer kann die Reparatur durchführen', 'error');
     return;
   }
   
-  console.log('🔧 Repariere pushTokens...');
-  
-  if (!state.pushTokens) {
-    state.pushTokens = {};
-  }
+  if (!state.pushTokens) state.pushTokens = {};
   
   let repairedCount = 0;
   
-  // Alle Keys durchgehen und reparieren
   Object.keys(state.pushTokens).forEach(key => {
     if (!Array.isArray(state.pushTokens[key])) {
-      console.log(`🔧 Repariere Key ${key}:`, state.pushTokens[key]);
       repairedCount++;
-      
-      // Wenn es ein String ist, in Array umwandeln
       if (typeof state.pushTokens[key] === 'string') {
         state.pushTokens[key] = [state.pushTokens[key]];
-      } 
-      // Wenn es ein Objekt ist
-      else if (typeof state.pushTokens[key] === 'object' && state.pushTokens[key] !== null) {
-        // Werte sammeln
+      } else if (typeof state.pushTokens[key] === 'object' && state.pushTokens[key] !== null) {
         const values = Object.values(state.pushTokens[key]);
-        // Nur gültige Token-Strings behalten (fangen mit f- oder eqm an)
         const validTokens = values.filter(v => 
           typeof v === 'string' && (v.startsWith('f-') || v.startsWith('eqm'))
         );
         state.pushTokens[key] = validTokens;
-      } 
-      else {
-        // Sonst leeren Array
+      } else {
         state.pushTokens[key] = [];
       }
     }
   });
   
   await save();
-  console.log('✅ pushTokens repariert:', state.pushTokens);
   showToast(`✅ ${repairedCount} Einträge repariert`, 'success');
 }
 
-// 🔥 ANGEPASSTE VERSION: sendPushNotification mit Speicherung in der App
 async function sendPushNotification(userId, title, body, type = 'info') {
   pushCounter++;
-  console.log(`🔥 PUSH AUFRUF #${pushCounter} für User ${userId}:`, {title, body});
   
-  // 🔥 NEU: Push in der App speichern
   await saveIncomingPush(userId, title, body, type);
   
-  // DIAGNOSE: Zeig mir was in pushTokens steht
-  console.log('📊 Aktuelle pushTokens im State:', JSON.stringify(state.pushTokens, null, 2));
+  if (!state.pushTokens) return;
   
-  if (!state.pushTokens) {
-    console.log('❌ pushTokens existiert nicht im State');
-    return;
-  }
+  if (!state.pushTokens[userId]) return;
   
-  if (!state.pushTokens[userId]) {
-    console.log(`❌ Keine Push-Tokens für User ${userId} gefunden!`);
-    console.log(`📝 Vorhandene User mit Tokens:`, Object.keys(state.pushTokens || {}));
-    return;
-  }
-  
-  // Prüfen ob es ein Array ist
-  if (!Array.isArray(state.pushTokens[userId])) {
-    console.log(`⚠️ pushTokens[${userId}] ist kein Array, überspringe...`);
-    return;
-  }
+  if (!Array.isArray(state.pushTokens[userId])) return;
   
   const tokens = state.pushTokens[userId];
-  console.log(`✅ ${tokens.length} Tokens für User ${userId} gefunden:`, tokens);
   
   const now = Date.now();
   
-  if (lastPush && lastPush.userId === userId && lastPush.body === body && now - lastPush.time < 5000) {
-    console.log("⛔ Doppelten Push verhindert");
-    return;
-  }
+  if (lastPush && lastPush.userId === userId && lastPush.body === body && now - lastPush.time < 5000) return;
   
   lastPush = {userId, title, body, time: now};
   
@@ -1486,7 +1356,6 @@ async function sendPushNotification(userId, title, body, type = 'info') {
       const accessToken = await getAccessToken();
       
       if (accessToken === 'dummy-token-bitte-durch-echten-ersetzen') {
-        console.log('🔧 Push-Simulation an Token:', token);
         showToast(`🔧 Push-Simulation für User ${userId}`, 'info', 3000);
         continue;
       }
@@ -1528,22 +1397,13 @@ async function sendPushNotification(userId, title, body, type = 'info') {
         })
       });
       
-      if (response.ok) {
-        console.log('✅ Push gesendet an Token:', token);
-      } else {
-        const error = await response.text();
-        console.log('❌ Fehler beim Senden:', error);
-        
-        // Bei 404 oder 400 (ungültiger Token) diesen Token entfernen
+      if (!response.ok) {
         if (response.status === 404 || response.status === 400) {
-          console.log(`🗑️ Entferne ungültigen Token für User ${userId}`);
           state.pushTokens[userId] = state.pushTokens[userId].filter(t => t !== token);
           await save();
         }
       }
-    } catch (tokenError) {
-      console.log('❌ Fehler bei Token', token, tokenError);
-    }
+    } catch (tokenError) {}
   }
 }
 
@@ -1552,12 +1412,11 @@ let lastPush = null;
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   deferredPrompt = e;
-  console.log('✅ beforeinstallprompt Event ausgelöst');
 });
 
 function installApp() {
   if (isIOS()) {
-    showIOSInstructions();
+    showToast('📱 Tippe auf "Teilen" → "Zum Home-Bildschirm"', 'info', 5000);
     return;
   }
   
@@ -1580,12 +1439,7 @@ function installApp() {
 
 // ==================== TÄGLICHE ERINNERUNGEN ====================
 async function checkAndSendReminders() {
-  console.log("⏰ Prüfe auf fällige Erinnerungen...");
-  
-  if (!state.reminderDays || state.reminderDays === 0) {
-    console.log("⏰ Erinnerungen sind aus");
-    return;
-  }
+  if (!state.reminderDays || state.reminderDays === 0) return;
   
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -1596,18 +1450,12 @@ async function checkAndSendReminders() {
     return matchDate >= today;
   }) || [];
   
-  console.log(`⏰ ${upcomingMatches.length} anstehende Spiele gefunden`);
-  
   for (const match of upcomingMatches) {
     const matchDate = new Date(match.date);
     matchDate.setHours(0, 0, 0, 0);
     const daysUntilMatch = Math.ceil((matchDate - today) / (1000 * 60 * 60 * 24));
     
-    console.log(`⏰ Match ${match.title} in ${daysUntilMatch} Tagen, Erinnerung ab ${state.reminderDays} Tagen`);
-    
     if (daysUntilMatch <= state.reminderDays && daysUntilMatch > 0) {
-      console.log(`⏰ Erinnerung für Match ${match.title} fällig!`);
-      
       const eligiblePlayers = getEligiblePlayersForMatch(match);
       
       for (const player of eligiblePlayers) {
@@ -1617,8 +1465,6 @@ async function checkAndSendReminders() {
           const parentUser = findUserForPlayer(player.id);
           
           if (parentUser && state.pushTokens?.[parentUser.id]) {
-            console.log(`⏰ Erinnere ${player.name} (${parentUser.username})`);
-            
             await sendPushNotification(
               parentUser.id,
               "⚽ Bitte abstimmen!",
@@ -1663,12 +1509,10 @@ let isAppInstalledFlag = false;
 
 if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
   isAppInstalledFlag = true;
-  console.log('✅ App läuft im installierten Modus');
 }
 
 window.addEventListener('appinstalled', (evt) => {
   isAppInstalledFlag = true;
-  console.log('✅ App wurde installiert');
   render();
 });
 
@@ -1689,10 +1533,8 @@ const seed = {
   pushTokens: {},
   reminderDays: 0,
   
-  // 🔥 NEU: Standard-Spielerfoto
   defaultPlayerPhoto: null,
   
-  // 🔥 NEU: Push-Nachrichten Speicher
   pendingPushes: [],
   
   splashConfig: {
@@ -1721,7 +1563,6 @@ const seed = {
       jersey: 7, 
       parentName: "Eltern Fabian", 
       since: "2023", 
-      nextTeam: "U9", 
       note: "Sehr aufmerksam", 
       games: 12, 
       goals: 8,        
@@ -1739,24 +1580,25 @@ const seed = {
         2024: { goals: 5, assists: 3, trainings: 18, percentage: 82 },
         2023: { goals: 2, assists: 1, trainings: 12, percentage: 75 }
       },
-      canVote: true
+      canVote: true,
+      canVoteInHigher: false
     },
-    { id: "p2", name: "Oliver A.", team: "U8", birthday: "2017-06-08", position: "Verteidiger", jersey: 4, parentName: "Eltern Oliver", since: "2024", nextTeam: "U9", note: "Gute Mitarbeit", games: 11, goals: 12, assists: 2, trainingCount: 12, speed: 6.4, dribbling: 6.8, passing: 6.9, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}, canVote: true },
-    { id: "p3", name: "Oliver B.", team: "U9", birthday: "2016-01-03", position: "Mittelfeld", jersey: 10, parentName: "Eltern Oliver B.", since: "2023", nextTeam: "U10", note: "Gute Übersicht", games: 10, goals: 5, assists: 5, trainingCount: 15, speed: 7.0, dribbling: 7.0, passing: 7.5, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}, canVote: true },
-    { id: "p4", name: "Lukas", team: "U8", birthday: "2017-10-14", position: "Verteidiger", jersey: 5, parentName: "Eltern Lukas", since: "2024", nextTeam: "U9", note: "Konstant", games: 9, goals: 3, assists: 1, trainingCount: 10, speed: 6.6, dribbling: 6.0, passing: 6.6, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}, canVote: true },
-    { id: "p5", name: "Luca", team: "U8", birthday: "2017-04-16", position: "Flügel", jersey: 11, parentName: "Eltern Luca", since: "2023", nextTeam: "U9", note: "Viel Tempo", games: 12, goals: 4, assists: 3, trainingCount: 13, speed: 8.0, dribbling: 7.1, passing: 6.3, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}, canVote: true },
-    { id: "p6", name: "Angelo", team: "U9", birthday: "2016-09-22", position: "Mittelfeld", jersey: 8, parentName: "Eltern Angelo", since: "2022", nextTeam: "U10", note: "Stark im Passspiel", games: 13, goals: 7, assists: 6, trainingCount: 16, speed: 7.1, dribbling: 7.5, passing: 8.4, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}, canVote: true },
-    { id: "p7", name: "Alexander", team: "U9", birthday: "2016-07-11", position: "Verteidiger", jersey: 3, parentName: "Eltern Alexander", since: "2022", nextTeam: "U10", note: "Sehr zuverlässig", games: 14, goals: 1, assists: 1, trainingCount: 15, speed: 6.4, dribbling: 6.2, passing: 7.2, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}, canVote: true },
-    { id: "p8", name: "Teo A.", team: "U8", birthday: "2017-02-05", position: "Stürmer", jersey: 9, parentName: "Eltern Teo A.", since: "2024", nextTeam: "U9", note: "Torgefährlich", games: 10, goals: 6, assists: 3, trainingCount: 12, speed: 7.3, dribbling: 7.2, passing: 6.5, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}, canVote: true },
-    { id: "p9", name: "Teo B.", team: "U9", birthday: "2016-12-28", position: "Mittelfeld", jersey: 6, parentName: "Eltern Teo B.", since: "2024", nextTeam: "U10", note: "Mutig am Ball", games: 9, goals: 2, assists: 2, trainingCount: 11, speed: 6.9, dribbling: 7.0, passing: 6.8, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}, canVote: true },
-    { id: "p10", name: "Wolfi", team: "U8", birthday: "2017-03-07", position: "Verteidiger", jersey: 2, parentName: "Eltern Wolfi", since: "2025", nextTeam: "U9", note: "Lernwillig", games: 8, goals: 0, assists: 0, trainingCount: 8, speed: 5.9, dribbling: 5.5, passing: 5.8, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}, canVote: true },
-    { id: "p11", name: "Loric", team: "U9", birthday: "2016-11-02", position: "Flügel", jersey: 12, parentName: "Eltern Loric", since: "2024", nextTeam: "U10", note: "Soll mehr Mut haben", games: 8, goals: 1, assists: 1, trainingCount: 9, speed: 6.7, dribbling: 6.5, passing: 6.2, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}, canVote: true },
-    { id: "p12", name: "Anna", team: "U9", birthday: "2016-04-14", position: "Mittelfeld", jersey: 14, parentName: "Eltern Anna", since: "2022", nextTeam: "U10", note: "Sehr aufmerksam", games: 14, goals: 4, assists: 7, trainingCount: 17, speed: 7.2, dribbling: 7.7, passing: 7.6, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}, canVote: true },
-    { id: "p13", name: "Max", team: "U8", birthday: "2017-08-01", position: "Mittelfeld", jersey: 13, parentName: "Eltern Max", since: "2023", nextTeam: "U9", note: "Stark im Dribbling", games: 13, goals: 7, assists: 4, trainingCount: 15, speed: 7.7, dribbling: 8.5, passing: 7.0, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}, canVote: true },
-    { id: "p14", name: "Fredi", team: "U8", birthday: "2017-05-26", position: "Tor", jersey: 15, parentName: "Eltern Fredi", since: "2024", nextTeam: "U9", note: "Gute Reflexe", games: 9, goals: 0, assists: 0, trainingCount: 10, speed: 5.5, dribbling: 5.2, passing: 5.9, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}, canVote: true },
-    { id: "p15", name: "Urs", team: "U9", birthday: "2016-06-17", position: "Tor", jersey: 1, parentName: "Eltern Urs", since: "2023", nextTeam: "U10", note: "Ruhig im Tor", games: 11, goals: 0, assists: 0, trainingCount: 12, speed: 5.6, dribbling: 5.4, passing: 6.0, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}, canVote: true },
-    { id: "p16", name: "Mario", team: "U8", birthday: "2017-01-19", position: "Flügel", jersey: 16, parentName: "Eltern Mario", since: "2025", nextTeam: "U9", note: "Wenig Einsatzzeit", games: 7, goals: 1, assists: 1, trainingCount: 7, speed: 6.0, dribbling: 5.8, passing: 5.6, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}, canVote: true },
-    { id: "p17", name: "David", team: "U9", birthday: "2016-03-30", position: "Verteidiger", jersey: 17, parentName: "Eltern David", since: "2025", nextTeam: "U10", note: "Braucht mehr Spielminuten", games: 7, goals: 0, assists: 0, trainingCount: 7, speed: 6.1, dribbling: 5.5, passing: 5.9, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}, canVote: true }
+    { id: "p2", name: "Oliver A.", team: "U8", birthday: "2017-06-08", position: "Verteidiger", jersey: 4, parentName: "Eltern Oliver", since: "2024", note: "Gute Mitarbeit", games: 11, goals: 12, assists: 2, trainingCount: 12, speed: 6.4, dribbling: 6.8, passing: 6.9, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}, canVote: true, canVoteInHigher: false },
+    { id: "p3", name: "Oliver B.", team: "U9", birthday: "2016-01-03", position: "Mittelfeld", jersey: 10, parentName: "Eltern Oliver B.", since: "2023", note: "Gute Übersicht", games: 10, goals: 5, assists: 5, trainingCount: 15, speed: 7.0, dribbling: 7.0, passing: 7.5, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}, canVote: true, canVoteInHigher: false },
+    { id: "p4", name: "Lukas", team: "U8", birthday: "2017-10-14", position: "Verteidiger", jersey: 5, parentName: "Eltern Lukas", since: "2024", note: "Konstant", games: 9, goals: 3, assists: 1, trainingCount: 10, speed: 6.6, dribbling: 6.0, passing: 6.6, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}, canVote: true, canVoteInHigher: false },
+    { id: "p5", name: "Luca", team: "U8", birthday: "2017-04-16", position: "Flügel", jersey: 11, parentName: "Eltern Luca", since: "2023", note: "Viel Tempo", games: 12, goals: 4, assists: 3, trainingCount: 13, speed: 8.0, dribbling: 7.1, passing: 6.3, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}, canVote: true, canVoteInHigher: false },
+    { id: "p6", name: "Angelo", team: "U9", birthday: "2016-09-22", position: "Mittelfeld", jersey: 8, parentName: "Eltern Angelo", since: "2022", note: "Stark im Passspiel", games: 13, goals: 7, assists: 6, trainingCount: 16, speed: 7.1, dribbling: 7.5, passing: 8.4, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}, canVote: true, canVoteInHigher: false },
+    { id: "p7", name: "Alexander", team: "U9", birthday: "2016-07-11", position: "Verteidiger", jersey: 3, parentName: "Eltern Alexander", since: "2022", note: "Sehr zuverlässig", games: 14, goals: 1, assists: 1, trainingCount: 15, speed: 6.4, dribbling: 6.2, passing: 7.2, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}, canVote: true, canVoteInHigher: false },
+    { id: "p8", name: "Teo A.", team: "U8", birthday: "2017-02-05", position: "Stürmer", jersey: 9, parentName: "Eltern Teo A.", since: "2024", note: "Torgefährlich", games: 10, goals: 6, assists: 3, trainingCount: 12, speed: 7.3, dribbling: 7.2, passing: 6.5, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}, canVote: true, canVoteInHigher: false },
+    { id: "p9", name: "Teo B.", team: "U9", birthday: "2016-12-28", position: "Mittelfeld", jersey: 6, parentName: "Eltern Teo B.", since: "2024", note: "Mutig am Ball", games: 9, goals: 2, assists: 2, trainingCount: 11, speed: 6.9, dribbling: 7.0, passing: 6.8, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}, canVote: true, canVoteInHigher: false },
+    { id: "p10", name: "Wolfi", team: "U8", birthday: "2017-03-07", position: "Verteidiger", jersey: 2, parentName: "Eltern Wolfi", since: "2025", note: "Lernwillig", games: 8, goals: 0, assists: 0, trainingCount: 8, speed: 5.9, dribbling: 5.5, passing: 5.8, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}, canVote: true, canVoteInHigher: false },
+    { id: "p11", name: "Loric", team: "U9", birthday: "2016-11-02", position: "Flügel", jersey: 12, parentName: "Eltern Loric", since: "2024", note: "Soll mehr Mut haben", games: 8, goals: 1, assists: 1, trainingCount: 9, speed: 6.7, dribbling: 6.5, passing: 6.2, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}, canVote: true, canVoteInHigher: false },
+    { id: "p12", name: "Anna", team: "U9", birthday: "2016-04-14", position: "Mittelfeld", jersey: 14, parentName: "Eltern Anna", since: "2022", note: "Sehr aufmerksam", games: 14, goals: 4, assists: 7, trainingCount: 17, speed: 7.2, dribbling: 7.7, passing: 7.6, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}, canVote: true, canVoteInHigher: false },
+    { id: "p13", name: "Max", team: "U8", birthday: "2017-08-01", position: "Mittelfeld", jersey: 13, parentName: "Eltern Max", since: "2023", note: "Stark im Dribbling", games: 13, goals: 7, assists: 4, trainingCount: 15, speed: 7.7, dribbling: 8.5, passing: 7.0, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}, canVote: true, canVoteInHigher: false },
+    { id: "p14", name: "Fredi", team: "U8", birthday: "2017-05-26", position: "Tor", jersey: 15, parentName: "Eltern Fredi", since: "2024", note: "Gute Reflexe", games: 9, goals: 0, assists: 0, trainingCount: 10, speed: 5.5, dribbling: 5.2, passing: 5.9, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}, canVote: true, canVoteInHigher: false },
+    { id: "p15", name: "Urs", team: "U9", birthday: "2016-06-17", position: "Tor", jersey: 1, parentName: "Eltern Urs", since: "2023", note: "Ruhig im Tor", games: 11, goals: 0, assists: 0, trainingCount: 12, speed: 5.6, dribbling: 5.4, passing: 6.0, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}, canVote: true, canVoteInHigher: false },
+    { id: "p16", name: "Mario", team: "U8", birthday: "2017-01-19", position: "Flügel", jersey: 16, parentName: "Eltern Mario", since: "2025", note: "Wenig Einsatzzeit", games: 7, goals: 1, assists: 1, trainingCount: 7, speed: 6.0, dribbling: 5.8, passing: 5.6, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}, canVote: true, canVoteInHigher: false },
+    { id: "p17", name: "David", team: "U9", birthday: "2016-03-30", position: "Verteidiger", jersey: 17, parentName: "Eltern David", since: "2025", note: "Braucht mehr Spielminuten", games: 7, goals: 0, assists: 0, trainingCount: 7, speed: 6.1, dribbling: 5.5, passing: 5.9, photo: "", trainingScore: 0, tests: [], matchReports: [], seasonHistory: {}, canVote: true, canVoteInHigher: false }
   ],
   
   matches: [
@@ -1784,7 +1626,7 @@ const seed = {
   selectedReportMatchId: null
 };
 
-// Eltern-Accounts generieren - MIT UMLAUT-UNTERSTÜTZUNG!
+// Eltern-Accounts generieren
 seed.players.forEach(p => {
   const username = generateUsername(p.name);
   
@@ -1802,7 +1644,6 @@ seed.players.forEach(p => {
 let state = {};
 let session = JSON.parse(sessionStorage.getItem("usv-staw-session") || "null");
 
-// Views für verschiedene Rollen
 let adminView = "dashboard";
 let coachView = "dashboard";
 let parentView = "kind";
@@ -1813,13 +1654,11 @@ let coachKindView = "kind";
 async function save() {
   try {
     await db.collection("app").doc("state").set(state);
-    console.log("✅ Gespeichert in Firebase");
     
     if (state.primaryColor) {
       updatePrimaryColor(state.primaryColor);
     }
   } catch (error) {
-    console.error("❌ Fehler beim Speichern:", error);
     showToast("Fehler beim Speichern: " + error.message, "error");
   }
 }
@@ -1829,7 +1668,6 @@ async function loadState() {
     const doc = await db.collection("app").doc("state").get();
     if (doc.exists) {
       state = doc.data();
-      console.log("✅ Daten aus Firebase geladen");
       
       if (state.primaryColor) {
         updatePrimaryColor(state.primaryColor);
@@ -1837,7 +1675,6 @@ async function loadState() {
     } else {
       await db.collection("app").doc("state").set(seed);
       state = seed;
-      console.log("✅ Erste Firebase-Datenbank angelegt");
       
       if (state.primaryColor) {
         updatePrimaryColor(state.primaryColor);
@@ -1845,8 +1682,6 @@ async function loadState() {
     }
     render();
   } catch (error) {
-    console.error("❌ Fehler beim Laden:", error);
-    showToast("Fehler beim Laden: " + error.message + " - Verwende Seed-Daten", "error");
     state = seed;
     
     if (state.primaryColor) {
@@ -1860,15 +1695,12 @@ function listenState() {
   db.collection("app").doc("state").onSnapshot((doc) => {
     if (doc.exists) {
       state = doc.data();
-      console.log("🔄 Live-Update von Firebase");
       
       if (state.primaryColor) {
         updatePrimaryColor(state.primaryColor);
       }
       render();
     }
-  }, (error) => {
-    console.error("❌ Fehler beim Live-Listening:", error);
   });
 }
 
@@ -1911,10 +1743,9 @@ function getTeamNumber(teamName) {
   return match ? parseInt(match[1]) : null;
 }
 
-// 🔥 NEU: Für ALLE Teams true (nicht nur U8)
 function isYouthTeam(teamName) {
   const match = teamName?.match(/^U(\d+)$/i);
-  return match !== null; // Alle U-Teams (U8, U9, U10, ...)
+  return match !== null;
 }
 
 function getEligiblePlayersForMatch(match) {
@@ -2377,6 +2208,19 @@ function requestAttendanceChange(matchId, newStatus) {
   const match = state.matches?.find(m => m.id === matchId);
   if (!match || !player) return false;
   
+  // Prüfen ob Spieler in diesem Match abstimmen darf
+  const playerTeamNumber = getTeamNumber(player.team);
+  const matchTeamNumber = getTeamNumber(match.team);
+  
+  const canVoteInThisMatch = 
+    player.team === match.team || // Gleiches Team
+    (player.canVoteInHigher && matchTeamNumber > playerTeamNumber); // Höheres Team erlaubt
+  
+  if (!canVoteInThisMatch) {
+    showToast("Du darfst in diesem Spiel nicht abstimmen!", "warning");
+    return false;
+  }
+  
   const currentStatus = match.attendance?.[playerId] || 'open';
   
   if (!state.attendanceRequests) state.attendanceRequests = [];
@@ -2442,11 +2286,16 @@ function updateMatchAttendance(matchId, status) {
   const match = state.matches?.find(m => m.id === matchId);
   if (!match) return;
   
+  // Prüfen ob Spieler in diesem Match abstimmen darf
   const playerTeamNumber = getTeamNumber(player.team);
   const matchTeamNumber = getTeamNumber(match.team);
   
-  if (matchTeamNumber < playerTeamNumber) {
-    showToast("Dieses Spiel steht dir nicht zur Verfügung!", "error");
+  const canVoteInThisMatch = 
+    player.team === match.team || // Gleiches Team
+    (player.canVoteInHigher && matchTeamNumber > playerTeamNumber); // Höheres Team erlaubt
+  
+  if (!canVoteInThisMatch) {
+    showToast("Du darfst in diesem Spiel nicht abstimmen!", "warning");
     return;
   }
   
@@ -2493,6 +2342,26 @@ function toggleVoteRight(playerId) {
   
   save();
   showToast(`✅ Abstimmrecht für ${player.name} ${player.canVote ? 'aktiviert' : 'deaktiviert'}`, "success");
+  render();
+}
+
+// 🔥 NEUE FUNKTION: Höhere Teams Toggle
+function toggleVoteHigher(playerId) {
+  const player = findPlayer(playerId);
+  if (!player) return;
+  
+  const password = prompt("🔒 Bitte Trainer-Passwort eingeben:");
+  if (password === null) return;
+  
+  const admin = state.users?.find(u => u.role === "admin");
+  if (password !== admin.password) {
+    showToast("❌ Falsches Passwort!", "error");
+    return;
+  }
+  
+  player.canVoteInHigher = !player.canVoteInHigher;
+  save();
+  showToast(`✅ Höhere Teams für ${player.name} ${player.canVoteInHigher ? 'aktiviert' : 'deaktiviert'}`, "success");
   render();
 }
 
@@ -2585,7 +2454,6 @@ function setSelectedPlayer(id) {
   save();
 }
 
-// 🔥 ANGEPASST: addPlayer mit Standardfoto
 function addPlayer() {
   const name = document.getElementById("new-player-name").value.trim();
   const team = document.getElementById("new-player-team").value;
@@ -2595,11 +2463,12 @@ function addPlayer() {
   if (!state.players) state.players = [];
   state.players.push({
     id, name, team, birthday: "", position: "", jersey: 0, parentName: "",
-    since: new Date().getFullYear().toString(), nextTeam: "", note: "",
+    since: new Date().getFullYear().toString(), note: "",
     games: 0, goals: 0, assists: 0, trainingCount: 0, speed: "", dribbling: "", passing: "",
-    photo: state.defaultPlayerPhoto || "", // 🔥 NEU: Standardfoto setzen
+    photo: state.defaultPlayerPhoto || "",
     trainingScore: 0, tests: [], matchReports: [], seasonHistory: {},
-    canVote: true
+    canVote: true,
+    canVoteInHigher: false
   });
   
   const username = generateUsername(name);
@@ -2643,7 +2512,6 @@ function resetCoachPassword(coachId) {
   showToast(`✅ Passwort für ${coach.name} zurückgesetzt auf "4321"`, "success");
 }
 
-// 🔥 ANGEPASST: savePlayerData mit Storage
 async function savePlayerData() {
   const playerId = state.selectedPlayerId;
   const player = findPlayer(playerId);
@@ -2660,20 +2528,15 @@ async function savePlayerData() {
   player.speed = document.getElementById('player-speed').value || '';
   player.dribbling = document.getElementById('player-dribbling').value || '';
   player.passing = document.getElementById('player-passing').value || '';
-  player.nextTeam = document.getElementById('player-nextTeam').value || '';
 
-  // 🔥 NEU: Foto in Storage hochladen
   const photoInput = document.getElementById('player-photo');
   if (photoInput && photoInput.value && photoInput.value.startsWith('data:image')) {
-    // Altes Bild löschen (falls aus Storage)
     if (player.photo && player.photo.includes('firebasestorage')) {
       await deleteImageFromStorage(player.photo);
     }
     
-    // Base64 in File umwandeln
     const file = await base64ToFile(photoInput.value, 'photo.jpg');
     
-    // Neues Bild hochladen
     const fileName = `players/${playerId}/${Date.now()}.jpg`;
     const downloadUrl = await uploadImageToStorage(file, fileName);
     
@@ -2681,7 +2544,6 @@ async function savePlayerData() {
       player.photo = downloadUrl;
     }
   } else {
-    // Wenn kein neues Foto, dann den bestehenden Wert behalten
     player.photo = player.photo || '';
   }
 
@@ -2693,11 +2555,10 @@ async function savePlayerData() {
   showToast("✅ Spielerdaten gespeichert!", "success");
 }
 
-// 🔥 ANGEPASST: handlePhotoUpload mit 5MB Limit
 function handlePhotoUpload(event) {
   const file = event.target.files[0];
   if (file) {
-    if (file.size > 5 * 1024 * 1024) { // 5MB
+    if (file.size > 5 * 1024 * 1024) {
       showToast("❌ Foto zu groß (max 5MB)", "error");
       return;
     }
@@ -2782,7 +2643,6 @@ function saveClubLogo() {
       save();
       showToast("✅ Vereinslogo gespeichert!", "success");
     } else {
-      console.log('⚠️ Ungültiges Logo-Format');
       showToast("❌ Ungültiges Bildformat", "error");
     }
   } else {
@@ -2790,7 +2650,6 @@ function saveClubLogo() {
   }
 }
 
-// 🔥 ANGEPASST: handleSponsorUpload mit Storage
 async function handleSponsorUpload(event) {
   const file = event.target.files[0];
   if (!file) return;
@@ -2809,7 +2668,6 @@ async function handleSponsorUpload(event) {
   const downloadUrl = await uploadImageToStorage(file, fileName);
   
   if (downloadUrl) {
-    // Altes Sponsor-Logo löschen falls vorhanden
     if (state.sponsorLogo && state.sponsorLogo.includes('firebasestorage')) {
       await deleteImageFromStorage(state.sponsorLogo);
     }
@@ -2824,7 +2682,6 @@ async function handleSponsorUpload(event) {
   }
 }
 
-// 🔥 ANGEPASST: saveSponsorLogo (jetzt nur noch für Storage)
 function saveSponsorLogo() {
   const sponsorInput = document.getElementById('sponsor-logo');
   if (sponsorInput && sponsorInput.value) {
@@ -2950,7 +2807,6 @@ function editMatch(matchId) {
   const newMeeting = prompt("Treffpunkt", match.meeting);
   if (newMeeting === null) return;
   
-  // 🔥 NEU: Gegner-Feld für ALLE Teams (immer anzeigen)
   const opponentsStr = match.opponents ? match.opponents.join(', ') : '';
   const newOpponents = prompt("Gegner (durch Komma getrennt)", opponentsStr);
   if (newOpponents !== null) {
@@ -3248,7 +3104,6 @@ function saveSplashEvent(eventType, field, value) {
   showToast(`✅ ${eventType} Einstellung gespeichert`, 'success');
 }
 
-// 🔥 ANGEPASST: handleSplashImageUpload mit Storage
 async function handleSplashImageUpload(event, eventType) {
   const file = event.target.files[0];
   if (!file) return;
@@ -3267,7 +3122,6 @@ async function handleSplashImageUpload(event, eventType) {
   const downloadUrl = await uploadImageToStorage(file, fileName);
   
   if (downloadUrl) {
-    // Altes Bild löschen falls vorhanden
     if (state.splashConfig[eventType]?.image && state.splashConfig[eventType].image.includes('firebasestorage')) {
       await deleteImageFromStorage(state.splashConfig[eventType].image);
     }
@@ -3324,7 +3178,6 @@ function updateCustomEvent(eventId, field, value) {
   }
 }
 
-// 🔥 ANGEPASST: handleCustomEventImageUpload mit Storage
 async function handleCustomEventImageUpload(event, eventId) {
   const file = event.target.files[0];
   if (!file) return;
@@ -3345,7 +3198,6 @@ async function handleCustomEventImageUpload(event, eventId) {
   if (downloadUrl) {
     const customEvent = state.splashConfig.customEvents?.find(ev => ev.id === eventId);
     if (customEvent) {
-      // Altes Bild löschen
       if (customEvent.image && customEvent.image.includes('firebasestorage')) {
         await deleteImageFromStorage(customEvent.image);
       }
@@ -3387,7 +3239,6 @@ function renderHeader() {
     }
   }
   
-  // 🔥 NEU: Push-Badge für Eltern
   let pushBadge = '';
   if (session.role === 'parent') {
     const unreadCount = countUnconfirmedPushes(session.id);
@@ -3420,7 +3271,7 @@ function renderHeader() {
       ` : ''}
       <div class="footer">
         <div class="copyright">
-          © Trainer Stephan Köck, Release 2026 Version 1.13
+          © Trainer Stephan Köck, Release 2026 Version 1.0
         </div>
       </div>
     </div>
@@ -3461,7 +3312,7 @@ function renderLogin() {
         </div>
         
         <div style="margin-top: 30px; text-align: center; color: #888; font-size: 11px; border-top: 1px solid #eee; padding-top: 15px;">
-          © Trainer Stephan Köck, Release 2026 Version 1.13
+          © Trainer Stephan Köck, Release 2026 Version 1.0
         </div>
       </div>
     </div>
@@ -3799,7 +3650,6 @@ function renderStatistics() {
   `;
 }
 
-// 🔥 VERBESSERTE VERSION: renderCalendar mit Gegner-Anzeige für ALLE Teams
 function renderCalendar() {
   let matches;
   let playerId;
@@ -3895,7 +3745,6 @@ function renderCalendar() {
           
           const matchClass = isPast ? 'match past' : 'match';
           
-          // 🔥 GEGNER-ANZEIGE für Eltern und Trainer (für ALLE Teams)
           let opponentsHtml = '';
           if (showOpponents) {
             if (m.location === 'Heim') {
@@ -4373,16 +4222,12 @@ function renderPlayers() {
               <label>Passspiel (1-10)</label>
               <input id="player-passing" value="${selectedPlayer.passing || ''}">
             </div>
-            <div>
-              <label>Nächstes Team</label>
-              <input id="player-nextTeam" value="${selectedPlayer.nextTeam || ''}">
-            </div>
           </div>
           
-          <!-- 🔥 NEU: Abstimmrecht Toggle -->
+          <!-- 🔥 Abstimmrecht (Spielerpass) -->
           <div style="margin-top: 16px; padding: 12px; background: #f5f9f6; border-radius: 12px;">
             <label style="display: flex; align-items: center; gap: 12px; cursor: pointer;">
-              <span style="font-weight: 600; flex: 1;">⚽ Abstimmrecht:</span>
+              <span style="font-weight: 600; flex: 1;">⚽ Abstimmrecht (Spielerpass):</span>
               <span style="color: var(--muted); margin-right: 8px;" id="vote-status-${selectedPlayer.id}">${selectedPlayer.canVote ? 'Aktiv' : 'Inaktiv'}</span>
               <button class="btn ${selectedPlayer.canVote ? 'yes' : 'secondary'}" 
                       style="min-width: 80px;"
@@ -4391,7 +4236,23 @@ function renderPlayers() {
               </button>
             </label>
             <p class="small" style="margin-top: 8px; color: var(--muted);">
-              ${selectedPlayer.canVote ? 'Spieler darf bei Spielen abstimmen' : 'Spieler kann Spiele nur sehen, aber nicht abstimmen'}
+              ${selectedPlayer.canVote ? 'Spieler darf grundsätzlich abstimmen' : 'Spieler hat keinen gültigen Pass'}
+            </p>
+          </div>
+          
+          <!-- 🔥 NEU: Höhere Teams -->
+          <div style="margin-top: 16px; padding: 12px; background: #f5f9f6; border-radius: 12px;">
+            <label style="display: flex; align-items: center; gap: 12px; cursor: pointer;">
+              <span style="font-weight: 600; flex: 1;">⚽ Höhere Teams:</span>
+              <span style="color: var(--muted); margin-right: 8px;">${selectedPlayer.canVoteInHigher ? 'Ja' : 'Nein'}</span>
+              <button class="btn ${selectedPlayer.canVoteInHigher ? 'yes' : 'secondary'}" 
+                      style="min-width: 80px;"
+                      onclick="toggleVoteHigher('${selectedPlayer.id}')">
+                ${selectedPlayer.canVoteInHigher ? '✅ Ja' : '⛔ Nein'}
+              </button>
+            </label>
+            <p class="small" style="margin-top: 8px; color: var(--muted);">
+              ${selectedPlayer.canVoteInHigher ? 'Spieler darf in höheren Teams abstimmen' : 'Spieler darf nur im eigenen Team abstimmen'}
             </p>
           </div>
           
@@ -5005,7 +4866,6 @@ function renderConfig() {
     const opponentsField = document.getElementById('opponents-field');
     if (teamSelect && opponentsField) {
       teamSelect.addEventListener('change', function() {
-        // 🔥 Jetzt immer anzeigen (keine Bedingung mehr nötig)
         opponentsField.style.display = 'block';
       });
     }
@@ -5102,7 +4962,6 @@ function renderMilestones(player) {
   `;
 }
 
-// 🔥 NEUE VERSION: renderParentView mit Push-Tab
 function renderParentView() {
   const player = findPlayer(session.playerId);
   if (!player) return `<div class="section">Fehler: Kein Spieler gefunden</div>`;
@@ -5126,7 +4985,6 @@ function renderParentView() {
   const goalRank = goalRanking[player.id] || '-';
   const assistRank = assistRanking[player.id] || '-';
   
-  // 🔥 NEU: Unbestätigte Pushes anzeigen
   const pushesHtml = renderPendingPushes();
   const unreadCount = countUnconfirmedPushes(session.id);
   
@@ -5148,9 +5006,37 @@ function renderParentView() {
         <div class="card">
           <h3>👤 ${player.name}</h3>
           
-          ${photoHtml}
+          <div style="display: flex; gap: 20px; align-items: flex-start;">
+            <div style="flex: 1;">
+              <div style="margin-top: 16px;">
+                <div class="listline">Geburtstag: ${player.birthday || '-'}</div>
+                <div class="listline">Position: ${player.position || '-'}</div>
+                <div class="listline">Trikot: ${player.jersey || '-'}</div>
+                <div class="listline">Im Verein seit: ${player.since || '-'}</div>
+              </div>
+              
+              <div class="attendance-buttons" style="margin: 20px 0;">
+                <button class="btn ${upcomingMatches[0]?.attendance?.[player.id] === 'coming' ? 'yes' : 'secondary'}" 
+                  onclick="updateMatchAttendance('${upcomingMatches[0]?.id}','coming')">
+                  ✓ Kommen
+                </button>
+                <button class="btn ${upcomingMatches[0]?.attendance?.[player.id] === 'maybe' ? 'maybe' : 'secondary'}" 
+                  onclick="updateMatchAttendance('${upcomingMatches[0]?.id}','maybe')">
+                  ? Vielleicht
+                </button>
+                <button class="btn ${upcomingMatches[0]?.attendance?.[player.id] === 'missing' ? 'no' : 'secondary'}" 
+                  onclick="updateMatchAttendance('${upcomingMatches[0]?.id}','missing')">
+                  ✗ Nicht
+                </button>
+              </div>
+            </div>
+            
+            <div class="parent-photo" style="width: 120px; margin: 0;">
+              ${photoHtml}
+            </div>
+          </div>
           
-          <div class="current-stats">
+          <div class="current-stats" style="margin-top: 20px;">
             <div class="stat-card">
               <div class="value">${player.goals || 0}</div>
               <div class="label">Tore</div>
@@ -5175,7 +5061,6 @@ function renderParentView() {
                               status === 'maybe' ? '? Vielleicht' : 
                               status === 'missing' ? '✗ Du fehlst' : '○ Nicht abgestimmt';
             
-            // 🔥 GEGNER-ANZEIGE im Dashboard
             const opponentsHtml = match.opponents && match.opponents.length > 0 ? `
               <div style="margin-top: 8px;">
                 <span class="small" style="opacity: 0.9;">Gegner: ${match.opponents.join(' · ')}</span>
@@ -5197,14 +5082,6 @@ function renderParentView() {
           <div style="display: flex; gap: 16px; margin: 20px 0;">
             <div class="stat" style="flex: 1;"><strong>${percent}%</strong><br><span class="small">Training</span></div>
             <div class="stat" style="flex: 1;"><strong>${matchPercent}%</strong><br><span class="small">Spiele</span></div>
-          </div>
-          
-          <div style="margin-top: 16px;">
-            <div class="listline">Geburtstag: ${player.birthday || '-'}</div>
-            <div class="listline">Position: ${player.position || '-'}</div>
-            <div class="listline">Trikot: ${player.jersey || '-'}</div>
-            <div class="listline">Im Verein seit: ${player.since || '-'}</div>
-            <div class="listline">Nächstes Team: ${player.nextTeam || '-'}</div>
           </div>
           
           ${player.note ? `
@@ -5230,7 +5107,7 @@ function renderParentView() {
           ` : ''}
         </div>
       ` : parentView === 'pushes' ? pushesHtml :
-         parentView === 'calendar' ? renderCalendar() : 
+         parentView === 'calendar' ? `<div class="card">${renderCalendar()}</div>` : 
          parentView === 'tests' ? `
         <div class="card">
           <h3>📊 Leistungstests - ${player.name}</h3>
@@ -5322,7 +5199,6 @@ function renderTrainerKindView() {
                         status === 'maybe' ? '? Vielleicht' : 
                         status === 'missing' ? '✗ Du fehlst' : '○ Nicht abgestimmt';
       
-      // 🔥 GEGNER-ANZEIGE
       const opponentsHtml = match.opponents && match.opponents.length > 0 ? `
         <div style="margin-top: 8px;">
           <span class="small" style="opacity: 0.9;">Gegner: ${match.opponents.join(' · ')}</span>
@@ -5360,9 +5236,37 @@ function renderTrainerKindView() {
         <div class="card">
           <h3>${player.name}</h3>
           
-          ${photoHtml}
+          <div style="display: flex; gap: 20px; align-items: flex-start;">
+            <div style="flex: 1;">
+              <div style="margin-top: 16px;">
+                <div class="listline">Geburtstag: ${player.birthday || '-'}</div>
+                <div class="listline">Position: ${player.position || '-'}</div>
+                <div class="listline">Trikot: ${player.jersey || '-'}</div>
+                <div class="listline">Im Verein seit: ${player.since || '-'}</div>
+              </div>
+              
+              <div class="attendance-buttons" style="margin: 20px 0;">
+                <button class="btn ${upcomingMatches[0]?.attendance?.[player.id] === 'coming' ? 'yes' : 'secondary'}" 
+                  onclick="updateMatchAttendance('${upcomingMatches[0]?.id}','coming')">
+                  ✓ Kommen
+                </button>
+                <button class="btn ${upcomingMatches[0]?.attendance?.[player.id] === 'maybe' ? 'maybe' : 'secondary'}" 
+                  onclick="updateMatchAttendance('${upcomingMatches[0]?.id}','maybe')">
+                  ? Vielleicht
+                </button>
+                <button class="btn ${upcomingMatches[0]?.attendance?.[player.id] === 'missing' ? 'no' : 'secondary'}" 
+                  onclick="updateMatchAttendance('${upcomingMatches[0]?.id}','missing')">
+                  ✗ Nicht
+                </button>
+              </div>
+            </div>
+            
+            <div class="parent-photo" style="width: 120px; margin: 0;">
+              ${photoHtml}
+            </div>
+          </div>
           
-          <div class="current-stats">
+          <div class="current-stats" style="margin-top: 20px;">
             <div class="stat-card">
               <div class="value">${player.goals || 0}</div>
               <div class="label">Tore</div>
@@ -5387,14 +5291,6 @@ function renderTrainerKindView() {
             <div class="stat" style="flex: 1;"><strong>${matchPercent}%</strong><br><span class="small">Spiele</span></div>
           </div>
           
-          <div style="margin-top: 16px;">
-            <div class="listline">Geburtstag: ${player.birthday || '-'}</div>
-            <div class="listline">Position: ${player.position || '-'}</div>
-            <div class="listline">Trikot: ${player.jersey || '-'}</div>
-            <div class="listline">Im Verein seit: ${player.since || '-'}</div>
-            <div class="listline">Nächstes Team: ${player.nextTeam || '-'}</div>
-          </div>
-          
           ${player.note ? `
             <h4 style="margin: 20px 0 8px;">📝 Trainer-Notiz</h4>
             <div style="background: #f5f9f6; padding: 12px; border-radius: 8px;">${player.note}</div>
@@ -5417,7 +5313,7 @@ function renderTrainerKindView() {
             </div>
           ` : ''}
         </div>
-      ` : trainerKindView === 'calendar' ? renderCalendar() : trainerKindView === 'tests' ? `
+      ` : trainerKindView === 'calendar' ? `<div class="card">${renderCalendar()}</div>` : trainerKindView === 'tests' ? `
         <div class="card">
           <h3>📊 Leistungstests - ${player.name}</h3>
           ${tests.length > 0 ? tests.sort((a,b) => b.date.localeCompare(a.date)).map(test => `
@@ -5498,7 +5394,6 @@ function renderCoachKindView() {
                         status === 'maybe' ? '? Vielleicht' : 
                         status === 'missing' ? '✗ Du fehlst' : '○ Nicht abgestimmt';
       
-      // 🔥 GEGNER-ANZEIGE
       const opponentsHtml = match.opponents && match.opponents.length > 0 ? `
         <div style="margin-top: 8px;">
           <span class="small" style="opacity: 0.9;">Gegner: ${match.opponents.join(' · ')}</span>
@@ -5536,9 +5431,37 @@ function renderCoachKindView() {
         <div class="card">
           <h3>${player.name}</h3>
           
-          ${photoHtml}
+          <div style="display: flex; gap: 20px; align-items: flex-start;">
+            <div style="flex: 1;">
+              <div style="margin-top: 16px;">
+                <div class="listline">Geburtstag: ${player.birthday || '-'}</div>
+                <div class="listline">Position: ${player.position || '-'}</div>
+                <div class="listline">Trikot: ${player.jersey || '-'}</div>
+                <div class="listline">Im Verein seit: ${player.since || '-'}</div>
+              </div>
+              
+              <div class="attendance-buttons" style="margin: 20px 0;">
+                <button class="btn ${upcomingMatches[0]?.attendance?.[player.id] === 'coming' ? 'yes' : 'secondary'}" 
+                  onclick="updateMatchAttendance('${upcomingMatches[0]?.id}','coming')">
+                  ✓ Kommen
+                </button>
+                <button class="btn ${upcomingMatches[0]?.attendance?.[player.id] === 'maybe' ? 'maybe' : 'secondary'}" 
+                  onclick="updateMatchAttendance('${upcomingMatches[0]?.id}','maybe')">
+                  ? Vielleicht
+                </button>
+                <button class="btn ${upcomingMatches[0]?.attendance?.[player.id] === 'missing' ? 'no' : 'secondary'}" 
+                  onclick="updateMatchAttendance('${upcomingMatches[0]?.id}','missing')">
+                  ✗ Nicht
+                </button>
+              </div>
+            </div>
+            
+            <div class="parent-photo" style="width: 120px; margin: 0;">
+              ${photoHtml}
+            </div>
+          </div>
           
-          <div class="current-stats">
+          <div class="current-stats" style="margin-top: 20px;">
             <div class="stat-card">
               <div class="value">${player.goals || 0}</div>
               <div class="label">Tore</div>
@@ -5563,14 +5486,6 @@ function renderCoachKindView() {
             <div class="stat" style="flex: 1;"><strong>${matchPercent}%</strong><br><span class="small">Spiele</span></div>
           </div>
           
-          <div style="margin-top: 16px;">
-            <div class="listline">Geburtstag: ${player.birthday || '-'}</div>
-            <div class="listline">Position: ${player.position || '-'}</div>
-            <div class="listline">Trikot: ${player.jersey || '-'}</div>
-            <div class="listline">Im Verein seit: ${player.since || '-'}</div>
-            <div class="listline">Nächstes Team: ${player.nextTeam || '-'}</div>
-          </div>
-          
           ${player.note ? `
             <h4 style="margin: 20px 0 8px;">📝 Trainer-Notiz</h4>
             <div style="background: #f5f9f6; padding: 12px; border-radius: 8px;">${player.note}</div>
@@ -5593,7 +5508,7 @@ function renderCoachKindView() {
             </div>
           ` : ''}
         </div>
-      ` : coachKindView === 'calendar' ? renderCalendar() : coachKindView === 'tests' ? `
+      ` : coachKindView === 'calendar' ? `<div class="card">${renderCalendar()}</div>` : coachKindView === 'tests' ? `
         <div class="card">
           <h3>📊 Leistungstests - ${player.name}</h3>
           ${tests.length > 0 ? tests.sort((a,b) => b.date.localeCompare(a.date)).map(test => `
@@ -5841,12 +5756,11 @@ async function startApp() {
   }, 2000);
 }
 
-// 🔥 NEU: Globale Funktionen für das Push-System
+// Globale Funktionen
 window.saveIncomingPush = saveIncomingPush;
 window.confirmPush = confirmPush;
 window.confirmAllPushes = confirmAllPushes;
 window.repairPushTokens = repairPushTokens;
-
 window.login = login;
 window.logout = logout;
 window.showToast = showToast;
@@ -5908,6 +5822,7 @@ window.updateCustomEvent = updateCustomEvent;
 window.handleCustomEventImageUpload = handleCustomEventImageUpload;
 window.installApp = installApp;
 window.toggleVoteRight = toggleVoteRight;
+window.toggleVoteHigher = toggleVoteHigher;
 
 startApp();
 </script>
