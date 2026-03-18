@@ -140,9 +140,10 @@ html, body {
   visibility: hidden;
 }
 
+/* 🔥 GEÄNDERT: Haupt-Splash auf 150x150 */
 .splash-screen img {
-  width: 120px;
-  height: 120px;
+  width: 150px;
+  height: 150px;
   border-radius: 24px;
   box-shadow: 0 10px 25px rgba(0,0,0,0.2);
   animation: logoPop 0.6s ease-out;
@@ -1895,15 +1896,34 @@ function formatDate(dateStr) {
   return { day: String(d.getDate()).padStart(2,"0"), mon: months[d.getMonth()] };
 }
 
-// 🔥 NEU: Nur Spieler mit canVote = true zählen
+// 🔥 Zählung: Nur Spieler MIT Spielerpass (canVote = true)
 function countAttendance(match) {
-  const eligiblePlayers = getEligiblePlayersForMatch(match).filter(p => p.canVote === true);
-  const coming = eligiblePlayers.filter(p => match.attendance?.[p.id] === "coming").length;
-  const maybe = eligiblePlayers.filter(p => match.attendance?.[p.id] === "maybe").length;
-  const missing = eligiblePlayers.filter(p => match.attendance?.[p.id] === "missing").length;
-  const open = eligiblePlayers.filter(p => !match.attendance?.[p.id] || match.attendance[p.id] === "open").length;
+  const allPossiblePlayers = getEligiblePlayersForMatch(match);
   
-  return { coming, maybe, missing, open, total: eligiblePlayers.length };
+  // Nur Spieler MIT Spielerpass (canVote = true) zählen
+  const countedPlayers = allPossiblePlayers.filter(player => {
+    if (player.canVote === false) return false;
+    
+    const playerTeamNumber = getTeamNumber(player.team);
+    const matchTeamNumber = getTeamNumber(match.team);
+    
+    // Gleiches Team = immer zählen
+    if (matchTeamNumber === playerTeamNumber) return true;
+    
+    // Höheres Team = nur zählen wenn canVoteInHigher = true
+    if (matchTeamNumber > playerTeamNumber) {
+      return player.canVoteInHigher === true;
+    }
+    
+    return false;
+  });
+  
+  const coming = countedPlayers.filter(p => match.attendance?.[p.id] === "coming").length;
+  const maybe = countedPlayers.filter(p => match.attendance?.[p.id] === "maybe").length;
+  const missing = countedPlayers.filter(p => match.attendance?.[p.id] === "missing").length;
+  const open = countedPlayers.filter(p => !match.attendance?.[p.id] || match.attendance[p.id] === "open").length;
+  
+  return { coming, maybe, missing, open, total: countedPlayers.length };
 }
 
 function getDetailedAttendance(match) {
@@ -3146,7 +3166,7 @@ function saveSplashEvent(eventType, field, value) {
   showToast(`✅ ${eventType} Einstellung gespeichert`, 'success');
 }
 
-// 🔥 NEU: Splash-Bilder auf 250x250
+// 🔥 Splash-Bilder in Konfiguration wieder auf 60x60
 async function handleSplashImageUpload(event, eventType) {
   const file = event.target.files[0];
   if (!file) return;
@@ -3179,7 +3199,7 @@ async function handleSplashImageUpload(event, eventType) {
     const previewId = `splash-preview-${eventType}`;
     const preview = document.getElementById(previewId);
     if (preview) {
-      preview.innerHTML = `<img src="${downloadUrl}" alt="Vorschau" style="width: 250px; height: 250px; border-radius: 12px; object-fit: cover;">`;
+      preview.innerHTML = `<img src="${downloadUrl}" alt="Vorschau" style="width: 60px; height: 60px; border-radius: 12px; object-fit: cover;">`;
     }
     
     showToast(`✅ Bild für ${eventType} gespeichert`, 'success');
@@ -3221,7 +3241,7 @@ function updateCustomEvent(eventId, field, value) {
   }
 }
 
-// 🔥 NEU: Custom Event Bilder auf 250x250
+// 🔥 Custom Event Bilder in Konfiguration wieder auf 60x60
 async function handleCustomEventImageUpload(event, eventId) {
   const file = event.target.files[0];
   if (!file) return;
@@ -3252,7 +3272,7 @@ async function handleCustomEventImageUpload(event, eventId) {
       const previewId = `custom-preview-${eventId}`;
       const preview = document.getElementById(previewId);
       if (preview) {
-        preview.innerHTML = `<img src="${downloadUrl}" alt="Vorschau" style="width: 250px; height: 250px; border-radius: 12px; object-fit: cover;">`;
+        preview.innerHTML = `<img src="${downloadUrl}" alt="Vorschau" style="width: 60px; height: 60px; border-radius: 12px; object-fit: cover;">`;
       }
       
       showToast('✅ Bild gespeichert', 'success');
@@ -4376,11 +4396,11 @@ function renderSplashConfig() {
     customEvents: []
   };
   
-  // 🔥 NEU: Vorschaubilder 250x250
+  // 🔥 Vorschaubilder in Konfiguration wieder auf 60x60
   function getPreviewHtml(eventType) {
     const img = config[eventType]?.image;
     if (img) {
-      return `<img src="${img}" alt="Vorschau" style="width: 250px; height: 250px; border-radius: 12px; object-fit: cover;">`;
+      return `<img src="${img}" alt="Vorschau" style="width: 60px; height: 60px; border-radius: 12px; object-fit: cover;">`;
     }
     return '<span style="color: var(--muted);">Kein Bild</span>';
   }
@@ -4573,7 +4593,7 @@ function renderSplashConfig() {
               <div style="text-align: center;">
                 <div style="margin-bottom: 4px;">Vorschau</div>
                 <div id="custom-preview-${event.id}">
-                  ${event.image ? `<img src="${event.image}" alt="Vorschau" style="width: 250px; height: 250px; border-radius: 12px; object-fit: cover;">` : '<span style="color: var(--muted);">Kein Bild</span>'}
+                  ${event.image ? `<img src="${event.image}" alt="Vorschau" style="width: 60px; height: 60px; border-radius: 12px; object-fit: cover;">` : '<span style="color: var(--muted);">Kein Bild</span>'}
                 </div>
               </div>
             </div>
@@ -5505,7 +5525,7 @@ function renderCoachKindView() {
             </div>
           ` : ''}
         </div>
-      ` : coachKindView === 'calendar' ? `<div class="card" style="background: white; padding: 0; overflow: hidden;">${renderCalendar()}</div>` : coachKindView === 'tests' ? `
+      ` : coachKindView === 'calendar' ? `<div class="card" style="background: white; padding: 0; width: 100%; overflow: hidden;">${renderCalendar()}</div>` : coachKindView === 'tests' ? `
         <div class="card">
           <h3>📊 Leistungstests - ${player.name}</h3>
           ${tests.length > 0 ? tests.sort((a,b) => b.date.localeCompare(a.date)).map(test => `
