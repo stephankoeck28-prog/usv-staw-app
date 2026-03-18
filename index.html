@@ -140,7 +140,7 @@ html, body {
   visibility: hidden;
 }
 
-/* 🔥 GEÄNDERT: Haupt-Splash auf 150x150 */
+/* Haupt-Splash auf 150x150 */
 .splash-screen img {
   width: 150px;
   height: 150px;
@@ -2091,6 +2091,7 @@ function deleteMatchReport(matchId) {
   showToast("✅ Spielbericht gelöscht!", "success");
 }
 
+// 🔥 GEÄNDERT: In saveMatchReport() wird bereits korrekt gefiltert
 function saveMatchReport(matchId) {
   const match = state.matches.find(m => m.id === matchId);
   if (!match) return;
@@ -3166,7 +3167,7 @@ function saveSplashEvent(eventType, field, value) {
   showToast(`✅ ${eventType} Einstellung gespeichert`, 'success');
 }
 
-// 🔥 Splash-Bilder in Konfiguration wieder auf 60x60
+// 🔥 Splash-Bilder in Konfiguration auf 60x60
 async function handleSplashImageUpload(event, eventType) {
   const file = event.target.files[0];
   if (!file) return;
@@ -3241,7 +3242,7 @@ function updateCustomEvent(eventId, field, value) {
   }
 }
 
-// 🔥 Custom Event Bilder in Konfiguration wieder auf 60x60
+// 🔥 Custom Event Bilder in Konfiguration auf 60x60
 async function handleCustomEventImageUpload(event, eventId) {
   const file = event.target.files[0];
   if (!file) return;
@@ -3714,6 +3715,7 @@ function renderStatistics() {
   `;
 }
 
+// 🔥 GEÄNDERT: In der erweiterten Trainer-Ansicht nur Spieler anzeigen, die abstimmen dürfen
 function renderCalendar() {
   let matches;
   let playerId;
@@ -3772,7 +3774,23 @@ function renderCalendar() {
           
           let detailedHtml = '';
           if (isTrainerOrCoach && !isParentMode && isExpanded) {
-            const eligiblePlayers = getEligiblePlayersForMatch(m).sort((a, b) => a.name.localeCompare(b.name));
+            // 🔥 NUR Spieler anzeigen, die abstimmen dürfen (gleiche Logik wie bei countAttendance)
+            const eligiblePlayers = getEligiblePlayersForMatch(m)
+              .filter(player => {
+                if (player.canVote === false) return false;
+                
+                const playerTeamNumber = getTeamNumber(player.team);
+                const matchTeamNumber = getTeamNumber(m.team);
+                
+                if (matchTeamNumber === playerTeamNumber) return true;
+                
+                if (matchTeamNumber > playerTeamNumber) {
+                  return player.canVoteInHigher === true;
+                }
+                
+                return false;
+              })
+              .sort((a, b) => a.name.localeCompare(b.name));
             
             detailedHtml = `
               <div class="detailed-attendance">
@@ -4005,6 +4023,7 @@ function renderTrainingHistory() {
   `;
 }
 
+// 🔥 GEÄNDERT: Im Spielbericht nur Spieler anzeigen, die mit "Kommen" oder "Vielleicht" abgestimmt haben
 function renderMatchReport() {
   if (session.role !== "admin") {
     return `
@@ -4051,22 +4070,34 @@ function renderMatchReport() {
             <input id="match-result-${selectedMatch.id}" value="${selectedMatch.result || ''}" placeholder="z.B. 4:4">
             
             <h5 style="margin: 20px 0 10px;">⚽ Torschützen</h5>
-            ${getEligiblePlayersForMatch(selectedMatch).sort((a,b) => a.name.localeCompare(b.name)).map(player => `
-              <div style="display: flex; gap: 10px; align-items: center; margin: 8px 0;">
-                <span style="width: 140px;"><strong>${player.name}</strong></span>
-                <input id="goal-${selectedMatch.id}-${player.id}" type="number" min="0" value="${selectedMatch.report?.goals?.[player.id] || 0}" style="width: 70px;">
-                <span class="small">Tore</span>
-              </div>
-            `).join('')}
+            ${getEligiblePlayersForMatch(selectedMatch)
+              .filter(player => {
+                const status = selectedMatch.attendance?.[player.id];
+                return status === 'coming' || status === 'maybe';
+              })
+              .sort((a,b) => a.name.localeCompare(b.name))
+              .map(player => `
+                <div style="display: flex; gap: 10px; align-items: center; margin: 8px 0;">
+                  <span style="width: 140px;"><strong>${player.name}</strong></span>
+                  <input id="goal-${selectedMatch.id}-${player.id}" type="number" min="0" value="${selectedMatch.report?.goals?.[player.id] || 0}" style="width: 70px;">
+                  <span class="small">Tore</span>
+                </div>
+              `).join('')}
             
             <h5 style="margin: 20px 0 10px;">🎯 Assists</h5>
-            ${getEligiblePlayersForMatch(selectedMatch).sort((a,b) => a.name.localeCompare(b.name)).map(player => `
-              <div style="display: flex; gap: 10px; align-items: center; margin: 8px 0;">
-                <span style="width: 140px;"><strong>${player.name}</strong></span>
-                <input id="assist-${selectedMatch.id}-${player.id}" type="number" min="0" value="${selectedMatch.report?.assists?.[player.id] || 0}" style="width: 70px;">
-                <span class="small">Assists</span>
-              </div>
-            `).join('')}
+            ${getEligiblePlayersForMatch(selectedMatch)
+              .filter(player => {
+                const status = selectedMatch.attendance?.[player.id];
+                return status === 'coming' || status === 'maybe';
+              })
+              .sort((a,b) => a.name.localeCompare(b.name))
+              .map(player => `
+                <div style="display: flex; gap: 10px; align-items: center; margin: 8px 0;">
+                  <span style="width: 140px;"><strong>${player.name}</strong></span>
+                  <input id="assist-${selectedMatch.id}-${player.id}" type="number" min="0" value="${selectedMatch.report?.assists?.[player.id] || 0}" style="width: 70px;">
+                  <span class="small">Assists</span>
+                </div>
+              `).join('')}
             
             <div style="display: flex; gap: 12px; margin-top: 24px;">
               <button class="btn primary" style="flex: 2;" onclick="saveMatchReport('${selectedMatch.id}')">
@@ -4396,7 +4427,7 @@ function renderSplashConfig() {
     customEvents: []
   };
   
-  // 🔥 Vorschaubilder in Konfiguration wieder auf 60x60
+  // Vorschaubilder in Konfiguration auf 60x60
   function getPreviewHtml(eventType) {
     const img = config[eventType]?.image;
     if (img) {
