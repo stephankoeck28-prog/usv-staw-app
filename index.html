@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <title>USV St Andrä Wördern - Team App</title>
 <!-- PWA Manifest -->
 <link rel="manifest" href="manifest.json">
@@ -85,6 +85,35 @@ html, body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
   color: var(--text); 
   line-height: 1.4; 
+}
+
+/* Querformat verbieten */
+@media (orientation: landscape) {
+  html, body {
+    transform: rotate(0deg) !important;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    position: fixed;
+  }
+  
+  body::after {
+    content: "Bitte drehe dein Gerät zurück ins Hochformat 📱";
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--primary);
+    color: white;
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 20px;
+    font-size: 18px;
+  }
 }
 
 /* ==================== SPLASH SCREEN ==================== */
@@ -738,7 +767,7 @@ input, select, textarea { width: 100%; padding: 12px; border: 1px solid #dce6de;
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 
 <script>
-// ==================== SERVICE WORKER REGISTRIERUNG MIT KORREKTEM SCOPE ====================
+// ==================== SERVICE WORKER REGISTRIERUNG ====================
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then(function(registrations) {
     for(let registration of registrations) {
@@ -1765,6 +1794,7 @@ function getEligiblePlayersForMatch(match) {
   return players;
 }
 
+// 🔥 NEUE LOGIK: Höhere Teams nur wenn canVoteInHigher = true
 function getVisibleMatchesForParent(playerId) {
   const player = findPlayer(playerId);
   if (!player) return [];
@@ -1774,7 +1804,17 @@ function getVisibleMatchesForParent(playerId) {
   
   return state.matches?.filter(m => {
     const matchTeamNumber = getTeamNumber(m.team);
-    return matchTeamNumber !== null && matchTeamNumber >= playerTeamNumber;
+    if (matchTeamNumber === null) return false;
+    
+    // Gleiches Team immer anzeigen
+    if (matchTeamNumber === playerTeamNumber) return true;
+    
+    // Höheres Team nur anzeigen wenn canVoteInHigher = true
+    if (matchTeamNumber > playerTeamNumber) {
+      return player.canVoteInHigher === true;
+    }
+    
+    return false;
   }).sort((a,b) => a.date.localeCompare(b.date)) || [];
 }
 
@@ -3136,7 +3176,7 @@ async function handleSplashImageUpload(event, eventType) {
     const previewId = `splash-preview-${eventType}`;
     const preview = document.getElementById(previewId);
     if (preview) {
-      preview.innerHTML = `<img src="${downloadUrl}" alt="Vorschau" style="width: 60px; height: 60px; border-radius: 12px; object-fit: cover;">`;
+      preview.innerHTML = `<img src="${downloadUrl}" alt="Vorschau" style="width: 150px; height: 150px; border-radius: 12px; object-fit: cover;">`;
     }
     
     showToast(`✅ Bild für ${eventType} gespeichert`, 'success');
@@ -3208,7 +3248,7 @@ async function handleCustomEventImageUpload(event, eventId) {
       const previewId = `custom-preview-${eventId}`;
       const preview = document.getElementById(previewId);
       if (preview) {
-        preview.innerHTML = `<img src="${downloadUrl}" alt="Vorschau" style="width: 60px; height: 60px; border-radius: 12px; object-fit: cover;">`;
+        preview.innerHTML = `<img src="${downloadUrl}" alt="Vorschau" style="width: 150px; height: 150px; border-radius: 12px; object-fit: cover;">`;
       }
       
       showToast('✅ Bild gespeichert', 'success');
@@ -4252,7 +4292,7 @@ function renderPlayers() {
               </button>
             </label>
             <p class="small" style="margin-top: 8px; color: var(--muted);">
-              ${selectedPlayer.canVoteInHigher ? 'Spieler darf in höheren Teams abstimmen' : 'Spieler darf nur im eigenen Team abstimmen'}
+              ${selectedPlayer.canVoteInHigher ? 'Spieler sieht und darf in höheren Teams abstimmen' : 'Spieler sieht nur sein eigenes Team'}
             </p>
           </div>
           
@@ -4335,7 +4375,7 @@ function renderSplashConfig() {
   function getPreviewHtml(eventType) {
     const img = config[eventType]?.image;
     if (img) {
-      return `<img src="${img}" alt="Vorschau" style="width: 60px; height: 60px; border-radius: 12px; object-fit: cover;">`;
+      return `<img src="${img}" alt="Vorschau" style="width: 150px; height: 150px; border-radius: 12px; object-fit: cover;">`;
     }
     return '<span style="color: var(--muted);">Kein Bild</span>';
   }
@@ -4528,7 +4568,7 @@ function renderSplashConfig() {
               <div style="text-align: center;">
                 <div style="margin-bottom: 4px;">Vorschau</div>
                 <div id="custom-preview-${event.id}">
-                  ${event.image ? `<img src="${event.image}" alt="Vorschau" style="width: 60px; height: 60px; border-radius: 12px; object-fit: cover;">` : '<span style="color: var(--muted);">Kein Bild</span>'}
+                  ${event.image ? `<img src="${event.image}" alt="Vorschau" style="width: 150px; height: 150px; border-radius: 12px; object-fit: cover;">` : '<span style="color: var(--muted);">Kein Bild</span>'}
                 </div>
               </div>
             </div>
@@ -5007,6 +5047,9 @@ function renderParentView() {
           <h3>👤 ${player.name}</h3>
           
           <div style="display: flex; gap: 20px; align-items: flex-start;">
+            <div class="parent-photo" style="width: 120px; margin-right: 10px;">
+              ${photoHtml}
+            </div>
             <div style="flex: 1;">
               <div style="margin-top: 16px;">
                 <div class="listline">Geburtstag: ${player.birthday || '-'}</div>
@@ -5014,42 +5057,28 @@ function renderParentView() {
                 <div class="listline">Trikot: ${player.jersey || '-'}</div>
                 <div class="listline">Im Verein seit: ${player.since || '-'}</div>
               </div>
-              
-              <div class="attendance-buttons" style="margin: 20px 0;">
-                <button class="btn ${upcomingMatches[0]?.attendance?.[player.id] === 'coming' ? 'yes' : 'secondary'}" 
-                  onclick="updateMatchAttendance('${upcomingMatches[0]?.id}','coming')">
-                  ✓ Kommen
-                </button>
-                <button class="btn ${upcomingMatches[0]?.attendance?.[player.id] === 'maybe' ? 'maybe' : 'secondary'}" 
-                  onclick="updateMatchAttendance('${upcomingMatches[0]?.id}','maybe')">
-                  ? Vielleicht
-                </button>
-                <button class="btn ${upcomingMatches[0]?.attendance?.[player.id] === 'missing' ? 'no' : 'secondary'}" 
-                  onclick="updateMatchAttendance('${upcomingMatches[0]?.id}','missing')">
-                  ✗ Nicht
-                </button>
-              </div>
-            </div>
-            
-            <div class="parent-photo" style="width: 120px; margin: 0;">
-              ${photoHtml}
             </div>
           </div>
           
-          <div class="current-stats" style="margin-top: 20px;">
-            <div class="stat-card">
-              <div class="value">${player.goals || 0}</div>
-              <div class="label">Tore</div>
-              <div class="ranking">
-                Rang ${goalRank} ${goalRank !== '-' ? getRankingBadge(goalRank) : ''}
-              </div>
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 20px 0;">
+            <div style="background: white; border-radius: 12px; padding: 8px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+              <div style="font-size: 20px; font-weight: 800; color: var(--primary);">${player.goals || 0}</div>
+              <div style="font-size: 11px; color: var(--muted);">Tore</div>
             </div>
-            <div class="stat-card">
-              <div class="value">${player.assists || 0}</div>
-              <div class="label">Assists</div>
-              <div class="ranking">
-                Rang ${assistRank} ${assistRank !== '-' ? getRankingBadge(assistRank) : ''}
-              </div>
+            <div style="background: white; border-radius: 12px; padding: 8px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+              <div style="font-size: 20px; font-weight: 800; color: var(--blue);">${player.assists || 0}</div>
+              <div style="font-size: 11px; color: var(--muted);">Assists</div>
+            </div>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 20px 0;">
+            <div style="background: white; border-radius: 12px; padding: 8px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+              <div style="font-size: 20px; font-weight: 800; color: var(--attendance-coming);">${percent}%</div>
+              <div style="font-size: 11px; color: var(--muted);">Training</div>
+            </div>
+            <div style="background: white; border-radius: 12px; padding: 8px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+              <div style="font-size: 20px; font-weight: 800; color: var(--attendance-maybe);">${matchPercent}%</div>
+              <div style="font-size: 11px; color: var(--muted);">Spiele</div>
             </div>
           </div>
           
@@ -5078,11 +5107,6 @@ function renderParentView() {
               </div>
             `;
           }).join('') : '<div class="card" style="text-align: center; padding: 20px;">Keine anstehenden Spiele</div>'}
-          
-          <div style="display: flex; gap: 16px; margin: 20px 0;">
-            <div class="stat" style="flex: 1;"><strong>${percent}%</strong><br><span class="small">Training</span></div>
-            <div class="stat" style="flex: 1;"><strong>${matchPercent}%</strong><br><span class="small">Spiele</span></div>
-          </div>
           
           ${player.note ? `
             <h4 style="margin: 20px 0 8px;">📝 Trainer-Notiz</h4>
@@ -5237,6 +5261,9 @@ function renderTrainerKindView() {
           <h3>${player.name}</h3>
           
           <div style="display: flex; gap: 20px; align-items: flex-start;">
+            <div class="parent-photo" style="width: 120px; margin-right: 10px;">
+              ${photoHtml}
+            </div>
             <div style="flex: 1;">
               <div style="margin-top: 16px;">
                 <div class="listline">Geburtstag: ${player.birthday || '-'}</div>
@@ -5244,52 +5271,33 @@ function renderTrainerKindView() {
                 <div class="listline">Trikot: ${player.jersey || '-'}</div>
                 <div class="listline">Im Verein seit: ${player.since || '-'}</div>
               </div>
-              
-              <div class="attendance-buttons" style="margin: 20px 0;">
-                <button class="btn ${upcomingMatches[0]?.attendance?.[player.id] === 'coming' ? 'yes' : 'secondary'}" 
-                  onclick="updateMatchAttendance('${upcomingMatches[0]?.id}','coming')">
-                  ✓ Kommen
-                </button>
-                <button class="btn ${upcomingMatches[0]?.attendance?.[player.id] === 'maybe' ? 'maybe' : 'secondary'}" 
-                  onclick="updateMatchAttendance('${upcomingMatches[0]?.id}','maybe')">
-                  ? Vielleicht
-                </button>
-                <button class="btn ${upcomingMatches[0]?.attendance?.[player.id] === 'missing' ? 'no' : 'secondary'}" 
-                  onclick="updateMatchAttendance('${upcomingMatches[0]?.id}','missing')">
-                  ✗ Nicht
-                </button>
-              </div>
-            </div>
-            
-            <div class="parent-photo" style="width: 120px; margin: 0;">
-              ${photoHtml}
             </div>
           </div>
           
-          <div class="current-stats" style="margin-top: 20px;">
-            <div class="stat-card">
-              <div class="value">${player.goals || 0}</div>
-              <div class="label">Tore</div>
-              <div class="ranking">
-                Rang ${goalRank} ${goalRank !== '-' ? getRankingBadge(goalRank) : ''}
-              </div>
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 20px 0;">
+            <div style="background: white; border-radius: 12px; padding: 8px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+              <div style="font-size: 20px; font-weight: 800; color: var(--primary);">${player.goals || 0}</div>
+              <div style="font-size: 11px; color: var(--muted);">Tore</div>
             </div>
-            <div class="stat-card">
-              <div class="value">${player.assists || 0}</div>
-              <div class="label">Assists</div>
-              <div class="ranking">
-                Rang ${assistRank} ${assistRank !== '-' ? getRankingBadge(assistRank) : ''}
-              </div>
+            <div style="background: white; border-radius: 12px; padding: 8px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+              <div style="font-size: 20px; font-weight: 800; color: var(--blue);">${player.assists || 0}</div>
+              <div style="font-size: 11px; color: var(--muted);">Assists</div>
+            </div>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 20px 0;">
+            <div style="background: white; border-radius: 12px; padding: 8px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+              <div style="font-size: 20px; font-weight: 800; color: var(--attendance-coming);">${percent}%</div>
+              <div style="font-size: 11px; color: var(--muted);">Training</div>
+            </div>
+            <div style="background: white; border-radius: 12px; padding: 8px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+              <div style="font-size: 20px; font-weight: 800; color: var(--attendance-maybe);">${matchPercent}%</div>
+              <div style="font-size: 11px; color: var(--muted);">Spiele</div>
             </div>
           </div>
           
           <h4 style="margin: 20px 0 12px 0;">📅 Anstehende Spiele</h4>
           ${upcomingMatchesHtml}
-          
-          <div style="display: flex; gap: 16px; margin: 20px 0;">
-            <div class="stat" style="flex: 1;"><strong>${percent}%</strong><br><span class="small">Training</span></div>
-            <div class="stat" style="flex: 1;"><strong>${matchPercent}%</strong><br><span class="small">Spiele</span></div>
-          </div>
           
           ${player.note ? `
             <h4 style="margin: 20px 0 8px;">📝 Trainer-Notiz</h4>
@@ -5432,6 +5440,9 @@ function renderCoachKindView() {
           <h3>${player.name}</h3>
           
           <div style="display: flex; gap: 20px; align-items: flex-start;">
+            <div class="parent-photo" style="width: 120px; margin-right: 10px;">
+              ${photoHtml}
+            </div>
             <div style="flex: 1;">
               <div style="margin-top: 16px;">
                 <div class="listline">Geburtstag: ${player.birthday || '-'}</div>
@@ -5439,52 +5450,33 @@ function renderCoachKindView() {
                 <div class="listline">Trikot: ${player.jersey || '-'}</div>
                 <div class="listline">Im Verein seit: ${player.since || '-'}</div>
               </div>
-              
-              <div class="attendance-buttons" style="margin: 20px 0;">
-                <button class="btn ${upcomingMatches[0]?.attendance?.[player.id] === 'coming' ? 'yes' : 'secondary'}" 
-                  onclick="updateMatchAttendance('${upcomingMatches[0]?.id}','coming')">
-                  ✓ Kommen
-                </button>
-                <button class="btn ${upcomingMatches[0]?.attendance?.[player.id] === 'maybe' ? 'maybe' : 'secondary'}" 
-                  onclick="updateMatchAttendance('${upcomingMatches[0]?.id}','maybe')">
-                  ? Vielleicht
-                </button>
-                <button class="btn ${upcomingMatches[0]?.attendance?.[player.id] === 'missing' ? 'no' : 'secondary'}" 
-                  onclick="updateMatchAttendance('${upcomingMatches[0]?.id}','missing')">
-                  ✗ Nicht
-                </button>
-              </div>
-            </div>
-            
-            <div class="parent-photo" style="width: 120px; margin: 0;">
-              ${photoHtml}
             </div>
           </div>
           
-          <div class="current-stats" style="margin-top: 20px;">
-            <div class="stat-card">
-              <div class="value">${player.goals || 0}</div>
-              <div class="label">Tore</div>
-              <div class="ranking">
-                Rang ${goalRank} ${goalRank !== '-' ? getRankingBadge(goalRank) : ''}
-              </div>
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 20px 0;">
+            <div style="background: white; border-radius: 12px; padding: 8px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+              <div style="font-size: 20px; font-weight: 800; color: var(--primary);">${player.goals || 0}</div>
+              <div style="font-size: 11px; color: var(--muted);">Tore</div>
             </div>
-            <div class="stat-card">
-              <div class="value">${player.assists || 0}</div>
-              <div class="label">Assists</div>
-              <div class="ranking">
-                Rang ${assistRank} ${assistRank !== '-' ? getRankingBadge(assistRank) : ''}
-              </div>
+            <div style="background: white; border-radius: 12px; padding: 8px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+              <div style="font-size: 20px; font-weight: 800; color: var(--blue);">${player.assists || 0}</div>
+              <div style="font-size: 11px; color: var(--muted);">Assists</div>
+            </div>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 20px 0;">
+            <div style="background: white; border-radius: 12px; padding: 8px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+              <div style="font-size: 20px; font-weight: 800; color: var(--attendance-coming);">${percent}%</div>
+              <div style="font-size: 11px; color: var(--muted);">Training</div>
+            </div>
+            <div style="background: white; border-radius: 12px; padding: 8px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+              <div style="font-size: 20px; font-weight: 800; color: var(--attendance-maybe);">${matchPercent}%</div>
+              <div style="font-size: 11px; color: var(--muted);">Spiele</div>
             </div>
           </div>
           
           <h4 style="margin: 20px 0 12px 0;">📅 Anstehende Spiele</h4>
           ${upcomingMatchesHtml}
-          
-          <div style="display: flex; gap: 16px; margin: 20px 0;">
-            <div class="stat" style="flex: 1;"><strong>${percent}%</strong><br><span class="small">Training</span></div>
-            <div class="stat" style="flex: 1;"><strong>${matchPercent}%</strong><br><span class="small">Spiele</span></div>
-          </div>
           
           ${player.note ? `
             <h4 style="margin: 20px 0 8px;">📝 Trainer-Notiz</h4>
