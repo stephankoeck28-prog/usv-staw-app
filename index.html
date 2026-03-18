@@ -2618,6 +2618,19 @@ async function savePlayerData() {
   showToast("✅ Spielerdaten gespeichert!", "success");
 }
 
+// 🔥 NEUE FUNKTION: Eltern können Geburtstag speichern
+async function saveParentBirthday() {
+  const player = findPlayer(session.playerId);
+  if (!player) return;
+
+  const birthdayInput = document.getElementById('parent-birthday');
+  if (birthdayInput) {
+    player.birthday = birthdayInput.value;
+    await save();
+    showToast("✅ Geburtstag gespeichert!", "success");
+  }
+}
+
 function handlePhotoUpload(event) {
   const file = event.target.files[0];
   if (file) {
@@ -5058,6 +5071,7 @@ function renderMilestones(player) {
   `;
 }
 
+// 🔥 GEÄNDERT: Eltern können jetzt den Geburtstag bearbeiten
 function renderParentView() {
   const player = findPlayer(session.playerId);
   if (!player) return `<div class="section">Fehler: Kein Spieler gefunden</div>`;
@@ -5108,7 +5122,11 @@ function renderParentView() {
             </div>
             <div style="flex: 1;">
               <div style="margin-top: 16px;">
-                <div class="listline">Geburtstag: ${player.birthday || '-'}</div>
+                <div class="listline" style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-weight: 600;">Geburtstag:</span>
+                  <input id="parent-birthday" type="date" value="${player.birthday || ''}" style="width: auto; margin: 0; padding: 6px;">
+                  <button class="btn primary small" onclick="saveParentBirthday()">Speichern</button>
+                </div>
                 <div class="listline">Position: ${player.position || '-'}</div>
                 <div class="listline">Trikot: ${player.jersey || '-'}</div>
                 <div class="listline">Im Verein seit: ${player.since || '-'}</div>
@@ -5826,6 +5844,7 @@ window.deletePlayer = deletePlayer;
 window.resetParentPassword = resetParentPassword;
 window.resetCoachPassword = resetCoachPassword;
 window.savePlayerData = savePlayerData;
+window.saveParentBirthday = saveParentBirthday;
 window.handlePhotoUpload = handlePhotoUpload;
 window.handleLogoUpload = handleLogoUpload;
 window.saveClubLogo = saveClubLogo;
