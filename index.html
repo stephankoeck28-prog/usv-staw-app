@@ -775,7 +775,10 @@ function closeToast(toastId) {
 function hideSplash() {
   const splash = document.getElementById('splash-screen');
   const app = document.getElementById('app');
-  if (splash) splash.classList.add('hidden');
+  if (splash) {
+    splash.classList.add('hidden');
+    console.log('✅ Splash ausgeblendet');
+  }
   if (app) app.style.opacity = '1';
 }
 
@@ -861,7 +864,9 @@ function showSplashScreen() {
   }
   
   splash.classList.remove('hidden');
-  setTimeout(hideSplash, state.splashConfig.duration * 1000);
+  
+  // Nach eingestellter Dauer ausblenden
+  setTimeout(hideSplash, (state.splashConfig.duration || 2) * 1000);
 }
 
 function findPlayer(id) { return state.players?.find(p => p.id === id); }
@@ -1346,7 +1351,7 @@ async function repairPushTokens() {
   showToast(`✅ ${repaired} Einträge repariert`, 'success');
 }
 
-// ==================== BEREITS BESTEHENDE FUNKTIONEN (KURZFORM) ====================
+// ==================== BEREITS BESTEHENDE FUNKTIONEN ====================
 function countAttendance(match) {
   const allPossiblePlayers = getEligiblePlayersForMatch(match);
   const countedPlayers = allPossiblePlayers.filter(player => {
@@ -1726,6 +1731,7 @@ function finishTraining() {
   
   save();
   showToast(`✅ Training vom ${date} gespeichert!`, "success");
+  render();
 }
 
 function deleteTraining(trainingId) {
@@ -1745,6 +1751,7 @@ function deleteTraining(trainingId) {
   state.trainings = state.trainings?.filter(t => t.id !== trainingId) || [];
   save();
   showToast("✅ Training wurde gelöscht!", "success");
+  render();
 }
 
 function setTodayForTraining() {
@@ -1818,6 +1825,7 @@ function resetParentPassword(playerId) {
   user.password = "1234";
   save();
   showToast(`✅ Passwort für ${user.username} zurückgesetzt auf "1234"`, "success");
+  render();
 }
 
 async function savePlayerData() {
@@ -1950,6 +1958,7 @@ async function handleSponsorUpload(event) {
   
   const fileName = `sponsor/${Date.now()}.jpg`;
   const url = await uploadImageToStorage(file, fileName);
+  
   if (url) {
     if (state.sponsorLogo?.includes('firebasestorage')) await deleteImageFromStorage(state.sponsorLogo);
     state.sponsorLogo = url;
@@ -2266,6 +2275,7 @@ function changePassword() {
   save();
   saveSession();
   showToast("✅ Passwort wurde geändert!", "success");
+  render();
 }
 
 function confirmResetTests() {
@@ -2728,15 +2738,12 @@ function renderDashboard() {
   
   const topScorers = [...players].filter(p => p.goals > 0).sort((a,b) => b.goals - a.goals);
   const top3Scorers = topScorers.slice(0, 3);
-  const bottom3Scorers = topScorers.slice(-3).reverse();
   
   const topAssists = [...players].filter(p => p.assists > 0).sort((a,b) => b.assists - a.assists);
   const top3Assists = topAssists.slice(0, 3);
-  const bottom3Assists = topAssists.slice(-3).reverse();
   
   const trainingStats = [...players].sort((a,b) => calculatePlayerPercentage(b.id) - calculatePlayerPercentage(a.id));
   const top3Training = trainingStats.slice(0, 3);
-  const bottom3Training = trainingStats.slice(-3).reverse();
   
   return `
     <div class="section">
@@ -2767,36 +2774,20 @@ function renderDashboard() {
       </div>
       
       <div class="card">
-        <h3>⚽ Torschützen</h3>
-        <h4 style="margin: 10px 0 5px;">Top 3</h4>
+        <h3>⚽ Torschützen Top 3</h3>
         ${top3Scorers.map(p => `<div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--line);"><span>${p.name}</span><span style="font-weight: 600; color: var(--primary);">${p.goals} Tore</span></div>`).join('')}
-        ${bottom3Scorers.length && bottom3Scorers[0].goals > 0 ? `
-          <h4 style="margin: 15px 0 5px;">Schlechteste 3</h4>
-          ${bottom3Scorers.map(p => `<div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--line);"><span>${p.name</span><span style="font-weight: 600; color: ${p.goals === 0 ? 'var(--red)' : 'var(--muted)'};">${p.goals} Tore</span></div>`).join('')}
-        ` : ''}
       </div>
       
       <div class="card">
-        <h3>🎯 Assists</h3>
-        <h4 style="margin: 10px 0 5px;">Top 3</h4>
+        <h3>🎯 Assists Top 3</h3>
         ${top3Assists.map(p => `<div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--line);"><span>${p.name}</span><span style="font-weight: 600; color: var(--blue);">${p.assists} Assists</span></div>`).join('')}
-        ${bottom3Assists.length && bottom3Assists[0].assists > 0 ? `
-          <h4 style="margin: 15px 0 5px;">Schlechteste 3</h4>
-          ${bottom3Assists.map(p => `<div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--line);"><span>${p.name}</span><span style="font-weight: 600; color: ${p.assists === 0 ? 'var(--red)' : 'var(--muted)'};">${p.assists} Assists</span></div>`).join('')}
-        ` : ''}
       </div>
       
       <div class="card">
-        <h3>🏋️ Trainingsbeteiligung</h3>
-        <h4 style="margin: 10px 0 5px;">Top 3</h4>
+        <h3>🏋️ Trainingsbeteiligung Top 3</h3>
         ${top3Training.map(p => {
           const percent = calculatePlayerPercentage(p.id);
           return `<div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--line);"><span>${p.name}</span><span style="font-weight: 600; color: var(--primary);">${percent}%</span></div>`;
-        }).join('')}
-        <h4 style="margin: 15px 0 5px;">Schlechteste 3</h4>
-        ${bottom3Training.map(p => {
-          const percent = calculatePlayerPercentage(p.id);
-          return `<div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--line);"><span>${p.name}</span><span style="font-weight: 600; color: ${percent < 50 ? 'var(--red)' : 'var(--muted)'};">${percent}%</span></div>`;
         }).join('')}
       </div>
     </div>
@@ -3849,9 +3840,6 @@ function renderParentView() {
   
   const photoHtml = player.photo ? `<div class="parent-photo"><img src="${player.photo}" alt="${player.name}" style="width: 100%; height: 100%; object-fit: cover;"></div>` : '';
   
-  const goalRanking = getGoalRanking(player.team);
-  const assistRanking = getAssistRanking(player.team);
-  
   const pushesHtml = renderPendingPushes();
   const unreadCount = countUnconfirmedPushes(session.id);
   
@@ -4293,14 +4281,34 @@ if ('serviceWorker' in navigator) {
 
 window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; });
 
-// ==================== APP START ====================
+// ==================== APP START MIT SPLASH-FIX ====================
 async function startApp() {
+  console.log("🚀 App wird gestartet...");
+  
   await loadState();
   listenState();
   render();
+  
+  // 🔥 FIX: Splash nach 1,5 Sekunden ausblenden
+  setTimeout(() => {
+    hideSplash();
+    console.log('✅ Splash nach Timeout ausgeblendet');
+  }, 1500);
+  
+  // 🔥 BACKUP: Notfall-Löschung nach 2,5 Sekunden
+  setTimeout(() => {
+    const splash = document.getElementById('splash-screen');
+    if (splash && !splash.classList.contains('hidden')) {
+      console.log('⚠️ NOTFALL: Splash erzwungen ausgeblendet');
+      splash.classList.add('hidden');
+      document.getElementById('app').style.opacity = '1';
+    }
+  }, 2500);
+  
+  // Aber trotzdem showSplashScreen aufrufen (für Custom-Splash)
   setTimeout(showSplashScreen, 100);
   
-  // Tägliche Erinnerungen um 8 Uhr
+  // Tägliche Erinnerungen
   const now = new Date();
   const next = new Date(); next.setHours(8,0,0,0);
   if (now > next) next.setDate(next.getDate() + 1);
