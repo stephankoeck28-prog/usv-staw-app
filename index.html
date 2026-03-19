@@ -1011,6 +1011,55 @@ input, select, textarea { width: 100%; padding: 12px; border: 1px solid #dce6de;
   background: #fff9f0;
 }
 
+/* Coach Config Kacheln */
+.coach-config-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 20px;
+}
+.coach-config-card {
+  cursor: pointer;
+  background: white;
+  border: 2px solid var(--line);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: 0.2s;
+}
+.coach-config-card:hover {
+  border-color: var(--coach-border);
+  background: var(--coach-bg);
+}
+.coach-config-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 25px;
+  background: var(--coach-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+.coach-config-content {
+  flex: 1;
+}
+.coach-config-title {
+  font-weight: 600;
+  font-size: 16px;
+}
+.coach-config-desc {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.coach-config-arrow {
+  color: var(--blue);
+  font-size: 20px;
+}
+
 /* Utils */
 .small { font-size: 12px; color: var(--muted); }
 .hidden { display: none !important; }
@@ -1049,7 +1098,6 @@ function formatGermanDate(dateStr) {
   return `${day}.${month}.${year}`;
 }
 
-// Für kurze Anzeige (TT.MM.JJ)
 function formatGermanDateShort(dateStr) {
   if (!dateStr) return '-';
   const [year, month, day] = dateStr.split('-');
@@ -1057,100 +1105,359 @@ function formatGermanDateShort(dateStr) {
   return `${day}.${month}.${year.slice(2)}`;
 }
 
-// ==================== SOUND STUDIO FUNKTIONEN ====================
-let audioElements = {};
+// ==================== PUSH-DIAGNOSE & REPARATUR ====================
+let messaging = null;
+let deferredPrompt;
+let _pushInitialized = false;
+let pushCounter = 0;
 
-async function handleSoundUpload(event) {
-  const file = event.target.files[0];
-  if (!file) return;
+const _processedForegroundIds = new Set();
+setInterval(() => {
+  _processedForegroundIds.clear();
+}, 10000);
+
+// 🔥 PUSH-STATUS ANZEIGEN
+function getPushStatus() {
+  if (!session) return { ok: false, reason: 'Nicht eingeloggt' };
   
-  if (!file.type.startsWith('audio/')) {
-    showToast("❌ Bitte eine Audiodatei auswählen (MP3, WAV)", "error");
-    return;
+  const status = {
+    browser: navigator.userAgent,
+    permission: Notification.permission,
+    serviceWorker: '❌ Nicht registriert',
+    vapidKey: 'vorhanden',
+    tokens: 0,
+    selectedSound: state.selectedPushSound || 'default',
+    ok: false
+  };
+  
+  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+    status.serviceWorker = '✅ Aktiv';
   }
   
-  if (file.size > 5 * 1024 * 1024) {
-    showToast("❌ Datei zu groß (max 5MB)", "error");
-    return;
+  if (state.pushTokens && state.pushTokens[session.id]) {
+    status.tokens = state.pushTokens[session.id].length;
   }
   
-  showToast("🔄 Lade Sound hoch...", "info", 0);
+  status.ok = (status.permission === 'granted' && status.serviceWorker === '✅ Aktiv' && status.tokens > 0);
   
-  const fileName = `sounds/${Date.now()}-${file.name}`;
-  const downloadUrl = await uploadImageToStorage(file, fileName);
+  return status;
+}
+
+// 🔥 PUSH-TEST FUNKTION
+async function testPushNotification() {
+  if (!session) {
+    showToast('❌ Nicht eingeloggt', 'error');
+    return false;
+  }
   
-  if (downloadUrl) {
-    if (!state.customSounds) state.customSounds = [];
-    
-    state.customSounds.push({
-      id: 'sound-' + Date.now(),
-      name: file.name.replace(/\.[^/.]+$/, ""), // Ohne Endung
-      url: downloadUrl,
-      fileName: fileName,
-      uploadedAt: new Date().toISOString()
+  showToast('📱 Sende Test-Push...', 'info', 0);
+  
+  const success = await sendPushNotification(
+    session.id,
+    '🧪 TEST-BENACHRICHTIGUNG',
+    'Wenn du das siehst, funktionieren Push-Benachrichtigungen! ⚽',
+    'test'
+  );
+  
+  if (success) {
+    showToast('✅ Test-Push gesendet!', 'success');
+  } else {
+    showToast('❌ Test-Push fehlgeschlagen', 'error');
+  }
+  
+  return success;
+}
+
+// 🔥 VERBESSERTE sendPushNotification mit Return-Wert
+async function sendPushNotification(userId, title, body, type = 'info') {
+  pushCounter++;
+  
+  await saveIncomingPush(userId, title, body, type);
+  
+  if (!state.pushTokens) {
+    console.log('❌ Keine pushTokens im State');
+    return false;
+  }
+  
+  if (!state.pushTokens[userId]) {
+    console.log(`❌ Keine Tokens für User ${userId}`);
+    return false;
+  }
+  
+  if (!Array.isArray(state.pushTokens[userId])) {
+    console.log(`❌ pushTokens[userId] ist kein Array:`, state.pushTokens[userId]);
+    // Reparieren
+    if (typeof state.pushTokens[userId] === 'string') {
+      state.pushTokens[userId] = [state.pushTokens[userId]];
+    } else {
+      state.pushTokens[userId] = [];
+    }
+    await save();
+    return false;
+  }
+  
+  const tokens = state.pushTokens[userId];
+  
+  if (tokens.length === 0) {
+    console.log(`❌ Keine gültigen Tokens für User ${userId}`);
+    return false;
+  }
+  
+  const now = Date.now();
+  
+  if (lastPush && lastPush.userId === userId && lastPush.body === body && now - lastPush.time < 5000) {
+    console.log('⏳ Zu viele Pushs in kurzer Zeit - ignoriert');
+    return false;
+  }
+  
+  lastPush = {userId, title, body, time: now};
+  
+  // 🔥 GEWÄHLTEN TON VERWENDEN
+  let soundFile = 'default';
+  if (state.selectedPushSound) {
+    if (state.selectedPushSound === 'whistle') {
+      soundFile = 'whistle';
+    } else {
+      const sound = state.customSounds?.find(s => s.id === state.selectedPushSound);
+      if (sound) {
+        soundFile = sound.url;
+      }
+    }
+  }
+  
+  let anySuccess = false;
+  
+  for (const token of tokens) {
+    try {
+      const accessToken = await getAccessToken();
+      
+      if (accessToken === 'dummy-token-bitte-durch-echten-ersetzen') {
+        console.log(`🔧 Push-Simulation für User ${userId}`);
+        anySuccess = true;
+        continue;
+      }
+      
+      const response = await fetch('https://fcm.googleapis.com/v1/projects/usv-staw-app/messages:send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + accessToken
+        },
+        body: JSON.stringify({
+          message: {
+            token: token,
+            notification: {
+              title: '📱 USV St Andrä Wördern',
+              body: body
+            },
+            data: {
+              title: title,
+              body: body,
+              type: type,
+              click_action: 'OPEN_APP',
+              sound: soundFile
+            },
+            android: {
+              priority: 'high',
+              notification: {
+                click_action: 'OPEN_APP',
+                sound: soundFile,
+                channelId: 'usv_football_channel'
+              }
+            },
+            apns: {
+              payload: {
+                aps: {
+                  sound: soundFile,
+                  'mutable-content': 1
+                }
+              }
+            }
+          }
+        })
+      });
+      
+      if (response.ok) {
+        console.log(`✅ Push gesendet an Token: ${token.substring(0, 10)}...`);
+        anySuccess = true;
+      } else {
+        console.log(`❌ Fehler beim Senden an Token: ${response.status}`);
+        if (response.status === 404 || response.status === 400) {
+          // Ungültigen Token entfernen
+          state.pushTokens[userId] = state.pushTokens[userId].filter(t => t !== token);
+          await save();
+        }
+      }
+    } catch (error) {
+      console.log('❌ Fehler bei Push:', error);
+    }
+  }
+  
+  return anySuccess;
+}
+
+let lastPush = null;
+
+async function getAccessToken() {
+  try {
+    const response = await fetch('https://getfcmtoken-xri47ejggq-uc.a.run.app', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      }
     });
     
-    await save();
-    showToast("✅ Sound erfolgreich hochgeladen!", "success");
-    render();
+    if (response.ok) {
+      const data = await response.json();
+      return data.accessToken;
+    } else {
+      return 'dummy-token-bitte-durch-echten-ersetzen';
+    }
+  } catch (error) {
+    return 'dummy-token-bitte-durch-echten-ersetzen';
   }
 }
 
-function playSound(url) {
-  if (audioElements[url]) {
-    audioElements[url].pause();
-    audioElements[url].currentTime = 0;
+// ==================== 🔥 NEU: PUSH-TOKEN REPARATUR FUNKTION ====================
+async function repairPushTokens() {
+  if (session?.role !== 'admin') {
+    showToast('⛔ Nur der Admin kann Push-Tokens reparieren!', 'error');
+    return;
   }
   
-  const audio = new Audio(url);
-  audioElements[url] = audio;
-  audio.play().catch(e => showToast("❌ Sound konnte nicht abgespielt werden", "error"));
-}
-
-async function deleteSound(soundId) {
-  if (!confirm("Sound wirklich löschen?")) return;
+  showToast('🔄 Repariere Push-Tokens...', 'info', 0);
   
-  const sound = state.customSounds?.find(s => s.id === soundId);
-  if (sound && sound.url.includes('firebasestorage')) {
-    await deleteImageFromStorage(sound.url);
+  if (!state.pushTokens) {
+    state.pushTokens = {};
   }
   
-  state.customSounds = state.customSounds?.filter(s => s.id !== soundId) || [];
+  let repairedCount = 0;
   
-  if (state.selectedPushSound === soundId) {
-    state.selectedPushSound = 'default';
-  }
+  // Durch alle User gehen
+  Object.keys(state.pushTokens).forEach(userId => {
+    // Prüfen ob es ein Array ist
+    if (!Array.isArray(state.pushTokens[userId])) {
+      repairedCount++;
+      
+      // Wenn es ein String ist, in Array umwandeln
+      if (typeof state.pushTokens[userId] === 'string') {
+        state.pushTokens[userId] = [state.pushTokens[userId]];
+      } 
+      // Wenn es ein Objekt ist, Werte sammeln
+      else if (typeof state.pushTokens[userId] === 'object' && state.pushTokens[userId] !== null) {
+        const values = Object.values(state.pushTokens[userId]);
+        // Nur gültige Tokens behalten (f- oder eqm- Präfix)
+        const validTokens = values.filter(v => 
+          typeof v === 'string' && (v.startsWith('f-') || v.startsWith('eqm') || v.length > 20)
+        );
+        state.pushTokens[userId] = validTokens;
+      } 
+      // Sonst leeres Array
+      else {
+        state.pushTokens[userId] = [];
+      }
+    } else {
+      // Array bereinigen - leere oder ungültige Einträge entfernen
+      const originalLength = state.pushTokens[userId].length;
+      state.pushTokens[userId] = state.pushTokens[userId].filter(t => 
+        t && typeof t === 'string' && t.length > 10
+      );
+      if (originalLength !== state.pushTokens[userId].length) {
+        repairedCount++;
+      }
+    }
+  });
   
   await save();
-  showToast("✅ Sound gelöscht!", "success");
-  render();
-}
-
-function selectPushSound(soundId) {
-  state.selectedPushSound = soundId;
-  save();
-  showToast("✅ Push-Ton ausgewählt!", "success");
-  render();
-}
-
-function getSoundName(soundId) {
-  if (soundId === 'default') return '🔇 Kein Ton (Standard)';
-  if (soundId === 'whistle') return '⚽ Fußball-Pfeife';
   
-  const sound = state.customSounds?.find(s => s.id === soundId);
-  return sound ? sound.name : 'Unbekannt';
-}
-
-function getSoundUrl(soundId) {
-  if (soundId === 'whistle') {
-    // Hier müsste die URL zur hochgeladenen Pfeife stehen
-    // Die muss der Trainer einmal hochladen
-    const whistleSound = state.customSounds?.find(s => s.name === 'Fussball Pfeife' || s.id === 'whistle-stored');
-    return whistleSound ? whistleSound.url : null;
+  if (repairedCount > 0) {
+    showToast(`✅ ${repairedCount} Push-Token Einträge repariert!`, 'success');
+  } else {
+    showToast('✅ Alle Push-Tokens sind in Ordnung', 'success');
   }
   
-  const sound = state.customSounds?.find(s => s.id === soundId);
-  return sound ? sound.url : null;
+  render();
+}
+
+async function initPushNotifications() {
+  if (_pushInitialized) return;
+  
+  _pushInitialized = true;
+  
+  try {
+    if (!firebase.messaging) return;
+    
+    messaging = firebase.messaging();
+    
+    const permission = await Notification.requestPermission();
+    if (permission === 'granted') {
+      try {
+        let token;
+        if (window.swRegistration) {
+          token = await messaging.getToken({
+            vapidKey: 'BNff0vnOXCeYPyLxqkCIDRAhaXhC06Xt1Fj6DduVFStn5xQNHdSbXzQHPriwpYySHdx1kQyywdVyTtY4_6TIcvI',
+            serviceWorkerRegistration: window.swRegistration
+          });
+        } else {
+          token = await messaging.getToken({
+            vapidKey: 'BNff0vnOXCeYPyLxqkCIDRAhaXhC06Xt1Fj6DduVFStn5xQNHdSbXzQHPriwpYySHdx1kQyywdVyTtY4_6TIcvI'
+          });
+        }
+        await savePushToken(token);
+        showToast('✅ Push aktiviert', 'success');
+      } catch (e) {
+        showToast('Push-Token Fehler: ' + e.message, 'error');
+      }
+      
+      messaging.onMessage((payload) => {
+        const messageId =
+          payload.data?.message_id ||
+          payload.messageId ||
+          payload.notification?.title + payload.notification?.body;
+
+        if (_processedForegroundIds.has(messageId)) return;
+
+        _processedForegroundIds.add(messageId);
+
+        const body =
+          payload.notification?.body ||
+          payload.data?.body ||
+          "Neue Nachricht";
+        
+        const title =
+          payload.notification?.title ||
+          payload.data?.title ||
+          "USV StAW";
+
+        if (session) {
+          saveIncomingPush(session.id, title, body, 'info');
+        }
+
+        showPersistentAlert(body);
+      });
+    }
+  } catch (error) {
+    console.log('⚠️ Push Fehler:', error);
+  }
+}
+
+async function savePushToken(token) {
+  try {
+    if (!session || !session.id) return;
+    
+    if (!state.pushTokens) state.pushTokens = {};
+    
+    if (!state.pushTokens[session.id] || !Array.isArray(state.pushTokens[session.id])) {
+      state.pushTokens[session.id] = [];
+    }
+    
+    if (!state.pushTokens[session.id].includes(token)) {
+      state.pushTokens[session.id].push(token);
+      await save();
+    }
+  } catch (error) {
+    console.log('⚠️ Token konnte nicht gespeichert werden:', error);
+  }
 }
 
 // ==================== SERVICE WORKER REGISTRIERUNG ====================
@@ -1603,239 +1910,6 @@ function showPersistentAlert(message) {
   if (messageEl) messageEl.textContent = message;
 }
 
-// ==================== PUSH BENACHRICHTIGUNGEN ====================
-let messaging = null;
-let deferredPrompt;
-let _pushInitialized = false;
-let pushCounter = 0;
-
-const _processedForegroundIds = new Set();
-setInterval(() => {
-  _processedForegroundIds.clear();
-}, 10000);
-
-async function getAccessToken() {
-  try {
-    const response = await fetch('https://getfcmtoken-xri47ejggq-uc.a.run.app', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    if (response.ok) {
-      const data = await response.json();
-      return data.accessToken;
-    } else {
-      return 'dummy-token-bitte-durch-echten-ersetzen';
-    }
-  } catch (error) {
-    return 'dummy-token-bitte-durch-echten-ersetzen';
-  }
-}
-
-async function initPushNotifications() {
-  if (_pushInitialized) return;
-  
-  _pushInitialized = true;
-  
-  try {
-    if (!firebase.messaging) return;
-    
-    messaging = firebase.messaging();
-    
-    const permission = await Notification.requestPermission();
-    if (permission === 'granted') {
-      try {
-        let token;
-        if (window.swRegistration) {
-          token = await messaging.getToken({
-            vapidKey: 'BNff0vnOXCeYPyLxqkCIDRAhaXhC06Xt1Fj6DduVFStn5xQNHdSbXzQHPriwpYySHdx1kQyywdVyTtY4_6TIcvI',
-            serviceWorkerRegistration: window.swRegistration
-          });
-        } else {
-          token = await messaging.getToken({
-            vapidKey: 'BNff0vnOXCeYPyLxqkCIDRAhaXhC06Xt1Fj6DduVFStn5xQNHdSbXzQHPriwpYySHdx1kQyywdVyTtY4_6TIcvI'
-          });
-        }
-        await savePushToken(token);
-        showToast('✅ Push aktiviert', 'success');
-      } catch (e) {
-        showToast('Push-Token Fehler', 'error');
-      }
-      
-      messaging.onMessage((payload) => {
-        const messageId =
-          payload.data?.message_id ||
-          payload.messageId ||
-          payload.notification?.title + payload.notification?.body;
-
-        if (_processedForegroundIds.has(messageId)) return;
-
-        _processedForegroundIds.add(messageId);
-
-        const body =
-          payload.notification?.body ||
-          payload.data?.body ||
-          "Neue Nachricht";
-        
-        const title =
-          payload.notification?.title ||
-          payload.data?.title ||
-          "USV StAW";
-
-        if (session) {
-          saveIncomingPush(session.id, title, body, 'info');
-        }
-
-        showPersistentAlert(body);
-      });
-    }
-  } catch (error) {
-    console.log('⚠️ Push Fehler:', error);
-  }
-}
-
-async function savePushToken(token) {
-  try {
-    if (!session || !session.id) return;
-    
-    if (!state.pushTokens) state.pushTokens = {};
-    
-    if (!state.pushTokens[session.id] || !Array.isArray(state.pushTokens[session.id])) {
-      state.pushTokens[session.id] = [];
-    }
-    
-    if (!state.pushTokens[session.id].includes(token)) {
-      state.pushTokens[session.id].push(token);
-      await save();
-    }
-  } catch (error) {
-    console.log('⚠️ Token konnte nicht gespeichert werden:', error);
-  }
-}
-
-async function repairPushTokens() {
-  if (session?.role !== 'admin' && !hasPermission(session.id, 'canSendPush')) {
-    showToast('⛔ Keine Berechtigung!', 'error');
-    return;
-  }
-  
-  if (!state.pushTokens) state.pushTokens = {};
-  
-  let repairedCount = 0;
-  
-  Object.keys(state.pushTokens).forEach(key => {
-    if (!Array.isArray(state.pushTokens[key])) {
-      repairedCount++;
-      if (typeof state.pushTokens[key] === 'string') {
-        state.pushTokens[key] = [state.pushTokens[key]];
-      } else if (typeof state.pushTokens[key] === 'object' && state.pushTokens[key] !== null) {
-        const values = Object.values(state.pushTokens[key]);
-        const validTokens = values.filter(v => 
-          typeof v === 'string' && (v.startsWith('f-') || v.startsWith('eqm'))
-        );
-        state.pushTokens[key] = validTokens;
-      } else {
-        state.pushTokens[key] = [];
-      }
-    }
-  });
-  
-  await save();
-  showToast(`✅ ${repairedCount} Einträge repariert`, 'success');
-}
-
-async function sendPushNotification(userId, title, body, type = 'info') {
-  pushCounter++;
-  
-  await saveIncomingPush(userId, title, body, type);
-  
-  if (!state.pushTokens) return;
-  if (!state.pushTokens[userId]) return;
-  if (!Array.isArray(state.pushTokens[userId])) return;
-  
-  const tokens = state.pushTokens[userId];
-  const now = Date.now();
-  
-  if (lastPush && lastPush.userId === userId && lastPush.body === body && now - lastPush.time < 5000) return;
-  
-  lastPush = {userId, title, body, time: now};
-  
-  // 🔥 GEWÄHLTEN TON VERWENDEN
-  let soundFile = 'default';
-  if (state.selectedPushSound) {
-    if (state.selectedPushSound === 'whistle') {
-      soundFile = 'whistle';
-    } else {
-      const sound = state.customSounds?.find(s => s.id === state.selectedPushSound);
-      if (sound) {
-        soundFile = sound.url;
-      }
-    }
-  }
-  
-  for (const token of tokens) {
-    try {
-      const accessToken = await getAccessToken();
-      
-      if (accessToken === 'dummy-token-bitte-durch-echten-ersetzen') {
-        showToast(`🔧 Push-Simulation für User ${userId}`, 'info', 3000);
-        continue;
-      }
-      
-      const response = await fetch('https://fcm.googleapis.com/v1/projects/usv-staw-app/messages:send', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + accessToken
-        },
-        body: JSON.stringify({
-          message: {
-            token: token,
-            notification: {
-              title: '📱 USV St Andrä Wördern',
-              body: 'Neue Nachricht'
-            },
-            data: {
-              title: title,
-              body: body,
-              type: type,
-              click_action: 'OPEN_APP',
-              sound: soundFile
-            },
-            android: {
-              priority: 'high',
-              notification: {
-                click_action: 'OPEN_APP',
-                sound: soundFile,
-                channelId: 'usv_football_channel'
-              }
-            },
-            apns: {
-              payload: {
-                aps: {
-                  sound: soundFile,
-                  'mutable-content': 1
-                }
-              }
-            }
-          }
-        })
-      });
-      
-      if (!response.ok) {
-        if (response.status === 404 || response.status === 400) {
-          state.pushTokens[userId] = state.pushTokens[userId].filter(t => t !== token);
-          await save();
-        }
-      }
-    } catch (tokenError) {}
-  }
-}
-
-let lastPush = null;
-
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   deferredPrompt = e;
@@ -1966,7 +2040,7 @@ const seed = {
   pendingPushes: [],
   
   // 🔥 SOUND-EINSTELLUNGEN
-  selectedPushSound: 'default', // 'default', 'whistle', oder sound-id
+  selectedPushSound: 'default',
   customSounds: [],
   
   splashConfig: {
@@ -2059,7 +2133,8 @@ const seed = {
   selectedPlayerId: "p1",
   expandedMatch: null,
   selectedReportMatchId: null,
-  selectedCoachId: null
+  selectedCoachId: null,
+  coachConfigView: "main"
 };
 
 // Eltern-Accounts generieren
@@ -2087,6 +2162,260 @@ let trainerKindView = "kind";
 let coachKindView = "kind";
 let parentLightView = "calendar";
 let datenschutzDetailView = null;
+let coachConfigView = "main"; // Für Co-Trainer Konfiguration
+
+// ==================== CO-TRAINER KONFIGURATION ====================
+
+// Prüft ob Co-Trainer überhaupt Konfig sehen darf
+function coachHasAnyConfigPermission() {
+  const permissions = state.coachPermissions?.[session.id] || getDefaultPermissions();
+  return (
+    permissions.canManagePlayers ||     // Spieler anlegen/bearbeiten
+    permissions.canDeletePlayers ||     // Spieler löschen
+    permissions.canManageMatches ||     // Spiele anlegen/bearbeiten
+    permissions.canDeleteMatches ||     // Spiele löschen
+    permissions.canManageTests          // Tests verwalten
+  );
+}
+
+// Haupt-Konfig Seite für Co-Trainer
+function renderCoachMainConfig() {
+  const permissions = state.coachPermissions?.[session.id] || getDefaultPermissions();
+  
+  // Sammle alle aktiven Berechtigungen
+  const activePermissions = [];
+  if (permissions.canManagePlayers) activePermissions.push({ id: 'players', icon: '👥', name: 'Spieler verwalten', desc: 'Spielerdaten bearbeiten' });
+  if (permissions.canDeletePlayers) activePermissions.push({ id: 'deleteplayers', icon: '🗑️', name: 'Spieler löschen', desc: 'Spieler aus Team entfernen' });
+  if (permissions.canManageMatches) activePermissions.push({ id: 'matches', icon: '⚽', name: 'Spiele verwalten', desc: 'Spiele anlegen/bearbeiten' });
+  if (permissions.canDeleteMatches) activePermissions.push({ id: 'deletematches', icon: '❌', name: 'Spiele löschen', desc: 'Spiele entfernen' });
+  if (permissions.canManageTests) activePermissions.push({ id: 'tests', icon: '📊', name: 'Tests verwalten', desc: 'Leistungstests erfassen' });
+  
+  if (activePermissions.length === 0) {
+    return `
+      <div class="section">
+        <div class="card">
+          <h3>⚙️ Co-Trainer Konfiguration</h3>
+          <p class="small">Du hast aktuell keine Berechtigungen für die Konfiguration.</p>
+        </div>
+      </div>
+    `;
+  }
+  
+  return `
+    <div class="section">
+      <div class="card">
+        <h3>⚙️ Co-Trainer Konfiguration</h3>
+        <p class="small" style="margin-bottom: 20px;">Wähle einen Bereich aus, den du verwalten möchtest:</p>
+        
+        <div class="coach-config-grid">
+          ${activePermissions.map(p => `
+            <div class="coach-config-card" onclick="setCoachConfigView('${p.id}')">
+              <div class="coach-config-icon">${p.icon}</div>
+              <div class="coach-config-content">
+                <div class="coach-config-title">${p.name}</div>
+                <div class="coach-config-desc">${p.desc}</div>
+              </div>
+              <div class="coach-config-arrow">›</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// Co-Trainer Spielerverwaltung (mit/ohne Lösch-Funktion)
+function renderCoachPlayers() {
+  const permissions = state.coachPermissions?.[session.id] || getDefaultPermissions();
+  const players = playersForCurrentTeam();
+  const selectedPlayer = findPlayer(state.selectedPlayerId) || players[0];
+  
+  if (!selectedPlayer) return '<p class="small">Keine Spieler vorhanden</p>';
+  
+  return `
+    <div class="section">
+      <button class="back-button" onclick="setCoachConfigView('main')">
+        <span style="font-size: 24px;">←</span> Zurück zur Übersicht
+      </button>
+      
+      <div class="card">
+        <h3>👥 Spieler verwalten</h3>
+        
+        <div class="player-list" style="max-height: 200px;">
+          ${players.map(p => `
+            <button class="${state.selectedPlayerId === p.id ? 'active' : ''}" onclick="setSelectedPlayer('${p.id}')">
+              ${p.name} (${p.team})
+            </button>
+          `).join('')}
+        </div>
+        
+        ${permissions.canManagePlayers ? `
+          <div>
+            <h4>${selectedPlayer.name}</h4>
+            
+            <div class="grid2">
+              <div>
+                <label>Geburtstag</label>
+                <input id="player-birthday" type="date" value="${selectedPlayer.birthday || ''}">
+              </div>
+              <div>
+                <label>Position</label>
+                <input id="player-position" value="${selectedPlayer.position || ''}">
+              </div>
+              <div>
+                <label>Trikotnummer</label>
+                <input id="player-jersey" type="number" value="${selectedPlayer.jersey || 0}">
+              </div>
+              <div>
+                <label>Im Verein seit</label>
+                <input id="player-since" value="${selectedPlayer.since || ''}">
+              </div>
+            </div>
+            
+            <label>Trainer-Notiz</label>
+            <textarea id="player-note" rows="2">${selectedPlayer.note || ''}</textarea>
+            
+            <button class="btn primary" style="width: 100%; margin-top: 16px;" onclick="savePlayerData()">
+              💾 Änderungen speichern
+            </button>
+          </div>
+        ` : '<p class="small">Keine Berechtigung zum Bearbeiten</p>'}
+        
+        ${permissions.canDeletePlayers ? `
+          <button class="btn danger" style="width: 100%; margin-top: 16px;" onclick="deletePlayer('${selectedPlayer.id}')">
+            🗑️ Spieler löschen
+          </button>
+        ` : ''}
+      </div>
+    </div>
+  `;
+}
+
+// Co-Trainer Spielverwaltung (nur anlegen/bearbeiten)
+function renderCoachMatches() {
+  const permissions = state.coachPermissions?.[session.id] || getDefaultPermissions();
+  
+  return `
+    <div class="section">
+      <button class="back-button" onclick="setCoachConfigView('main')">
+        <span style="font-size: 24px;">←</span> Zurück zur Übersicht
+      </button>
+      
+      <div class="card">
+        <h3>⚽ Spiele verwalten</h3>
+        
+        ${permissions.canManageMatches ? `
+          <div>
+            <h4>Neues Spiel anlegen</h4>
+            
+            <div class="grid2">
+              <div>
+                <label>Titel</label>
+                <input id="match-title" placeholder="z.B. U8 Tulln">
+              </div>
+              <div>
+                <label>Team</label>
+                <select id="match-team">
+                  <option value="${state.teams.main}">${state.teams.main}</option>
+                  ${state.teams.showSecond ? `<option value="${state.teams.second}">${state.teams.second}</option>` : ''}
+                </select>
+              </div>
+              <div>
+                <label>Datum</label>
+                <input id="match-date" type="date">
+              </div>
+              <div>
+                <label>Uhrzeit</label>
+                <input id="match-time" placeholder="14:00">
+              </div>
+              <div>
+                <label>Art</label>
+                <select id="match-kind">
+                  <option>TESTSPIEL</option>
+                  <option>MEISTERSCHAFT</option>
+                  <option>CUP</option>
+                  <option>TURNIER</option>
+                </select>
+              </div>
+              <div>
+                <label>Ort</label>
+                <select id="match-location">
+                  <option>Heim</option>
+                  <option>Auswärts</option>
+                </select>
+              </div>
+            </div>
+            
+            <label>Treffpunkt</label>
+            <input id="match-meeting" placeholder="13:15 Sportplatz">
+            
+            <button class="btn primary" style="width: 100%; margin-top: 16px;" onclick="addMatch()">
+              ➕ Spiel anlegen
+            </button>
+          </div>
+        ` : '<p class="small">Keine Berechtigung zum Anlegen von Spielen</p>'}
+        
+        ${permissions.canDeleteMatches ? `
+          <div style="margin-top: 30px;">
+            <h4 style="color: var(--red);">⚠️ Spiele löschen</h4>
+            <p class="small">Wähle ein Spiel aus der Kalender-Ansicht und klicke auf "Löschen".</p>
+          </div>
+        ` : ''}
+      </div>
+    </div>
+  `;
+}
+
+// Co-Trainer Tests verwalten
+function renderCoachTests() {
+  const permissions = state.coachPermissions?.[session.id] || getDefaultPermissions();
+  const players = playersForCurrentTeam();
+  const today = new Date().toISOString().split('T')[0];
+  const player = findPlayer(state.selectedPlayerId);
+  
+  return `
+    <div class="section">
+      <button class="back-button" onclick="setCoachConfigView('main')">
+        <span style="font-size: 24px;">←</span> Zurück zur Übersicht
+      </button>
+      
+      <div class="card">
+        <h3>📊 Leistungstests verwalten</h3>
+        
+        <div class="player-list" style="max-height: 150px;">
+          ${players.map(p => `
+            <button class="${state.selectedPlayerId === p.id ? 'active' : ''}" onclick="setSelectedPlayer('${p.id}')">
+              ${p.name}
+            </button>
+          `).join('')}
+        </div>
+        
+        ${player && permissions.canManageTests ? `
+          <div>
+            <label>Testdatum</label>
+            <input id="test-date-${player.id}" type="date" value="${today}">
+            
+            ${(state.testConfig || []).map(t => `
+              <div style="margin-top: 12px;">
+                <label>${t.name} (${t.unit})</label>
+                <input id="test-${player.id}-${t.id}" type="number" step="0.01" placeholder="Wert eingeben">
+              </div>
+            `).join('')}
+            
+            <button class="btn primary" style="width: 100%; margin-top: 16px;" onclick="saveTestResults('${player.id}')">
+              ✅ Tests speichern
+            </button>
+          </div>
+        ` : player ? '<p class="small">Keine Berechtigung zum Erfassen von Tests</p>' : ''}
+      </div>
+    </div>
+  `;
+}
+
+function setCoachConfigView(view) {
+  coachConfigView = view;
+  render();
+}
 
 // ==================== NEUE BERECHTIGUNGS FUNKTIONEN ====================
 function getDefaultPermissions() {
@@ -4119,6 +4448,94 @@ async function handleCustomEventImageUpload(event, eventId) {
       showToast('✅ Bild gespeichert', 'success');
     }
   }
+}
+
+// ==================== SOUND STUDIO FUNKTIONEN ====================
+let audioElements = {};
+
+async function handleSoundUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  if (!file.type.startsWith('audio/')) {
+    showToast("❌ Bitte eine Audiodatei auswählen (MP3, WAV)", "error");
+    return;
+  }
+  
+  if (file.size > 5 * 1024 * 1024) {
+    showToast("❌ Datei zu groß (max 5MB)", "error");
+    return;
+  }
+  
+  showToast("🔄 Lade Sound hoch...", "info", 0);
+  
+  const fileName = `sounds/${Date.now()}-${file.name}`;
+  const downloadUrl = await uploadImageToStorage(file, fileName);
+  
+  if (downloadUrl) {
+    if (!state.customSounds) state.customSounds = [];
+    
+    state.customSounds.push({
+      id: 'sound-' + Date.now(),
+      name: file.name.replace(/\.[^/.]+$/, ""),
+      url: downloadUrl,
+      fileName: fileName,
+      uploadedAt: new Date().toISOString()
+    });
+    
+    await save();
+    showToast("✅ Sound erfolgreich hochgeladen!", "success");
+    render();
+  }
+}
+
+function playSound(url) {
+  if (audioElements[url]) {
+    audioElements[url].pause();
+    audioElements[url].currentTime = 0;
+  }
+  
+  const audio = new Audio(url);
+  audioElements[url] = audio;
+  audio.play().catch(e => showToast("❌ Sound konnte nicht abgespielt werden", "error"));
+}
+
+async function deleteSound(soundId) {
+  if (!confirm("Sound wirklich löschen?")) return;
+  
+  const sound = state.customSounds?.find(s => s.id === soundId);
+  if (sound && sound.url.includes('firebasestorage')) {
+    await deleteImageFromStorage(sound.url);
+  }
+  
+  state.customSounds = state.customSounds?.filter(s => s.id !== soundId) || [];
+  
+  if (state.selectedPushSound === soundId) {
+    state.selectedPushSound = 'default';
+  }
+  
+  await save();
+  showToast("✅ Sound gelöscht!", "success");
+  render();
+}
+
+function selectPushSound(soundId) {
+  state.selectedPushSound = soundId;
+  save();
+  showToast("✅ Push-Ton ausgewählt!", "success");
+  render();
+}
+
+function getSoundName(soundId) {
+  if (soundId === 'default') return '🔇 Kein Ton (Standard)';
+  
+  const sound = state.customSounds?.find(s => s.id === soundId);
+  return sound ? sound.name : 'Unbekannt';
+}
+
+function getSoundUrl(soundId) {
+  const sound = state.customSounds?.find(s => s.id === soundId);
+  return sound ? sound.url : null;
 }
 
 // ==================== NEUE DATENSCHUTZ FUNKTIONEN ====================
@@ -6191,7 +6608,7 @@ function renderConfig() {
           </div>
           <div>
             <label>Uhrzeit</label>
-            <input id="match-time" placeholder="z.B. 14:00">
+            <input id="match-time" placeholder="14:00">
           </div>
           <div>
             <label>Art</label>
@@ -6211,7 +6628,7 @@ function renderConfig() {
           </div>
         </div>
         <label>Treffpunkt</label>
-        <input id="match-meeting" placeholder="z.B. 13:15 Sportplatz">
+        <input id="match-meeting" placeholder="13:15 Sportplatz">
         
         <div id="opponents-field" style="margin-top: 12px;">
           <label>Gegner (durch Komma getrennt)</label>
@@ -6290,7 +6707,7 @@ function renderConfig() {
           </button>
         </div>
         
-        <!-- 🔥 NEU: Sound-Studio Button -->
+        <!-- 🔥 Sound-Studio Button -->
         <div style="background: var(--sound-bg); padding: 16px; border-radius: 12px; margin-bottom: 24px; border-left: 4px solid var(--sound-border);">
           <h4 style="margin: 0 0 8px 0; color: #b45f06;">🔊 SOUND-STUDIO</h4>
           <p class="small" style="margin-bottom: 16px;">Lade eigene Push-Töne hoch (MP3) und wähle den aktiven Ton aus.</p>
@@ -6319,6 +6736,15 @@ function renderConfig() {
           <h4 style="margin: 0 0 8px 0; color: var(--blue);">🔧 Push-Tokens reparieren</h4>
           <p class="small">Falls Push-Benachrichtigungen nicht ankommen, kannst du hier die Tokens reparieren.</p>
           <button class="btn primary" style="width: 100%;" onclick="repairPushTokens()">🔧 Jetzt reparieren</button>
+        </div>
+        
+        <!-- 🔥 Push-Test Button -->
+        <div style="background: #e8f5e9; padding: 16px; border-radius: 12px; margin-bottom: 24px; border-left: 4px solid var(--primary);">
+          <h4 style="margin: 0 0 8px 0; color: var(--primary);">📱 PUSH-TEST</h4>
+          <p class="small" style="margin-bottom: 16px;">Teste ob Push-Benachrichtigungen funktionieren.</p>
+          <button class="btn primary" style="width: 100%;" onclick="testPushNotification()">
+            📲 TEST-PUSH SENDEN
+          </button>
         </div>
         
         <!-- 🔥 Saison-Korrektur Button -->
@@ -6834,6 +7260,8 @@ function renderCoachView() {
     } else {
       content = renderDashboard();
     }
+  } else if (coachView === "coachconfig") {
+    content = renderCoachMainConfig();
   } else content += renderDashboard();
   
   return `<div class="section">${content}</div>`;
@@ -6875,6 +7303,7 @@ function renderNav() {
     `;
   } else if (session.role === "coach") {
     const hasChild = session.childId && hasPermission(session.id, 'canViewOwnChild');
+    const hasConfig = coachHasAnyConfigPermission();
     
     return `
       <div class="nav">
@@ -6887,6 +7316,9 @@ function renderNav() {
           <button class="${coachView === 'password' ? 'active' : ''}" onclick="setCoachView('password')">🔑</button>
           ${hasChild ? `
             <button class="coach-kind-nav ${coachView === 'coachkind' ? 'active' : ''}" onclick="setCoachView('coachkind')">👨‍👦</button>
+          ` : ''}
+          ${hasConfig ? `
+            <button class="${coachView === 'coachconfig' ? 'active' : ''}" onclick="setCoachView('coachconfig')">⚙️</button>
           ` : ''}
           <button onclick="logout()">🚪</button>
         </div>
@@ -6924,6 +7356,22 @@ function render() {
   
   if (!session) {
     app.innerHTML = renderLogin();
+    return;
+  }
+  
+  // Co-Trainer Config View
+  if (session.role === 'coach' && coachView === 'coachconfig') {
+    if (coachConfigView === 'main') {
+      app.innerHTML = renderHeader() + renderCoachMainConfig() + renderNav();
+    } else if (coachConfigView === 'players') {
+      app.innerHTML = renderHeader() + renderCoachPlayers() + renderNav();
+    } else if (coachConfigView === 'matches') {
+      app.innerHTML = renderHeader() + renderCoachMatches() + renderNav();
+    } else if (coachConfigView === 'tests') {
+      app.innerHTML = renderHeader() + renderCoachTests() + renderNav();
+    } else {
+      app.innerHTML = renderHeader() + renderCoachMainConfig() + renderNav();
+    }
     return;
   }
   
@@ -7017,6 +7465,8 @@ window.saveIncomingPush = saveIncomingPush;
 window.confirmPush = confirmPush;
 window.confirmAllPushes = confirmAllPushes;
 window.repairPushTokens = repairPushTokens;
+window.testPushNotification = testPushNotification;
+window.getPushStatus = getPushStatus;
 window.login = login;
 window.logout = logout;
 window.showToast = showToast;
@@ -7068,6 +7518,7 @@ window.setParentView = setParentView;
 window.setParentLightView = setParentLightView;
 window.setTrainerKindView = setTrainerKindView;
 window.setCoachKindView = setCoachKindView;
+window.setCoachConfigView = setCoachConfigView;
 window.saveTeamConfig = saveTeamConfig;
 window.setSelectedReportMatch = setSelectedReportMatch;
 window.saveMatchReport = saveMatchReport;
