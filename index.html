@@ -73,6 +73,10 @@
   --datenschutz-pending: #f3a43b;
   --light-bg: #f9f9f9;
   --light-border: #ddd;
+  --permission-bg: #f0f7ff;
+  --permission-border: #5e8fe8;
+  --permission-enabled: #2e9b58;
+  --permission-disabled: #d45d4a;
 }
 
 * { 
@@ -630,6 +634,64 @@ input, select, textarea { width: 100%; padding: 12px; border: 1px solid #dce6de;
 .btn.request { background: var(--notification-border); color: #856404; }
 .btn.reset { background: #6c757d; color: white; }
 .btn.reset:hover { background: #5a6268; }
+
+/* Permission Toggle */
+.permission-group {
+  background: var(--permission-bg);
+  border: 2px solid var(--permission-border);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+.permission-group h4 {
+  color: var(--blue);
+  margin: 0 0 12px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--blue);
+}
+.permission-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: white;
+  border-radius: 12px;
+  margin-bottom: 8px;
+}
+.permission-item:last-child {
+  margin-bottom: 0;
+}
+.permission-label {
+  font-weight: 600;
+  flex: 1;
+}
+.permission-toggle {
+  width: 60px;
+  height: 30px;
+  background: var(--permission-disabled);
+  border-radius: 30px;
+  position: relative;
+  cursor: pointer;
+  transition: 0.3s;
+  margin-left: 12px;
+}
+.permission-toggle.enabled {
+  background: var(--permission-enabled);
+}
+.permission-toggle::after {
+  content: '';
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  background: white;
+  border-radius: 50%;
+  top: 2px;
+  left: 2px;
+  transition: 0.3s;
+}
+.permission-toggle.enabled::after {
+  left: 32px;
+}
 
 /* Player List */
 .player-list { max-height: 300px; overflow-y: auto; border: 1px solid var(--line); border-radius: 14px; padding: 8px; margin-bottom: 20px; background: white; }
@@ -1472,8 +1534,8 @@ async function savePushToken(token) {
 }
 
 async function repairPushTokens() {
-  if (session?.role !== 'admin') {
-    showToast('⛔ Nur der Trainer kann die Reparatur durchführen', 'error');
+  if (session?.role !== 'admin' && !hasPermission(session.id, 'canSendPush')) {
+    showToast('⛔ Keine Berechtigung!', 'error');
     return;
   }
   
@@ -1631,7 +1693,6 @@ async function checkAndSendReminders() {
       for (const player of eligiblePlayers) {
         const status = match.attendance?.[player.id] || 'open';
         
-        // 🔥 NUR an berechtigte Spieler (canVote = true)
         if (status === 'open' && player.canVote === true) {
           const parentUser = findUserForPlayer(player.id);
           
@@ -1700,7 +1761,7 @@ const seed = {
   
   clubLogo: defaultLogo,
   attendanceRequests: [],
-  // 🔥 Saison auf 2025/2026 geändert
+  // 🔥 SAISON AUF 2025/2026 GESETZT
   currentSeason: "2025/2026",
   pushTokens: {},
   reminderDays: 0,
@@ -1719,6 +1780,9 @@ const seed = {
     birthday: { active: false, image: null, text: 'Happy Birthday, NAME! 🎂' },
     customEvents: []
   },
+  
+  // 🔥 NEU: Berechtigungen für Co-Trainer
+  coachPermissions: {},
   
   users: [
     { id: "u1", username: "trainer", password: "trainer", role: "admin", name: "Haupttrainer", childId: null },
@@ -1795,7 +1859,8 @@ const seed = {
   currentTeam: "U8",
   selectedPlayerId: "p1",
   expandedMatch: null,
-  selectedReportMatchId: null
+  selectedReportMatchId: null,
+  selectedCoachId: null
 };
 
 // Eltern-Accounts generieren
@@ -1824,6 +1889,91 @@ let coachKindView = "kind";
 let parentLightView = "calendar";
 let datenschutzDetailView = null;
 
+// ==================== NEUE BERECHTIGUNGS FUNKTIONEN ====================
+function getDefaultPermissions() {
+  return {
+    // Spieler
+    canManagePlayers: false,
+    canDeletePlayers: false,
+    
+    // Spiele
+    canManageMatches: false,
+    canDeleteMatches: false,
+    
+    // Training
+    canManageTraining: false,
+    canDeleteTraining: false,
+    
+    // Tests
+    canManageTests: false,
+    canDeleteTests: false,
+    
+    // Berichte
+    canManageReports: false,
+    
+    // Statistiken & Dashboard
+    canViewStatistics: true,
+    canViewDashboard: true,
+    
+    // Konfiguration
+    canViewConfig: false,
+    
+    // Push
+    canSendPush: false,
+    
+    // Anwesenheit
+    canManageAttendance: true,
+    
+    // Eigenes Kind
+    canViewOwnChild: true
+  };
+}
+
+function hasPermission(userId, permission) {
+  // Admin hat immer alle Rechte
+  if (session.role === 'admin') return true;
+  
+  // Coach prüfen
+  if (session.role === 'coach') {
+    const permissions = state.coachPermissions?.[userId];
+    if (!permissions) return false;
+    return permissions[permission] === true;
+  }
+  
+  // Parent hat grundsätzlich keine Trainer-Rechte
+  return false;
+}
+
+function saveCoachPermissions(coachId) {
+  const permissions = {};
+  
+  // Alle Berechtigungen aus den Toggles sammeln
+  document.querySelectorAll('[id^="perm-"]').forEach(el => {
+    const permName = el.id.replace('perm-', '');
+    permissions[permName] = el.checked;
+  });
+  
+  if (!state.coachPermissions) state.coachPermissions = {};
+  state.coachPermissions[coachId] = permissions;
+  
+  save();
+  showToast('✅ Berechtigungen gespeichert!', 'success');
+}
+
+// ==================== SAISON-KORREKTUR FUNKTIONEN ====================
+function forceSeasonCorrection() {
+  if (session.role !== 'admin') {
+    showToast('⛔ Nur der Haupttrainer kann die Saison korrigieren!', 'error');
+    return;
+  }
+  
+  const oldSeason = state.currentSeason;
+  state.currentSeason = "2025/2026";
+  save();
+  showToast(`✅ Saison von ${oldSeason} auf 2025/2026 korrigiert!`, "success");
+  render();
+}
+
 // ==================== FIREBASE FUNKTIONEN ====================
 async function save() {
   try {
@@ -1842,6 +1992,26 @@ async function loadState() {
     const doc = await db.collection("app").doc("state").get();
     if (doc.exists) {
       state = doc.data();
+      
+      // 🔥 INTELLIGENTE SAISON-KORREKTUR
+      let seasonChanged = false;
+      if (state.currentSeason === "2027") {
+        state.currentSeason = "2025/2026";
+        seasonChanged = true;
+      } else if (state.currentSeason === "2026") {
+        state.currentSeason = "2025/2026";
+        seasonChanged = true;
+      } else if (state.currentSeason && !state.currentSeason.includes('/')) {
+        state.currentSeason = "2025/2026";
+        seasonChanged = true;
+      }
+      
+      if (seasonChanged) {
+        await save(); // Sofort in Firebase speichern!
+        setTimeout(() => {
+          showToast("✅ Saison automatisch auf 2025/2026 korrigiert", "success");
+        }, 500);
+      }
       
       if (state.primaryColor) {
         updatePrimaryColor(state.primaryColor);
@@ -1939,7 +2109,6 @@ function getEligiblePlayersForMatch(match) {
   return players;
 }
 
-// Höhere Teams: nur wenn canVoteInHigher = true
 function getVisibleMatchesForParent(playerId) {
   const player = findPlayer(playerId);
   if (!player) return [];
@@ -1951,10 +2120,8 @@ function getVisibleMatchesForParent(playerId) {
     const matchTeamNumber = getTeamNumber(m.team);
     if (matchTeamNumber === null) return false;
     
-    // Gleiches Team immer anzeigen
     if (matchTeamNumber === playerTeamNumber) return true;
     
-    // Höheres Team nur anzeigen wenn canVoteInHigher = true
     if (matchTeamNumber > playerTeamNumber) {
       return player.canVoteInHigher === true;
     }
@@ -2039,21 +2206,17 @@ function formatDate(dateStr) {
   return { day: String(d.getDate()).padStart(2,"0"), mon: months[d.getMonth()] };
 }
 
-// 🔥 Zählung: Nur Spieler MIT Spielerpass (canVote = true)
 function countAttendance(match) {
   const allPossiblePlayers = getEligiblePlayersForMatch(match);
   
-  // Nur Spieler MIT Spielerpass (canVote = true) zählen
   const countedPlayers = allPossiblePlayers.filter(player => {
     if (player.canVote === false) return false;
     
     const playerTeamNumber = getTeamNumber(player.team);
     const matchTeamNumber = getTeamNumber(match.team);
     
-    // Gleiches Team = immer zählen
     if (matchTeamNumber === playerTeamNumber) return true;
     
-    // Höheres Team = nur zählen wenn canVoteInHigher = true
     if (matchTeamNumber > playerTeamNumber) {
       return player.canVoteInHigher === true;
     }
@@ -2198,11 +2361,20 @@ function getStarsHtml(stars) {
 
 // ==================== SPIELBERICHT FUNKTIONEN ====================
 function setSelectedReportMatch(matchId) {
+  if (session.role !== 'admin' && !hasPermission(session.id, 'canManageReports')) {
+    showToast('⛔ Keine Berechtigung!', 'error');
+    return;
+  }
   state.selectedReportMatchId = matchId;
   save();
 }
 
 function deleteMatchReport(matchId) {
+  if (session.role !== 'admin' && !hasPermission(session.id, 'canManageReports')) {
+    showToast('⛔ Keine Berechtigung!', 'error');
+    return;
+  }
+  
   if (!confirm("Spielbericht wirklich löschen?")) return;
   
   const match = state.matches.find(m => m.id === matchId);
@@ -2234,8 +2406,12 @@ function deleteMatchReport(matchId) {
   showToast("✅ Spielbericht gelöscht!", "success");
 }
 
-// 🔥 GEÄNDERT: In saveMatchReport() wird bereits korrekt gefiltert
 function saveMatchReport(matchId) {
+  if (session.role !== 'admin' && !hasPermission(session.id, 'canManageReports')) {
+    showToast('⛔ Keine Berechtigung!', 'error');
+    return;
+  }
+  
   const match = state.matches.find(m => m.id === matchId);
   if (!match) return;
   
@@ -2420,7 +2596,6 @@ function requestAttendanceChange(matchId, newStatus) {
   const match = state.matches?.find(m => m.id === matchId);
   if (!match || !player) return false;
   
-  // Prüfen ob Spieler in diesem Match abstimmen darf
   const playerTeamNumber = getTeamNumber(player.team);
   const matchTeamNumber = getTeamNumber(match.team);
   
@@ -2498,7 +2673,6 @@ function updateMatchAttendance(matchId, status) {
   const match = state.matches?.find(m => m.id === matchId);
   if (!match) return;
   
-  // Prüfen ob Spieler in diesem Match abstimmen darf
   const playerTeamNumber = getTeamNumber(player.team);
   const matchTeamNumber = getTeamNumber(match.team);
   
@@ -2534,6 +2708,11 @@ function updateMatchAttendance(matchId, status) {
 
 // ==================== ABSTIMMRECHT TOGGLE ====================
 function toggleVoteRight(playerId) {
+  if (session.role !== 'admin' && !hasPermission(session.id, 'canManagePlayers')) {
+    showToast('⛔ Keine Berechtigung!', 'error');
+    return;
+  }
+  
   const player = findPlayer(playerId);
   if (!player) return;
   
@@ -2557,8 +2736,12 @@ function toggleVoteRight(playerId) {
   render();
 }
 
-// Höhere Teams Toggle
 function toggleVoteHigher(playerId) {
+  if (session.role !== 'admin' && !hasPermission(session.id, 'canManagePlayers')) {
+    showToast('⛔ Keine Berechtigung!', 'error');
+    return;
+  }
+  
   const player = findPlayer(playerId);
   if (!player) return;
   
@@ -2578,7 +2761,10 @@ function toggleVoteHigher(playerId) {
 }
 
 function approveAttendanceRequest(requestId, approved) {
-  if (session?.role !== "admin") return;
+  if (session?.role !== "admin" && !hasPermission(session.id, 'canManageAttendance')) {
+    showToast("⛔ Keine Berechtigung!", "error");
+    return;
+  }
   
   const request = state.attendanceRequests?.find(r => r.id === requestId);
   if (!request) return;
@@ -2612,6 +2798,11 @@ function approveAttendanceRequest(requestId, approved) {
 
 // ==================== TRAINING ====================
 function finishTraining() {
+  if (session.role !== 'admin' && !hasPermission(session.id, 'canManageTraining')) {
+    showToast('⛔ Keine Berechtigung!', 'error');
+    return;
+  }
+  
   const dateInput = document.getElementById("training-date");
   const date = dateInput.value;
   if (!date) { showToast("Bitte Datum auswählen", "warning"); return; }
@@ -2637,7 +2828,10 @@ function finishTraining() {
 }
 
 function deleteTraining(trainingId) {
-  if (session?.role !== "admin") return;
+  if (session.role !== 'admin' && !hasPermission(session.id, 'canDeleteTraining')) {
+    showToast('⛔ Keine Berechtigung!', 'error');
+    return;
+  }
   
   const password = prompt("🔒 Bitte Trainer-Passwort eingeben:");
   if (password === null) return;
@@ -2667,6 +2861,11 @@ function setSelectedPlayer(id) {
 }
 
 function addPlayer() {
+  if (session.role !== 'admin' && !hasPermission(session.id, 'canManagePlayers')) {
+    showToast('⛔ Keine Berechtigung!', 'error');
+    return;
+  }
+  
   const name = document.getElementById("new-player-name").value.trim();
   const team = document.getElementById("new-player-team").value;
   if (!name) { showToast("Name fehlt", "warning"); return; }
@@ -2696,6 +2895,11 @@ function addPlayer() {
 }
 
 function deletePlayer(playerId) {
+  if (session.role !== 'admin' && !hasPermission(session.id, 'canDeletePlayers')) {
+    showToast('⛔ Keine Berechtigung!', 'error');
+    return;
+  }
+  
   if (!confirm("Spieler wirklich löschen?")) return;
   state.players = state.players?.filter(p => p.id !== playerId) || [];
   state.users = state.users?.filter(u => u.playerId !== playerId) || [];
@@ -2707,7 +2911,11 @@ function deletePlayer(playerId) {
 }
 
 function resetParentPassword(playerId) {
-  if (session?.role !== "admin") return;
+  if (session.role !== 'admin' && !hasPermission(session.id, 'canManagePlayers')) {
+    showToast('⛔ Keine Berechtigung!', 'error');
+    return;
+  }
+  
   const user = findUserForPlayer(playerId);
   if (!user) return showToast("Kein Eltern-Account gefunden!", "error");
   user.password = "1234";
@@ -2716,7 +2924,11 @@ function resetParentPassword(playerId) {
 }
 
 function resetCoachPassword(coachId) {
-  if (session?.role !== "admin") return;
+  if (session.role !== 'admin' && !hasPermission(session.id, 'canViewConfig')) {
+    showToast('⛔ Keine Berechtigung!', 'error');
+    return;
+  }
+  
   const coach = state.users?.find(u => u.id === coachId && u.role === "coach");
   if (!coach) return showToast("Kein Co-Trainer gefunden!", "error");
   coach.password = "4321";
@@ -2725,6 +2937,11 @@ function resetCoachPassword(coachId) {
 }
 
 async function savePlayerData() {
+  if (session.role !== 'admin' && !hasPermission(session.id, 'canManagePlayers')) {
+    showToast('⛔ Keine Berechtigung!', 'error');
+    return;
+  }
+  
   const playerId = state.selectedPlayerId;
   const player = findPlayer(playerId);
   if (!player) return;
@@ -2926,6 +3143,11 @@ function savePrimaryColor(color) {
 }
 
 function addMatch() {
+  if (session.role !== 'admin' && !hasPermission(session.id, 'canManageMatches')) {
+    showToast('⛔ Keine Berechtigung!', 'error');
+    return;
+  }
+  
   const title = document.getElementById("match-title").value.trim();
   const team = document.getElementById("match-team").value;
   const date = document.getElementById("match-date").value;
@@ -3000,6 +3222,11 @@ function addMatch() {
 }
 
 function deleteMatch(matchId) {
+  if (session.role !== 'admin' && !hasPermission(session.id, 'canDeleteMatches')) {
+    showToast('⛔ Keine Berechtigung!', 'error');
+    return;
+  }
+  
   if (!confirm("Spiel wirklich löschen?")) return;
   state.matches = state.matches?.filter(m => m.id !== matchId) || [];
   save();
@@ -3007,6 +3234,11 @@ function deleteMatch(matchId) {
 }
 
 function editMatch(matchId) {
+  if (session.role !== 'admin' && !hasPermission(session.id, 'canManageMatches')) {
+    showToast('⛔ Keine Berechtigung!', 'error');
+    return;
+  }
+  
   const match = state.matches?.find(m => m.id === matchId);
   if (!match) return;
   
@@ -3039,7 +3271,11 @@ function editMatch(matchId) {
 }
 
 function addCoach() {
-  if (session?.role !== "admin") return;
+  if (session.role !== 'admin' && !hasPermission(session.id, 'canViewConfig')) {
+    showToast('⛔ Keine Berechtigung!', 'error');
+    return;
+  }
+  
   const name = document.getElementById("coach-name").value.trim();
   if (!name) { showToast("Bitte Namen eingeben!", "warning"); return; }
   
@@ -3049,6 +3285,10 @@ function addCoach() {
   state.users.push({
     id, username, password: "4321", role: "coach", name, childId: null
   });
+  
+  // Standard-Berechtigungen setzen
+  if (!state.coachPermissions) state.coachPermissions = {};
+  state.coachPermissions[id] = getDefaultPermissions();
   
   save();
   showToast(`✅ Co-Trainer "${name}" angelegt! Username: ${username}, Passwort: 4321`, "success");
@@ -3072,13 +3312,226 @@ function updateTrainerChild(childId) {
 }
 
 function deleteCoach(coachId) {
+  if (session.role !== 'admin' && !hasPermission(session.id, 'canViewConfig')) {
+    showToast('⛔ Keine Berechtigung!', 'error');
+    return;
+  }
+  
   if (!confirm("Co-Trainer wirklich löschen?")) return;
   state.users = state.users?.filter(u => u.id !== coachId) || [];
+  if (state.coachPermissions) {
+    delete state.coachPermissions[coachId];
+  }
   save();
   showToast("✅ Co-Trainer gelöscht!", "success");
 }
 
+function setSelectedCoach(coachId) {
+  state.selectedCoachId = coachId;
+  render();
+}
+
+function renderCoachPermissions() {
+  if (!state.selectedCoachId) return '';
+  
+  const coach = state.users?.find(u => u.id === state.selectedCoachId);
+  if (!coach) return '';
+  
+  const permissions = state.coachPermissions?.[coach.id] || getDefaultPermissions();
+  
+  return `
+    <div class="section">
+      <button class="back-button" onclick="setSelectedCoach(null)">
+        <span style="font-size: 24px;">←</span> Zurück zur Konfiguration
+      </button>
+      
+      <div class="card">
+        <h3>🔑 Berechtigungen: ${coach.name}</h3>
+        <p class="small" style="margin-bottom: 20px;">Lege fest, welche Aktionen der Co-Trainer ausführen darf</p>
+        
+        <div class="permission-group">
+          <h4>👥 Spieler-Verwaltung</h4>
+          <div class="permission-item">
+            <span class="permission-label">Spieler anlegen/bearbeiten</span>
+            <div class="permission-toggle ${permissions.canManagePlayers ? 'enabled' : ''}" 
+                 onclick="togglePermission('${coach.id}', 'canManagePlayers')" 
+                 id="toggle-canManagePlayers">
+              <input type="checkbox" id="perm-canManagePlayers" ${permissions.canManagePlayers ? 'checked' : ''} style="display: none;">
+            </div>
+          </div>
+          <div class="permission-item">
+            <span class="permission-label">Spieler löschen</span>
+            <div class="permission-toggle ${permissions.canDeletePlayers ? 'enabled' : ''}" 
+                 onclick="togglePermission('${coach.id}', 'canDeletePlayers')" 
+                 id="toggle-canDeletePlayers">
+              <input type="checkbox" id="perm-canDeletePlayers" ${permissions.canDeletePlayers ? 'checked' : ''} style="display: none;">
+            </div>
+          </div>
+        </div>
+        
+        <div class="permission-group">
+          <h4>⚽ Spiel-Verwaltung</h4>
+          <div class="permission-item">
+            <span class="permission-label">Spiele anlegen/bearbeiten</span>
+            <div class="permission-toggle ${permissions.canManageMatches ? 'enabled' : ''}" 
+                 onclick="togglePermission('${coach.id}', 'canManageMatches')" 
+                 id="toggle-canManageMatches">
+              <input type="checkbox" id="perm-canManageMatches" ${permissions.canManageMatches ? 'checked' : ''} style="display: none;">
+            </div>
+          </div>
+          <div class="permission-item">
+            <span class="permission-label">Spiele löschen</span>
+            <div class="permission-toggle ${permissions.canDeleteMatches ? 'enabled' : ''}" 
+                 onclick="togglePermission('${coach.id}', 'canDeleteMatches')" 
+                 id="toggle-canDeleteMatches">
+              <input type="checkbox" id="perm-canDeleteMatches" ${permissions.canDeleteMatches ? 'checked' : ''} style="display: none;">
+            </div>
+          </div>
+        </div>
+        
+        <div class="permission-group">
+          <h4>🏋️ Training</h4>
+          <div class="permission-item">
+            <span class="permission-label">Training erfassen</span>
+            <div class="permission-toggle ${permissions.canManageTraining ? 'enabled' : ''}" 
+                 onclick="togglePermission('${coach.id}', 'canManageTraining')" 
+                 id="toggle-canManageTraining">
+              <input type="checkbox" id="perm-canManageTraining" ${permissions.canManageTraining ? 'checked' : ''} style="display: none;">
+            </div>
+          </div>
+          <div class="permission-item">
+            <span class="permission-label">Training löschen</span>
+            <div class="permission-toggle ${permissions.canDeleteTraining ? 'enabled' : ''}" 
+                 onclick="togglePermission('${coach.id}', 'canDeleteTraining')" 
+                 id="toggle-canDeleteTraining">
+              <input type="checkbox" id="perm-canDeleteTraining" ${permissions.canDeleteTraining ? 'checked' : ''} style="display: none;">
+            </div>
+          </div>
+        </div>
+        
+        <div class="permission-group">
+          <h4>📊 Tests & Statistiken</h4>
+          <div class="permission-item">
+            <span class="permission-label">Tests verwalten</span>
+            <div class="permission-toggle ${permissions.canManageTests ? 'enabled' : ''}" 
+                 onclick="togglePermission('${coach.id}', 'canManageTests')" 
+                 id="toggle-canManageTests">
+              <input type="checkbox" id="perm-canManageTests" ${permissions.canManageTests ? 'checked' : ''} style="display: none;">
+            </div>
+          </div>
+          <div class="permission-item">
+            <span class="permission-label">Tests löschen</span>
+            <div class="permission-toggle ${permissions.canDeleteTests ? 'enabled' : ''}" 
+                 onclick="togglePermission('${coach.id}', 'canDeleteTests')" 
+                 id="toggle-canDeleteTests">
+              <input type="checkbox" id="perm-canDeleteTests" ${permissions.canDeleteTests ? 'checked' : ''} style="display: none;">
+            </div>
+          </div>
+          <div class="permission-item">
+            <span class="permission-label">Statistiken sehen</span>
+            <div class="permission-toggle ${permissions.canViewStatistics ? 'enabled' : ''}" 
+                 onclick="togglePermission('${coach.id}', 'canViewStatistics')" 
+                 id="toggle-canViewStatistics">
+              <input type="checkbox" id="perm-canViewStatistics" ${permissions.canViewStatistics ? 'checked' : ''} style="display: none;">
+            </div>
+          </div>
+        </div>
+        
+        <div class="permission-group">
+          <h4>📝 Berichte</h4>
+          <div class="permission-item">
+            <span class="permission-label">Spielberichte verwalten</span>
+            <div class="permission-toggle ${permissions.canManageReports ? 'enabled' : ''}" 
+                 onclick="togglePermission('${coach.id}', 'canManageReports')" 
+                 id="toggle-canManageReports">
+              <input type="checkbox" id="perm-canManageReports" ${permissions.canManageReports ? 'checked' : ''} style="display: none;">
+            </div>
+          </div>
+        </div>
+        
+        <div class="permission-group">
+          <h4>📅 Dashboard & Navigation</h4>
+          <div class="permission-item">
+            <span class="permission-label">Dashboard sehen</span>
+            <div class="permission-toggle ${permissions.canViewDashboard ? 'enabled' : ''}" 
+                 onclick="togglePermission('${coach.id}', 'canViewDashboard')" 
+                 id="toggle-canViewDashboard">
+              <input type="checkbox" id="perm-canViewDashboard" ${permissions.canViewDashboard ? 'checked' : ''} style="display: none;">
+            </div>
+          </div>
+          <div class="permission-item">
+            <span class="permission-label">Konfiguration sehen</span>
+            <div class="permission-toggle ${permissions.canViewConfig ? 'enabled' : ''}" 
+                 onclick="togglePermission('${coach.id}', 'canViewConfig')" 
+                 id="toggle-canViewConfig">
+              <input type="checkbox" id="perm-canViewConfig" ${permissions.canViewConfig ? 'checked' : ''} style="display: none;">
+            </div>
+          </div>
+        </div>
+        
+        <div class="permission-group">
+          <h4>🔔 Sonstiges</h4>
+          <div class="permission-item">
+            <span class="permission-label">Push-Benachrichtigungen senden</span>
+            <div class="permission-toggle ${permissions.canSendPush ? 'enabled' : ''}" 
+                 onclick="togglePermission('${coach.id}', 'canSendPush')" 
+                 id="toggle-canSendPush">
+              <input type="checkbox" id="perm-canSendPush" ${permissions.canSendPush ? 'checked' : ''} style="display: none;">
+            </div>
+          </div>
+          <div class="permission-item">
+            <span class="permission-label">Anwesenheit verwalten</span>
+            <div class="permission-toggle ${permissions.canManageAttendance ? 'enabled' : ''}" 
+                 onclick="togglePermission('${coach.id}', 'canManageAttendance')" 
+                 id="toggle-canManageAttendance">
+              <input type="checkbox" id="perm-canManageAttendance" ${permissions.canManageAttendance ? 'checked' : ''} style="display: none;">
+            </div>
+          </div>
+          <div class="permission-item">
+            <span class="permission-label">Eigenes Kind sehen</span>
+            <div class="permission-toggle ${permissions.canViewOwnChild ? 'enabled' : ''}" 
+                 onclick="togglePermission('${coach.id}', 'canViewOwnChild')" 
+                 id="toggle-canViewOwnChild">
+              <input type="checkbox" id="perm-canViewOwnChild" ${permissions.canViewOwnChild ? 'checked' : ''} style="display: none;">
+            </div>
+          </div>
+        </div>
+        
+        <div style="display: flex; gap: 12px; margin-top: 24px;">
+          <button class="btn primary" style="flex: 2;" onclick="saveCoachPermissions('${coach.id}')">
+            💾 Berechtigungen speichern
+          </button>
+          <button class="btn secondary" style="flex: 1;" onclick="setSelectedCoach(null)">
+            Schließen
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function togglePermission(coachId, permission) {
+  const checkbox = document.getElementById(`perm-${permission}`);
+  if (checkbox) {
+    checkbox.checked = !checkbox.checked;
+    
+    const toggle = document.getElementById(`toggle-${permission}`);
+    if (toggle) {
+      if (checkbox.checked) {
+        toggle.classList.add('enabled');
+      } else {
+        toggle.classList.remove('enabled');
+      }
+    }
+  }
+}
+
 function addTestConfig() {
+  if (session.role !== 'admin' && !hasPermission(session.id, 'canManageTests')) {
+    showToast('⛔ Keine Berechtigung!', 'error');
+    return;
+  }
+  
   const name = document.getElementById("test-name").value.trim();
   const unit = document.getElementById("test-unit").value.trim();
   const target = parseFloat(document.getElementById("test-target").value);
@@ -3097,6 +3550,11 @@ function addTestConfig() {
 }
 
 function deleteTestConfig(id) {
+  if (session.role !== 'admin' && !hasPermission(session.id, 'canDeleteTests')) {
+    showToast('⛔ Keine Berechtigung!', 'error');
+    return;
+  }
+  
   if (!confirm("Test löschen?")) return;
   state.testConfig = state.testConfig?.filter(t => t.id !== id) || [];
   save();
@@ -3104,6 +3562,11 @@ function deleteTestConfig(id) {
 }
 
 function saveTestResults(playerId) {
+  if (session.role !== 'admin' && !hasPermission(session.id, 'canManageTests')) {
+    showToast('⛔ Keine Berechtigung!', 'error');
+    return;
+  }
+  
   const player = findPlayer(playerId);
   if (!player) return;
   
@@ -3124,7 +3587,10 @@ function saveTestResults(playerId) {
 }
 
 function deleteSingleTest(playerId, testIndex) {
-  if (session?.role !== "admin") return;
+  if (session.role !== 'admin' && !hasPermission(session.id, 'canDeleteTests')) {
+    showToast('⛔ Keine Berechtigung!', 'error');
+    return;
+  }
   
   const password = prompt("🔒 Bitte Trainer-Passwort eingeben:");
   if (password === null) return;
@@ -3147,6 +3613,7 @@ function deleteSingleTest(playerId, testIndex) {
   showToast("✅ Test wurde gelöscht!", "success");
 }
 
+// 🔥 GEÄNDERT: resetSeason mit automatischer nächster Saison
 function resetSeason() {
   if (session?.role !== "admin") return;
   
@@ -3171,7 +3638,32 @@ function resetSeason() {
     };
   });
   
-  state.currentSeason = "2026/2027";
+  // 🔥 INTELLIGENTE BERECHNUNG DER NÄCHSTEN SAISON
+  if (state.currentSeason === "2025/2026") {
+    state.currentSeason = "2026/2027";
+  } else if (state.currentSeason === "2026/2027") {
+    state.currentSeason = "2027/2028";
+  } else if (state.currentSeason === "2027/2028") {
+    state.currentSeason = "2028/2029";
+  } else if (state.currentSeason === "2028/2029") {
+    state.currentSeason = "2029/2030";
+  } else if (state.currentSeason === "2029/2030") {
+    state.currentSeason = "2030/2031";
+  } else {
+    // Fallback: Parse und erhöhe
+    const parts = state.currentSeason.split('/');
+    if (parts.length === 2) {
+      const start = parseInt(parts[0]);
+      const end = parseInt(parts[1]);
+      if (!isNaN(start) && !isNaN(end)) {
+        state.currentSeason = `${start + 1}/${end + 1}`;
+      } else {
+        state.currentSeason = "2026/2027";
+      }
+    } else {
+      state.currentSeason = "2026/2027";
+    }
+  }
   
   state.matches = [];
   state.trainings = [];
@@ -3187,7 +3679,7 @@ function resetSeason() {
   });
   
   save();
-  showToast("✅ Neue Saison gestartet! Die alten Statistiken sind in der Historie einsehbar.", "success");
+  showToast(`✅ Neue Saison gestartet! Jetzt: ${state.currentSeason}`, "success");
 }
 
 function changePassword() {
@@ -3213,7 +3705,10 @@ function changePassword() {
 }
 
 function confirmResetTests() {
-  if (session?.role !== "admin") return;
+  if (session?.role !== "admin" && !hasPermission(session.id, 'canDeleteTests')) {
+    showToast("⛔ Keine Berechtigung!", "error");
+    return;
+  }
   
   const password = prompt("🔒 Bitte Trainer-Passwort eingeben:");
   if (password === null) return;
@@ -3316,7 +3811,6 @@ function saveSplashEvent(eventType, field, value) {
   showToast(`✅ ${eventType} Einstellung gespeichert`, 'success');
 }
 
-// 🔥 Splash-Bilder in Konfiguration auf 60x60
 async function handleSplashImageUpload(event, eventType) {
   const file = event.target.files[0];
   if (!file) return;
@@ -3391,7 +3885,6 @@ function updateCustomEvent(eventId, field, value) {
   }
 }
 
-// 🔥 Custom Event Bilder in Konfiguration auf 60x60
 async function handleCustomEventImageUpload(event, eventId) {
   const file = event.target.files[0];
   if (!file) return;
@@ -3432,7 +3925,6 @@ async function handleCustomEventImageUpload(event, eventId) {
 
 // ==================== NEUE DATENSCHUTZ FUNKTIONEN ====================
 
-// 🔥 Vollbild-Datenschutz anzeigen (nach Login)
 function showDatenschutzFullscreen() {
   if (!session || session.role !== 'parent') return false;
   
@@ -3502,7 +3994,6 @@ function closeDatenschutzFullscreen() {
   if (dialog) dialog.remove();
 }
 
-// PRO Version (Zustimmen)
 function datenschutzAccept() {
   if (!session || session.role !== 'parent') return;
   
@@ -3526,7 +4017,6 @@ function datenschutzAccept() {
   }
 }
 
-// LIGHT Version (Ablehnen)
 function datenschutzReject() {
   if (!session || session.role !== 'parent') return;
   
@@ -3545,7 +4035,6 @@ function datenschutzReject() {
   render();
 }
 
-// 🔥 Reset-Antrag stellen (Eltern wollen neu abstimmen)
 function requestDatenschutzReset() {
   if (!session || session.role !== 'parent') return;
   
@@ -3579,13 +4068,11 @@ function requestDatenschutzReset() {
   save();
   showToast('✅ Antrag auf Neubewertung gesendet!', 'success');
   
-  // 🔥 Push an Trainer
   sendPushNotification('u1', '🔄 Datenschutz Reset', `${player.name} möchte neu abstimmen`);
   
   render();
 }
 
-// 🔥 Reset-Antrag genehmigen/ablehnen (Trainer)
 function approveDatenschutzReset(requestId, approved) {
   if (session?.role !== 'admin') return;
   
@@ -3595,7 +4082,6 @@ function approveDatenschutzReset(requestId, approved) {
   const userId = 'u-' + request.playerId;
   
   if (approved) {
-    // 🔥 Zustimmung löschen - Eltern müssen neu abstimmen
     if (state.datenschutz.zustimmungen[userId]) {
       delete state.datenschutz.zustimmungen[userId];
     }
@@ -3603,7 +4089,6 @@ function approveDatenschutzReset(requestId, approved) {
     request.status = 'approved';
     showToast(`✅ Reset für ${request.playerName} genehmigt`, 'success');
     
-    // Push an Eltern
     const parentUser = findUserForPlayer(request.playerId);
     if (parentUser) {
       sendPushNotification(parentUser.id, '✅ Reset genehmigt', 'Du kannst jetzt neu abstimmen');
@@ -3622,7 +4107,6 @@ function approveDatenschutzReset(requestId, approved) {
   render();
 }
 
-// 🔥 Manueller Reset durch Trainer (in der Konfig)
 function manualResetDatenschutz(playerId) {
   if (session?.role !== 'admin') return;
   
@@ -3646,7 +4130,6 @@ function manualResetDatenschutz(playerId) {
   render();
 }
 
-// 🔥 Prüfen ob User PRO oder LIGHT hat
 function isProUser() {
   if (!session || session.role !== 'parent') return true;
   
@@ -3657,7 +4140,6 @@ function isProUser() {
   return consent.status === 'accepted';
 }
 
-// 🔥 LIGHT Version Parent View (gleiches Design wie PRO)
 function renderParentLightView() {
   const player = findPlayer(session.playerId);
   if (!player) return `<div class="section">Fehler: Kein Spieler gefunden</div>`;
@@ -3706,7 +4188,6 @@ function setParentLightView(view) {
   render();
 }
 
-// 🔥 NEUE: Datenschutz-Zentrale mit Detailansicht
 function renderDatenschutzZentrale() {
   if (session?.role !== 'admin') {
     return `<div class="section"><div class="card"><h3>⛔ Kein Zugriff</h3><p class="small">Nur der Haupttrainer hat Zugriff auf die Datenschutz-Zentrale.</p></div></div>`;
@@ -3714,7 +4195,6 @@ function renderDatenschutzZentrale() {
   
   const players = state.players || [];
   
-  // Wenn ein Spieler ausgewählt wurde, Detailansicht zeigen
   if (datenschutzDetailView) {
     const player = findPlayer(datenschutzDetailView);
     if (!player) {
@@ -3776,7 +4256,6 @@ function renderDatenschutzZentrale() {
     `;
   }
   
-  // Übersicht aller Spieler
   return `
     <div class="section">
       <button class="back-button" onclick="setAdminView('config')">
@@ -3847,7 +4326,6 @@ function closeDatenschutzDetail() {
   render();
 }
 
-// 🔥 Geburtstagsdialog
 function showBirthdayDialog(playerId) {
   const player = findPlayer(playerId);
   if (!player) return;
@@ -3920,7 +4398,6 @@ function renderHeader() {
     }
   }
   
-  // 🔥 Auch Datenschutz-Anträge im Badge anzeigen
   if (session.role === "admin" && state.datenschutz?.resetRequests) {
     const pendingDS = state.datenschutz.resetRequests.filter(r => r.status === 'pending').length;
     if (pendingDS > 0) {
@@ -4009,13 +4486,16 @@ function renderLogin() {
 }
 
 function renderDashboard() {
+  if (session.role !== 'admin' && !hasPermission(session.id, 'canViewDashboard')) {
+    return `<div class="section"><div class="card"><h3>⛔ Keine Berechtigung</h3><p class="small">Du darfst das Dashboard nicht sehen.</p></div></div>`;
+  }
+  
   const players = playersForCurrentTeam();
   const matches = matchesForCurrentTeam().filter(m => m.date >= new Date().toISOString().split('T')[0]).slice(0, 3);
   const upcomingBirthdays = getUpcomingBirthdays(3);
   
   let requestsHtml = '';
   
-  // 🔥 Attendance-Anträge
   if (session.role === "admin" && state.attendanceRequests) {
     const pendingRequests = state.attendanceRequests.filter(r => r.status === 'pending');
     
@@ -4036,7 +4516,6 @@ function renderDashboard() {
     }
   }
   
-  // 🔥 Datenschutz-Reset-Anträge (im Dashboard anzeigen)
   if (session.role === "admin" && state.datenschutz?.resetRequests) {
     const pendingDS = state.datenschutz.resetRequests.filter(r => r.status === 'pending');
     
@@ -4148,6 +4627,10 @@ function renderDashboard() {
 }
 
 function renderStatistics() {
+  if (session.role !== 'admin' && !hasPermission(session.id, 'canViewStatistics')) {
+    return `<div class="section"><div class="card"><h3>⛔ Keine Berechtigung</h3><p class="small">Du darfst die Statistiken nicht sehen.</p></div></div>`;
+  }
+  
   const players = state.players || [];
   
   const playersByTeam = {};
@@ -4325,7 +4808,6 @@ function renderStatistics() {
   `;
 }
 
-// 🔥 GEÄNDERT: In der erweiterten Trainer-Ansicht nur Spieler anzeigen, die abstimmen dürfen
 function renderCalendar() {
   let matches;
   let playerId;
@@ -4383,8 +4865,7 @@ function renderCalendar() {
           }
           
           let detailedHtml = '';
-          if (isTrainerOrCoach && !isParentMode && isExpanded) {
-            // 🔥 NUR Spieler anzeigen, die abstimmen dürfen (gleiche Logik wie bei countAttendance)
+          if (isTrainerOrCoach && !isParentMode && isExpanded && hasPermission(session.id, 'canManageAttendance')) {
             const eligiblePlayers = getEligiblePlayersForMatch(m)
               .filter(player => {
                 if (player.canVote === false) return false;
@@ -4539,10 +5020,12 @@ function renderCalendar() {
                 
                 ${m.result ? `<div style="margin-top: 8px; font-weight: 600;">Ergebnis: ${m.result}</div>` : ''}
                 
-                ${session.role === "admin" && !isParentMode ? `
+                ${(session.role === "admin" || hasPermission(session.id, 'canManageMatches')) && !isParentMode ? `
                   <div style="display: flex; gap: 8px; margin-top: 12px;" onclick="event.stopPropagation()">
                     <button class="btn secondary small" onclick="editMatch('${m.id}')">Bearbeiten</button>
-                    <button class="btn warn small" onclick="deleteMatch('${m.id}')">Löschen</button>
+                    ${hasPermission(session.id, 'canDeleteMatches') ? `
+                      <button class="btn warn small" onclick="deleteMatch('${m.id}')">Löschen</button>
+                    ` : ''}
                   </div>
                 ` : ''}
               </div>
@@ -4557,6 +5040,10 @@ function renderCalendar() {
 }
 
 function renderTraining() {
+  if (session.role !== 'admin' && !hasPermission(session.id, 'canManageTraining')) {
+    return `<div class="section"><div class="card"><h3>⛔ Keine Berechtigung</h3><p class="small">Du darfst kein Training erfassen.</p></div></div>`;
+  }
+  
   const today = new Date().toISOString().split('T')[0];
   const players = playersForCurrentTeam();
   
@@ -4618,7 +5105,7 @@ function renderTrainingHistory() {
             <div style="margin-bottom: 16px; padding: 12px; background: #f5f9f6; border-radius: 12px;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                 <div style="font-weight: 600;">📅 ${t.date}</div>
-                ${session.role === "admin" ? `
+                ${(session.role === "admin" || hasPermission(session.id, 'canDeleteTraining')) ? `
                   <button class="btn danger small" onclick="deleteTraining('${t.id}')">🗑️</button>
                 ` : ''}
               </div>
@@ -4633,14 +5120,13 @@ function renderTrainingHistory() {
   `;
 }
 
-// 🔥 GEÄNDERT: Im Spielbericht nur Spieler anzeigen, die mit "Kommen" oder "Vielleicht" abgestimmt haben
 function renderMatchReport() {
-  if (session.role !== "admin") {
+  if (session.role !== "admin" && !hasPermission(session.id, 'canManageReports')) {
     return `
       <div class="section">
         <div class="card">
           <h3>⛔ Kein Zugriff</h3>
-          <p class="small">Nur der Haupttrainer kann Spielberichte verwalten.</p>
+          <p class="small">Du darfst keine Spielberichte verwalten.</p>
         </div>
       </div>
     `;
@@ -4732,7 +5218,9 @@ function renderMatchReport() {
                 <div class="match-report-title">${m.date} - ${m.title} (${m.team})</div>
                 <div class="match-report-actions">
                   <button class="btn secondary small" onclick="setSelectedReportMatch('${m.id}')">✏️</button>
-                  <button class="btn danger small" onclick="deleteMatchReport('${m.id}')">🗑️</button>
+                  ${hasPermission(session.id, 'canManageReports') ? `
+                    <button class="btn danger small" onclick="deleteMatchReport('${m.id}')">🗑️</button>
+                  ` : ''}
                 </div>
               </div>
               <div class="match-report-result">Ergebnis: ${m.result}</div>
@@ -4762,6 +5250,10 @@ function renderMatchReport() {
 }
 
 function renderTests() {
+  if (session.role !== 'admin' && !hasPermission(session.id, 'canManageTests')) {
+    return `<div class="section"><div class="card"><h3>⛔ Keine Berechtigung</h3><p class="small">Du darfst keine Tests verwalten.</p></div></div>`;
+  }
+  
   const players = playersForCurrentTeam();
   const today = new Date().toISOString().split('T')[0];
   
@@ -4807,7 +5299,7 @@ function renderTests() {
                     <div style="margin-bottom: 12px; padding: 12px; background: white; border-radius: 8px; position: relative;">
                       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                         <div style="font-weight: 600;">📅 ${test.date}</div>
-                        ${session.role === "admin" ? `
+                        ${hasPermission(session.id, 'canDeleteTests') ? `
                           <button class="btn danger small" onclick="deleteSingleTest('${player.id}', ${index})">✗</button>
                         ` : ''}
                       </div>
@@ -4835,6 +5327,10 @@ function renderTests() {
 }
 
 function renderPlayers() {
+  if (session.role !== 'admin' && !hasPermission(session.id, 'canManagePlayers')) {
+    return `<div class="section"><div class="card"><h3>⛔ Keine Berechtigung</h3><p class="small">Du darfst keine Spieler verwalten.</p></div></div>`;
+  }
+  
   const players = playersForCurrentTeam();
   const selectedPlayer = findPlayer(state.selectedPlayerId) || players[0];
   
@@ -4929,7 +5425,6 @@ function renderPlayers() {
             </div>
           </div>
           
-          <!-- 🔥 Abstimmrecht (Spielerpass) -->
           <div style="margin-top: 16px; padding: 12px; background: #f5f9f6; border-radius: 12px;">
             <label style="display: flex; align-items: center; gap: 12px; cursor: pointer;">
               <span style="font-weight: 600; flex: 1;">⚽ Abstimmrecht (Spielerpass):</span>
@@ -4945,7 +5440,6 @@ function renderPlayers() {
             </p>
           </div>
           
-          <!-- 🔥 NEU: Höhere Teams -->
           <div style="margin-top: 16px; padding: 12px; background: #f5f9f6; border-radius: 12px;">
             <label style="display: flex; align-items: center; gap: 12px; cursor: pointer;">
               <span style="font-weight: 600; flex: 1;">⚽ Höhere Teams:</span>
@@ -4973,7 +5467,9 @@ function renderPlayers() {
           <div style="display: flex; gap: 12px; margin-top: 16px;">
             <button class="btn primary" style="flex: 2;" onclick="savePlayerData()">💾 Speichern</button>
             <button class="btn secondary" style="flex: 1;" onclick="resetParentPassword('${selectedPlayer.id}')">🔑 Eltern-PW</button>
-            <button class="btn danger" style="flex: 1;" onclick="deletePlayer('${selectedPlayer.id}')">🗑️ Löschen</button>
+            ${hasPermission(session.id, 'canDeletePlayers') ? `
+              <button class="btn danger" style="flex: 1;" onclick="deletePlayer('${selectedPlayer.id}')">🗑️ Löschen</button>
+            ` : ''}
           </div>
           
           ${lastTest ? `
@@ -5016,12 +5512,12 @@ function renderPlayers() {
 }
 
 function renderSplashConfig() {
-  if (session.role !== "admin") {
+  if (session.role !== "admin" && !hasPermission(session.id, 'canViewConfig')) {
     return `
       <div class="section">
         <div class="card">
           <h3>⛔ Kein Zugriff</h3>
-          <p class="small">Nur der Haupttrainer hat Zugriff auf die Splash-Konfiguration.</p>
+          <p class="small">Du darfst die Splash-Konfiguration nicht sehen.</p>
         </div>
       </div>
     `;
@@ -5037,7 +5533,6 @@ function renderSplashConfig() {
     customEvents: []
   };
   
-  // Vorschaubilder in Konfiguration auf 60x60
   function getPreviewHtml(eventType) {
     const img = config[eventType]?.image;
     if (img) {
@@ -5255,15 +5750,20 @@ function renderSplashConfig() {
 }
 
 function renderConfig() {
-  if (session.role !== "admin") {
+  if (session.role !== "admin" && !hasPermission(session.id, 'canViewConfig')) {
     return `
       <div class="section">
         <div class="card">
           <h3>⛔ Kein Zugriff</h3>
-          <p class="small">Nur der Haupttrainer hat Zugriff auf die Konfiguration.</p>
+          <p class="small">Du darfst die Konfiguration nicht sehen.</p>
         </div>
       </div>
     `;
+  }
+  
+  // Wenn ein Co-Trainer ausgewählt wurde, zeige die Berechtigungsseite
+  if (state.selectedCoachId) {
+    return renderCoachPermissions();
   }
   
   const coaches = state.users?.filter(u => u.role === "coach") || [];
@@ -5311,7 +5811,6 @@ function renderConfig() {
           <p class="small" style="margin-top: 10px;">Das Sponsor-Logo erscheint rechts im Header.</p>
         </div>
         
-        <!-- 🔥 NEU: Standard-Spielerfoto -->
         <div class="default-photo-upload">
           <h4 style="margin: 0 0 16px 0; color: var(--blue);">📸 STANDARD-SPIELERFOTO</h4>
           <p class="small" style="margin-bottom: 16px;">Dieses Foto wird automatisch bei jedem neuen Spieler gesetzt.</p>
@@ -5487,10 +5986,14 @@ function renderConfig() {
         </div>
         
         ${coaches.map(c => `
-          <div style="background: white; padding: 12px; border-radius: 8px; margin: 8px 0;">
+          <div style="background: white; padding: 12px; border-radius: 8px; margin: 8px 0; border-left: 4px solid var(--coach-border);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-              <span><strong>${c.name}</strong> (${c.username})</span>
               <div>
+                <span><strong>${c.name}</strong> (${c.username})</span>
+                <span class="small" style="display: block; margin-top: 2px;">Passwort: 4321</span>
+              </div>
+              <div>
+                <button class="btn primary small" style="margin-right: 5px;" onclick="setSelectedCoach('${c.id}')">🔑 Rechte</button>
                 <button class="btn secondary small" style="margin-right: 5px;" onclick="resetCoachPassword('${c.id}')">🔑 PW</button>
                 <button class="btn danger small" onclick="deleteCoach('${c.id}')">🗑️</button>
               </div>
@@ -5533,7 +6036,15 @@ function renderConfig() {
           <button class="btn primary" style="width: 100%;" onclick="repairPushTokens()">🔧 Jetzt reparieren</button>
         </div>
         
-        <!-- 🔥 NEU: Button zur Datenschutz-Zentrale -->
+        <!-- 🔥 NEU: Saison-Korrektur Button -->
+        <div style="background: #e8f0fe; padding: 16px; border-radius: 12px; margin-bottom: 24px; border-left: 4px solid var(--blue);">
+          <h4 style="margin: 0 0 8px 0; color: var(--blue);">📅 Saison-Korrektur</h4>
+          <p class="small">Aktuelle Saison: <strong>${state.currentSeason}</strong></p>
+          <button class="btn primary" style="width: 100%;" onclick="forceSeasonCorrection()">
+            🔧 Auf 2025/2026 korrigieren
+          </button>
+        </div>
+        
         <div style="background: #e8f5e9; padding: 20px; border-radius: 16px; margin: 24px 0; border-left: 8px solid var(--primary);">
           <h4 style="margin: 0 0 10px 0; color: var(--primary);">🔐 DATENSCHUTZ-ZENTRALE</h4>
           <p class="small" style="margin-bottom: 16px;">Hier siehst du alle Zustimmungen der Eltern, kannst Details einsehen und Anträge bearbeiten.</p>
@@ -5675,20 +6186,16 @@ function renderMilestones(player) {
 }
 
 function renderParentView() {
-  // Prüfen ob User schon entschieden hat
   const isPro = isProUser();
   
-  // Wenn noch keine Entscheidung, nur leeren Container (der Vollbild-Dialog wird separat angezeigt)
   if (isPro === null) {
     return '<div class="section"></div>';
   }
   
-  // LIGHT Version
   if (!isPro) {
     return renderParentLightView();
   }
   
-  // PRO Version (Original)
   const player = findPlayer(session.playerId);
   if (!player) return `<div class="section">Fehler: Kein Spieler gefunden</div>`;
   
@@ -5919,6 +6426,10 @@ function setTrainerKindView(view) {
 }
 
 function renderCoachKindView() {
+  if (!hasPermission(session.id, 'canViewOwnChild')) {
+    return '';
+  }
+  
   const coach = session;
   if (!coach || !coach.childId) return '';
   
@@ -6012,9 +6523,9 @@ function renderCoachView() {
   
   let content = '';
   
-  if (coachView === "dashboard") content += renderDashboard();
+  if (hasPermission(session.id, 'canViewDashboard') && coachView === "dashboard") content += renderDashboard();
   else if (coachView === "calendar") content += renderCalendar();
-  else if (coachView === "training") content += renderTraining();
+  else if (hasPermission(session.id, 'canManageTraining') && coachView === "training") content += renderTraining();
   else if (coachView === "traininghistory") content += renderTrainingHistory();
   else if (coachView === "password") content += `
     <div class="section">
@@ -6030,9 +6541,9 @@ function renderCoachView() {
       </div>
     </div>
   `;
-  else if (coachView === "statistics") content += renderStatistics();
+  else if (hasPermission(session.id, 'canViewStatistics') && coachView === "statistics") content += renderStatistics();
   else if (coachView === "coachkind") {
-    if (childPlayer) {
+    if (childPlayer && hasPermission(session.id, 'canViewOwnChild')) {
       content = renderCoachKindView();
     } else {
       content = renderDashboard();
@@ -6077,16 +6588,16 @@ function renderNav() {
       </div>
     `;
   } else if (session.role === "coach") {
-    const hasChild = session.childId;
+    const hasChild = session.childId && hasPermission(session.id, 'canViewOwnChild');
     
     return `
       <div class="nav">
         <div class="nav-inner">
-          <button class="${coachView === 'dashboard' ? 'active' : ''}" onclick="setCoachView('dashboard')">🏠</button>
+          ${hasPermission(session.id, 'canViewDashboard') ? `<button class="${coachView === 'dashboard' ? 'active' : ''}" onclick="setCoachView('dashboard')">🏠</button>` : ''}
           <button class="${coachView === 'calendar' ? 'active' : ''}" onclick="setCoachView('calendar')">📅</button>
-          <button class="${coachView === 'training' ? 'active' : ''}" onclick="setCoachView('training')">🏋️</button>
+          ${hasPermission(session.id, 'canManageTraining') ? `<button class="${coachView === 'training' ? 'active' : ''}" onclick="setCoachView('training')">🏋️</button>` : ''}
           <button class="${coachView === 'traininghistory' ? 'active' : ''}" onclick="setCoachView('traininghistory')">📋</button>
-          <button class="${coachView === 'statistics' ? 'active' : ''}" onclick="setCoachView('statistics')">📈</button>
+          ${hasPermission(session.id, 'canViewStatistics') ? `<button class="${coachView === 'statistics' ? 'active' : ''}" onclick="setCoachView('statistics')">📈</button>` : ''}
           <button class="${coachView === 'password' ? 'active' : ''}" onclick="setCoachView('password')">🔑</button>
           ${hasChild ? `
             <button class="coach-kind-nav ${coachView === 'coachkind' ? 'active' : ''}" onclick="setCoachView('coachkind')">👨‍👦</button>
@@ -6187,7 +6698,6 @@ async function startApp() {
     showSplashScreen();
   }, 100);
   
-  // Sicherheitshalber nach 3 Sekunden Splash ausblenden
   setTimeout(() => {
     hideSplash();
   }, 3000);
@@ -6254,6 +6764,9 @@ window.addCoach = addCoach;
 window.updateCoachChild = updateCoachChild;
 window.updateTrainerChild = updateTrainerChild;
 window.deleteCoach = deleteCoach;
+window.setSelectedCoach = setSelectedCoach;
+window.togglePermission = togglePermission;
+window.saveCoachPermissions = saveCoachPermissions;
 window.addTestConfig = addTestConfig;
 window.deleteTestConfig = deleteTestConfig;
 window.saveTestResults = saveTestResults;
@@ -6291,6 +6804,7 @@ window.approveDatenschutzReset = approveDatenschutzReset;
 window.manualResetDatenschutz = manualResetDatenschutz;
 window.showDatenschutzDetail = showDatenschutzDetail;
 window.closeDatenschutzDetail = closeDatenschutzDetail;
+window.forceSeasonCorrection = forceSeasonCorrection;
 
 startApp();
 </script>
