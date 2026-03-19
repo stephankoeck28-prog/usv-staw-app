@@ -6,11 +6,14 @@
 <title>USV St Andrä Wördern - Team App</title>
 <!-- PWA Manifest -->
 <link rel="manifest" href="manifest.json">
-<!-- Korrigierte Meta Tags (ohne deprecated) -->
-<meta name="mobile-web-app-capable" content="yes">
+<!-- NATIVEN SPLASH DEAKTIVIEREN -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<!-- KEINE splash Bilder! -->
 <meta name="theme-color" id="theme-color" content="#156d3b">
+<!-- iOS Meta Tags für besseres Icon-Handling -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="apple-touch-icon" href="icon-192.png">
 <style>
 :root {
@@ -142,6 +145,7 @@ html, body {
   visibility: hidden;
 }
 
+/* Haupt-Splash auf 150x150 */
 .splash-screen img {
   width: 150px;
   height: 150px;
@@ -343,28 +347,154 @@ html, body {
 .toast.info { border-left-color: var(--toast-info); }
 .toast.warning { border-left-color: var(--toast-warning); }
 
-.toast-icon { font-size: 24px; line-height: 1; }
-.toast-content { flex: 1; font-size: 14px; font-weight: 500; color: var(--text); }
-.toast-close { background: none; border: none; font-size: 18px; cursor: pointer; color: var(--muted); padding: 0 5px; }
-.toast-close:hover { color: var(--text); }
+.toast-icon {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.toast-content {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.toast-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: var(--muted);
+  padding: 0 5px;
+}
+
+.toast-close:hover {
+  color: var(--text);
+}
 
 @keyframes slideIn {
-  from { transform: translateX(100%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 @keyframes slideOut {
-  from { transform: translateX(0); opacity: 1; }
-  to { transform: translateX(100%); opacity: 0; }
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
 }
 
-.toast.closing { animation: slideOut 0.3s ease forwards; }
+.toast.closing {
+  animation: slideOut 0.3s ease forwards;
+}
 
-/* ==================== WEITERE STYLES ==================== */
-/* Hier folgen alle bestehenden Styles aus deinem Original - der Kürze halber nicht alle aufgelistet */
-/* Im vollständigen Code sind sie natürlich alle enthalten */
+/* ==================== PUSH NACHRICHTEN STYLES ==================== */
+.pushes-section {
+  margin-bottom: 20px;
+}
 
-/* Header */
+.push-card {
+  background: var(--message-bg);
+  border: 2px solid var(--message-border);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 12px;
+  position: relative;
+}
+
+.push-card.unread {
+  background: var(--message-unread);
+  border-color: var(--message-unread-border);
+}
+
+.push-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.push-date {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.push-badge {
+  background: var(--red);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.push-title {
+  font-weight: 600;
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+.push-content {
+  font-size: 14px;
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+.push-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  border-top: 1px solid rgba(0,0,0,0.1);
+  padding-top: 12px;
+  margin-top: 8px;
+}
+
+.push-confirm-btn {
+  background: var(--approval-green);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.push-confirm-btn:hover {
+  opacity: 0.9;
+}
+
+.no-pushes {
+  text-align: center;
+  padding: 20px;
+  color: var(--muted);
+  background: white;
+  border-radius: 12px;
+}
+
+/* Header Badge */
+.push-count-badge {
+  background: var(--red);
+  color: white;
+  border-radius: 50%;
+  padding: 2px 6px;
+  font-size: 10px;
+  margin-left: 6px;
+  display: inline-block;
+  min-width: 18px;
+  text-align: center;
+}
+
+/* Header - LOGO FIX */
 .header { 
   background: linear-gradient(180deg, var(--primary), var(--primary-dark)); 
   color: white; 
@@ -376,36 +506,391 @@ html, body {
   z-index: 20; 
   box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
 }
-.header-content { display: flex; align-items: center; justify-content: space-between; }
-.brand { display: flex; align-items: center; gap: 14px; }
-.logo { width: 60px; height: 60px; border-radius: 18px; background: transparent; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-.logo img { width: 100%; height: 100%; object-fit: contain; padding: 0; }
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.brand { 
+  display: flex; 
+  align-items: center; 
+  gap: 14px; 
+}
+.logo { 
+  width: 60px; 
+  height: 60px; 
+  border-radius: 18px; 
+  background: transparent; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  overflow: hidden; 
+}
+.logo img { 
+  width: 100%; 
+  height: 100%; 
+  object-fit: contain; 
+  padding: 0; 
+}
 .logo span { font-size: 24px; color: var(--primary); font-weight: bold; }
 .brand small { display: block; opacity: 0.9; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; }
 .brand strong { display: block; font-size: 18px; }
-.role-badge { background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 20px; font-size: 11px; margin-top: 4px; display: inline-flex; align-items: center; gap: 4px; }
+.role-badge { 
+  background: rgba(255,255,255,0.2); 
+  padding: 4px 10px; 
+  border-radius: 20px; 
+  font-size: 11px; 
+  margin-top: 4px; 
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
 
-.sponsor-area { width: 80px; height: 60px; display: flex; align-items: center; justify-content: center; background: transparent; }
-.sponsor-logo { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px; }
+/* Sponsor Bereich */
+.sponsor-area {
+  width: 80px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+}
+.sponsor-logo {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+}
 
+/* Footer - jetzt im Header! */
 .footer { background: transparent; color: rgba(255,255,255,0.5); padding: 4px 0 0; text-align: left; font-size: 9px; width: 100%; margin-top: 8px; border-top: 1px solid rgba(255,255,255,0.1); }
 .footer .copyright { opacity: 0.7; letter-spacing: 0.3px; }
 
+/* Tabs */
 .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
 .pill { border: none; border-radius: 20px; padding: 8px 16px; font-weight: 600; font-size: 14px; cursor: pointer; background: rgba(255,255,255,0.2); color: white; }
 .pill.active { background: var(--yellow); color: #21482d; }
 .pill.alt { background: var(--primary-light); color: white; }
 
+/* Cards */
 .section { padding: 16px 16px 80px; }
 .card { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 16px; margin-bottom: 16px; box-shadow: 0 3px 10px rgba(0,0,0,0.04); }
 .card h3 { margin: 0 0 12px; font-size: 18px; display: flex; align-items: center; gap: 6px; }
 
-/* ... und alle weiteren Styles */
+/* Back Button */
+.back-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  color: var(--primary);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 8px 0;
+  margin-bottom: 16px;
+}
+.back-button:hover {
+  opacity: 0.8;
+}
+
+/* Next Match Card with Attendance Color */
+.next-match-card { padding: 16px; border-radius: 16px; margin-bottom: 20px; color: white; }
+.next-match-card.coming { background: linear-gradient(135deg, var(--attendance-coming), #1e6b3d); }
+.next-match-card.maybe { background: linear-gradient(135deg, var(--attendance-maybe), #c47f2a); }
+.next-match-card.missing { background: linear-gradient(135deg, var(--attendance-missing), #a63e2f); }
+.next-match-card.open { background: linear-gradient(135deg, var(--attendance-open), #5c6962); }
+.next-match-card.past { background: linear-gradient(135deg, var(--match-past), #a0a0a0); opacity: 0.8; }
+.next-match-card .small { color: rgba(255,255,255,0.8); }
+.next-match-card .title { font-weight: 600; font-size: 18px; margin: 8px 0; }
+.next-match-card .details { margin: 4px 0; }
+
+/* Grid */
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+@media (max-width: 560px) { .grid2, .grid3 { grid-template-columns: 1fr; } }
+
+/* Forms */
+label { display: block; font-size: 12px; font-weight: 600; color: #5a665f; margin-bottom: 4px; }
+input, select, textarea { width: 100%; padding: 12px; border: 1px solid #dce6de; border-radius: 12px; font: inherit; background: white; margin-bottom: 12px; }
+
+/* Buttons */
+.btn { border: none; border-radius: 12px; padding: 12px 16px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+.btn.primary { background: var(--primary); color: white; }
+.btn.primary:hover { background: var(--primary-dark); }
+.btn.secondary { background: #eef4ef; color: #264533; }
+.btn.warn { background: #fff4d4; color: #735700; }
+.btn.danger { background: #d45d4a; color: white; }
+.btn.yes { background: var(--attendance-coming); color: white; }
+.btn.no { background: var(--attendance-missing); color: white; }
+.btn.maybe { background: var(--attendance-maybe); color: white; }
+.btn.small { padding: 6px 10px; font-size: 12px; }
+.btn.approve { background: var(--approval-green); color: white; }
+.btn.reject { background: var(--approval-red); color: white; }
+.btn.request { background: var(--notification-border); color: #856404; }
+.btn.reset { background: #6c757d; color: white; }
+.btn.reset:hover { background: #5a6268; }
+
+/* Player List */
+.player-list { max-height: 300px; overflow-y: auto; border: 1px solid var(--line); border-radius: 14px; padding: 8px; margin-bottom: 20px; background: white; }
+.player-list button { width: 100%; text-align: left; background: white; border: 1px solid var(--line); padding: 12px 14px; border-radius: 14px; font-weight: 600; margin-bottom: 6px; cursor: pointer; }
+.player-list button.active { border-color: var(--primary); background: #f7fbf8; }
+
+/* Match List */
+.match { display: flex; background: white; border-bottom: 1px solid #edf1ee; margin-bottom: 8px; cursor: pointer; transition: 0.2s; }
+.match:hover { background: #f5f9f6; }
+.match.expanded { background: #f0f7f2; border-left: 4px solid var(--primary); }
+.match.past { background: var(--match-past); opacity: 0.7; }
+.match.past:hover { background: #d0d0d0; }
+.datebox { width: 80px; padding: 12px 8px; text-align: center; border-right: 1px solid #edf1ee; }
+.datebox .day { font-size: 24px; font-weight: 300; line-height: 1; }
+.datebox .mon { font-size: 11px; font-weight: 600; color: #58635d; margin-top: 4px; }
+.info { flex: 1; padding: 12px; }
+.name { font-size: 16px; font-weight: 600; margin: 4px 0; }
+.time { font-size: 14px; color: #44514a; }
+.badges { display: flex; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; }
+.badge { padding: 4px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+.badge.meisterschaft { background: var(--badge-meisterschaft); color: white; }
+.badge.turnier { background: var(--badge-turnier); color: white; }
+.badge.testspiel { background: var(--badge-testspiel); color: white; }
+.badge.cup { background: var(--badge-cup); color: white; }
+.team1 { background: var(--yellow); color: #214b2f; }
+.team2 { background: var(--primary-light); color: white; }
+.status.home { color: #2d9c4b; font-weight: 600; }
+.status.away { color: #d8712b; font-weight: 600; }
+
+/* Attendance */
+.attendance-stats { display: flex; gap: 16px; font-size: 13px; margin: 10px 0; }
+.attendance-buttons { display: flex; gap: 8px; margin: 10px 0; }
+.attendance-buttons .btn { flex: 1; }
+
+/* Attendance Overview */
+.attendance-overview { display: flex; justify-content: space-around; padding: 12px; background: #f5f9f6; border-radius: 12px; margin: 15px 0; }
+.attendance-item { text-align: center; }
+.attendance-item .count { font-size: 24px; font-weight: 800; }
+.attendance-item .label { font-size: 11px; color: var(--muted); }
+.attendance-item.coming .count { color: var(--attendance-coming); }
+.attendance-item.maybe .count { color: var(--attendance-maybe); }
+.attendance-item.missing .count { color: var(--attendance-missing); }
+.attendance-item.open .count { color: var(--attendance-open); }
+
+/* Detailed Attendance for Trainer */
+.detailed-attendance { margin: 15px 0; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.detailed-header { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; background: #e0e0e0; font-weight: 600; font-size: 12px; padding: 8px; }
+.detailed-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; padding: 8px; border-top: 1px solid var(--line); align-items: center; }
+.detailed-row:nth-child(even) { background: #f9f9f9; }
+.detailed-status { text-align: center; font-weight: 600; }
+.status-coming { color: var(--attendance-coming); }
+.status-maybe { color: var(--attendance-maybe); }
+.status-missing { color: var(--attendance-missing); }
+.status-open { color: var(--attendance-open); }
+
+/* Training */
+.training-player { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #e0eae1; }
+.training-options { display: flex; gap: 8px; }
+.training-options label { padding: 8px 16px; border-radius: 25px; font-weight: 600; cursor: pointer; background: #e8f0ea; border: 1px solid #c0d9c5; margin: 0; }
+.training-options input[type="radio"] { display: none; }
+.training-options input[type="radio"]:checked + label { color: white; }
+.training-options input[value="present"]:checked + label { background: var(--attendance-coming); }
+.training-options input[value="excused"]:checked + label { background: var(--attendance-maybe); }
+.training-options input[value="missing"]:checked + label { background: var(--attendance-missing); }
+
+/* History */
+.history-item { padding: 10px; margin: 5px 0; border-radius: 8px; font-size: 13px; }
+.history-present { background: #e6f3e9; border-left: 4px solid var(--attendance-coming); }
+.history-excused { background: #fff2dd; border-left: 4px solid var(--attendance-maybe); }
+.history-missing { background: #ffe6e3; border-left: 4px solid var(--attendance-missing); }
+
+/* Test Stars */
+.star { color: #f3c623; font-size: 18px; }
+.star-empty { color: #ddd; font-size: 18px; }
+
+/* Stat Boxes */
+.stat { background: var(--soft); border: 1px solid #edf3ee; border-radius: 16px; padding: 12px; text-align: center; }
+.stat strong { display: block; font-size: 20px; }
+
+/* Ranking */
+.ranking-badge { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; margin-left: 8px; font-weight: 800; font-size: 14px; }
+.ranking-1 { background: var(--gold); color: #000; }
+.ranking-2 { background: var(--silver); color: #000; }
+.ranking-3 { background: var(--bronze); color: #fff; }
+.ranking-other { background: #e0e0e0; color: #333; }
+
+/* Season Stats */
+.season-stats { background: #e8f0fe; border-radius: 16px; padding: 16px; margin: 20px 0; }
+.season-stats h4 { color: var(--blue); margin: 0 0 12px 0; border-bottom: 1px solid var(--blue); padding-bottom: 8px; }
+.season-stat-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(94,143,232,0.2); }
+.season-stat-item:last-child { border-bottom: none; }
+.season-stat-item.current { background: rgba(94,143,232,0.1); border-radius: 8px; padding: 8px; margin-bottom: 8px; font-weight: 600; }
+
+/* Current Season Stats */
+.current-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0; }
+.stat-card { background: white; border: 1px solid var(--line); border-radius: 16px; padding: 16px; text-align: center; }
+.stat-card .value { font-size: 32px; font-weight: 800; color: var(--primary); }
+.stat-card .label { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.stat-card .ranking { display: flex; align-items: center; justify-content: center; margin-top: 8px; font-size: 14px; }
+
+/* Month Separator */
+.month { background: #ddd; color: #535353; font-weight: 800; letter-spacing: .14em; padding: 10px 16px; margin-top: 10px; }
+
+/* Photo Upload */
+.photo-upload { display: flex; flex-direction: column; align-items: center; margin-bottom: 15px; }
+.photo-preview { width: 120px; height: 120px; border-radius: 60px; background: #f0f7f2; border: 2px dashed var(--primary); display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 10px; }
+.photo-preview img { width: 100%; height: 100%; object-fit: cover; }
+.photo-preview span { color: var(--muted); font-size: 12px; text-align: center; }
+
+/* Parent Photo */
+.parent-photo { width: 120px; height: 120px; border-radius: 60px; margin: 0 auto 16px; overflow: hidden; }
+.parent-photo img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Trainer Kind Section - MIT ABSTIMMUNG (wie Eltern) */
+.trainer-kind-section { border-radius: 20px; padding: 16px; margin: 16px 0; background: var(--trainer-kind-bg); border: 2px solid var(--trainer-kind-border); }
+.trainer-kind-section .section-title { color: var(--trainer-kind-border); font-size: 16px; font-weight: 600; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--trainer-kind-border); }
+
+/* Coach Kind Section */
+.coach-kind-section { border-radius: 20px; padding: 16px; margin: 16px 0; background: var(--coach-bg); border: 2px solid var(--coach-border); }
+.coach-kind-section .section-title { color: #856404; font-size: 16px; font-weight: 600; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--coach-border); }
+
+/* Statistics Section */
+.statistics-section { border-radius: 20px; padding: 16px; margin: 16px 0; background: var(--statistics-bg); border: 2px solid var(--statistics-border); }
+.statistics-section .section-title { color: #555; font-size: 16px; font-weight: 600; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--statistics-border); }
+.statistics-table { width: 100%; border-collapse: collapse; }
+.statistics-table th { text-align: left; padding: 8px; background: #e0e0e0; font-size: 12px; }
+.statistics-table td { padding: 8px; border-bottom: 1px solid #ddd; }
+.statistics-table tr:last-child td { border-bottom: none; }
+.statistics-table .zero { color: var(--muted); font-style: italic; }
+
+/* Notifications */
+.notification-badge { background: var(--notification-bg); border: 1px solid var(--notification-border); border-radius: 20px; padding: 4px 10px; font-size: 12px; font-weight: 600; margin-left: 8px; }
+.notification-item { background: var(--notification-bg); border-left: 4px solid var(--notification-border); padding: 12px; border-radius: 8px; margin: 8px 0; }
+.approval-message { padding: 10px; border-radius: 8px; margin: 10px 0; text-align: center; font-weight: 600; }
+.approval-message.approved { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+.approval-message.rejected { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+
+/* Login */
+.login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 18px; }
+.login-card { background: white; border: 1px solid var(--line); border-radius: 24px; padding: 24px; width: 100%; max-width: 400px; }
+
+/* Navigation */
+.nav { position: fixed; left: 0; right: 0; bottom: 0; background: white; border-top: 1px solid var(--line); display: flex; justify-content: center; z-index: 25; }
+.nav-inner { width: 100%; max-width: 720px; display: grid; grid-template-columns: repeat(10, 1fr); }
+.nav button { background: none; border: none; padding: 12px 4px; color: #617067; font-size: 20px; cursor: pointer; transition: 0.2s; }
+.nav button.active { color: var(--primary); transform: translateY(-2px); }
+.nav .trainer-kind-nav, .nav .coach-kind-nav { margin-left: 20px; }
+
+/* Logo Upload in Config - LOGO FIX */
+.logo-upload { display: flex; flex-direction: column; align-items: center; margin: 20px 0; padding: 20px; background: #f5f9f6; border-radius: 12px; }
+.logo-preview { width: 100px; height: 100px; border-radius: 18px; background: white; border: 2px dashed var(--primary); display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 10px; }
+.logo-preview img { 
+  width: 100%; 
+  height: 100%; 
+  object-fit: contain; 
+  padding: 0; 
+}
+.logo-preview span { color: var(--muted); font-size: 12px; text-align: center; }
+
+/* Sponsor Upload in Config */
+.sponsor-upload { display: flex; flex-direction: column; align-items: center; margin: 20px 0; padding: 20px; background: #f5f9f6; border-radius: 12px; }
+.sponsor-preview { width: 80px; height: 60px; border-radius: 8px; background: white; border: 2px dashed var(--primary); display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 10px; }
+.sponsor-preview img { width: 100%; height: 100%; object-fit: contain; }
+.sponsor-preview span { color: var(--muted); font-size: 12px; text-align: center; }
+
+/* Color Picker */
+.color-preview {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  border: 2px solid var(--line);
+  margin-left: 10px;
+}
+
+/* Default Player Photo Upload */
+.default-photo-upload {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 20px 0;
+  padding: 20px;
+  background: #f5f9f6;
+  border-radius: 12px;
+  border-left: 4px solid var(--blue);
+}
+.default-photo-preview {
+  width: 120px;
+  height: 120px;
+  border-radius: 60px;
+  background: white;
+  border: 2px dashed var(--blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+.default-photo-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.default-photo-preview span {
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+/* Gegner-Liste für U8 und kleiner */
+.opponents-list { margin: 12px 0; padding: 12px; background: #f5f9f6; border-radius: 12px; }
+.opponents-list h4 { margin: 0 0 8px 0; font-size: 14px; color: var(--muted); }
+.opponents-items { display: flex; flex-wrap: wrap; gap: 8px; }
+.opponent-tag { background: var(--blue); color: white; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+
+/* Match Report Styles */
+.match-report-item { background: white; border: 1px solid var(--line); border-radius: 16px; padding: 16px; margin-bottom: 16px; }
+.match-report-item.completed { background: var(--report-completed); border-color: var(--report-completed-border); }
+.match-report-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.match-report-title { font-weight: 600; font-size: 16px; }
+.match-report-actions { display: flex; gap: 8px; }
+.match-report-result { font-size: 18px; font-weight: 800; color: var(--primary); margin: 8px 0; }
+
+/* Milestone Card */
+.milestone-card { background: var(--milestone-bg); border: 2px solid var(--milestone-border); border-radius: 16px; padding: 16px; margin-bottom: 16px; }
+.milestone-year { font-size: 20px; font-weight: 800; color: #e65100; margin-bottom: 12px; border-bottom: 1px solid var(--milestone-border); padding-bottom: 8px; }
+.milestone-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.milestone-stat { text-align: center; background: white; border-radius: 12px; padding: 12px; }
+.milestone-stat .value { font-size: 28px; font-weight: 800; color: var(--primary); }
+.milestone-stat .label { font-size: 12px; color: var(--muted); }
+
+/* Section Divider */
+.section-divider { 
+  margin: 30px 0 20px; 
+  border-top: 2px solid var(--line); 
+  position: relative; 
+}
+.section-divider span { 
+  position: absolute; 
+  top: -12px; 
+  left: 20px; 
+  background: var(--bg); 
+  padding: 0 10px; 
+  font-weight: 600; 
+  color: var(--primary); 
+  font-size: 14px; 
+}
+.spacer { height: 20px; }
+
+/* Utils */
+.small { font-size: 12px; color: var(--muted); }
+.hidden { display: none !important; }
+.mt-2 { margin-top: 8px; }
+.mt-3 { margin-top: 12px; }
+.mt-4 { margin-top: 16px; }
+.mb-2 { margin-bottom: 8px; }
+.mb-3 { margin-bottom: 16px; }
 </style>
 </head>
 <body>
-
-<!-- Splash Screen -->
+<!-- ==================== SPLASH SCREEN ==================== -->
 <div class="splash-screen" id="splash-screen">
   <img id="splash-image" src="icon-192.png" alt="USV">
   <div class="splash-title" id="splash-title">USV St Andrä Wördern</div>
@@ -413,6 +898,8 @@ html, body {
 </div>
 
 <div class="app" id="app" style="opacity: 0; transition: opacity 0.3s ease;"></div>
+
+<!-- Toast Container für moderne Alerts -->
 <div id="toast-container" class="toast-container"></div>
 
 <!-- Firebase Imports -->
@@ -422,22 +909,6 @@ html, body {
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 
 <script>
-// ==================== FIREBASE KONFIGURATION ====================
-const firebaseConfig = {
-  apiKey: "AIzaSyAemNwKerXt-hvtikIIACR4oBTb72VjL_U",
-  authDomain: "usv-staw-app.firebaseapp.com",
-  projectId: "usv-staw-app",
-  storageBucket: "usv-staw-app.firebasestorage.app",
-  messagingSenderId: "983106867178",
-  appId: "1:983106867178:web:90234121a5833e7e396c93"
-};
-
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-const storage = firebase.storage();
-window.db = db;
-window.storage = storage;
-
 // ==================== SERVICE WORKER REGISTRIERUNG ====================
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then(function(registrations) {
@@ -456,22 +927,6 @@ if ('serviceWorker' in navigator) {
     console.log('❌ Service Worker Fehler:', error);
   });
 }
-
-// ==================== GLOBALE VARIABLEN ====================
-// WICHTIG: Keine doppelte Deklaration!
-let state = {};
-let session = JSON.parse(sessionStorage.getItem("usv-staw-session") || "null");
-let adminView = "dashboard";
-let coachView = "dashboard";
-let parentView = "kind";
-let parentLightView = "calendar";
-let trainerKindView = "kind";
-let coachKindView = "kind";
-let deferredPrompt = null;
-let messaging = null;
-
-const DEFAULT_PRIMARY_COLOR = "#156d3b";
-const defaultLogo = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23156d3b'/%3E%3Ctext x='50' y='55' font-size='40' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'%3E⚽%3C/text%3E%3C/svg%3E";
 
 // ==================== BADGE FUNKTIONEN ====================
 function updateAppBadge(count) {
@@ -670,6 +1125,8 @@ function clearDefaultPlayerPhoto() {
 }
 
 // ==================== HILFSFUNKTION FÜR FARBEN ====================
+const DEFAULT_PRIMARY_COLOR = "#156d3b";
+
 function updatePrimaryColor(color) {
   document.documentElement.style.setProperty('--primary', color);
   
@@ -716,7 +1173,6 @@ function hideSplash() {
   const app = document.getElementById('app');
   if (splash) splash.classList.add('hidden');
   if (app) app.style.opacity = '1';
-  console.log('✅ Splash ausgeblendet');
 }
 
 function showSplashScreen() {
@@ -806,7 +1262,7 @@ function showSplashScreen() {
   }, state.splashConfig.duration * 1000);
 }
 
-// ==================== TOAST FUNKTIONEN ====================
+// ==================== MODERNE ALERT FUNKTION ====================
 function showToast(message, type = 'success', duration = 3000) {
   const container = document.getElementById('toast-container');
   if (!container) return;
@@ -852,7 +1308,7 @@ function closeToast(toastId) {
   }
 }
 
-// ==================== INSTALLATIONS HELPER ====================
+// ==================== HELPER FUNKTIONEN FÜR INSTALLATION ====================
 function isIOS() {
   return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 }
@@ -862,6 +1318,7 @@ function isAppInstalled() {
          window.navigator.standalone === true;
 }
 
+// ==================== PERSISTENT ALERT FÜR ELTERN ====================
 function showPersistentAlert(message) {
   let alertBox = document.getElementById('persistent-alert');
   
@@ -904,31 +1361,40 @@ function showPersistentAlert(message) {
 }
 
 // ==================== PUSH BENACHRICHTIGUNGEN ====================
-let pushInitialized = false;
-const processedForegroundIds = new Set();
-setInterval(() => processedForegroundIds.clear(), 10000);
+let messaging = null;
+let deferredPrompt;
+let _pushInitialized = false;
+let pushCounter = 0;
+
+const _processedForegroundIds = new Set();
+setInterval(() => {
+  _processedForegroundIds.clear();
+}, 10000);
 
 async function getAccessToken() {
   try {
     const response = await fetch('https://getfcmtoken-xri47ejggq-uc.a.run.app', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' }
+      headers: {
+        'Content-Type': 'application/json'
+      }
     });
     
     if (response.ok) {
       const data = await response.json();
       return data.accessToken;
+    } else {
+      return 'dummy-token-bitte-durch-echten-ersetzen';
     }
-    return 'dummy-token-bitte-durch-echten-ersetzen';
   } catch (error) {
     return 'dummy-token-bitte-durch-echten-ersetzen';
   }
 }
 
 async function initPushNotifications() {
-  if (pushInitialized) return;
+  if (_pushInitialized) return;
   
-  pushInitialized = true;
+  _pushInitialized = true;
   
   try {
     if (!firebase.messaging) return;
@@ -961,9 +1427,9 @@ async function initPushNotifications() {
           payload.messageId ||
           payload.notification?.title + payload.notification?.body;
 
-        if (processedForegroundIds.has(messageId)) return;
+        if (_processedForegroundIds.has(messageId)) return;
 
-        processedForegroundIds.add(messageId);
+        _processedForegroundIds.add(messageId);
 
         const body =
           payload.notification?.body ||
@@ -1038,13 +1504,23 @@ async function repairPushTokens() {
 }
 
 async function sendPushNotification(userId, title, body, type = 'info') {
+  pushCounter++;
+  
   await saveIncomingPush(userId, title, body, type);
   
   if (!state.pushTokens) return;
+  
   if (!state.pushTokens[userId]) return;
+  
   if (!Array.isArray(state.pushTokens[userId])) return;
   
   const tokens = state.pushTokens[userId];
+  
+  const now = Date.now();
+  
+  if (lastPush && lastPush.userId === userId && lastPush.body === body && now - lastPush.time < 5000) return;
+  
+  lastPush = {userId, title, body, time: now};
   
   for (const token of tokens) {
     try {
@@ -1055,7 +1531,7 @@ async function sendPushNotification(userId, title, body, type = 'info') {
         continue;
       }
       
-      await fetch('https://fcm.googleapis.com/v1/projects/usv-staw-app/messages:send', {
+      const response = await fetch('https://fcm.googleapis.com/v1/projects/usv-staw-app/messages:send', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1091,9 +1567,18 @@ async function sendPushNotification(userId, title, body, type = 'info') {
           }
         })
       });
-    } catch (error) {}
+      
+      if (!response.ok) {
+        if (response.status === 404 || response.status === 400) {
+          state.pushTokens[userId] = state.pushTokens[userId].filter(t => t !== token);
+          await save();
+        }
+      }
+    } catch (tokenError) {}
   }
 }
+
+let lastPush = null;
 
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
@@ -1147,6 +1632,7 @@ async function checkAndSendReminders() {
       for (const player of eligiblePlayers) {
         const status = match.attendance?.[player.id] || 'open';
         
+        // 🔥 NUR an berechtigte Spieler (canVote = true)
         if (status === 'open' && player.canVote === true) {
           const parentUser = findUserForPlayer(player.id);
           
@@ -1171,9 +1657,24 @@ function saveReminderDays(days) {
 }
 
 // ==================== FIREBASE INIT ====================
-// Bereits oben initialisiert
+const firebaseConfig = {
+  apiKey: "AIzaSyAemNwKerXt-hvtikIIACR4oBTb72VjL_U",
+  authDomain: "usv-staw-app.firebaseapp.com",
+  projectId: "usv-staw-app",
+  storageBucket: "usv-staw-app.firebasestorage.app",
+  messagingSenderId: "983106867178",
+  appId: "1:983106867178:web:90234121a5833e7e396c93"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+window.db = db;
+
+const storage = firebase.storage();
+window.storage = storage;
 
 // ==================== STANDARD LOGO ====================
+const defaultLogo = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23156d3b'/%3E%3Ctext x='50' y='55' font-size='40' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'%3E⚽%3C/text%3E%3C/svg%3E";
 
 // ==================== PWA INSTALLATION ====================
 let isAppInstalledFlag = false;
@@ -1207,11 +1708,6 @@ const seed = {
   defaultPlayerPhoto: null,
   
   pendingPushes: [],
-  
-  datenschutz: {
-    zustimmungen: {},
-    resetRequests: []
-  },
   
   splashConfig: {
     duration: 2,
@@ -1315,6 +1811,18 @@ seed.players.forEach(p => {
     playerId: p.id
   });
 });
+
+// ==================== STATE ====================
+let state = {};
+let session = JSON.parse(sessionStorage.getItem("usv-staw-session") || "null");
+
+let adminView = "dashboard";
+let coachView = "dashboard";
+let parentView = "kind";
+let parentLightView = "calendar";
+let trainerKindView = "kind";
+let coachKindView = "kind";
+let datenschutzDetailView = null; // Für Detailansicht in Datenschutz-Zentrale
 
 // ==================== FIREBASE FUNKTIONEN ====================
 async function save() {
@@ -1431,6 +1939,7 @@ function getEligiblePlayersForMatch(match) {
   return players;
 }
 
+// Höhere Teams: nur wenn canVoteInHigher = true
 function getVisibleMatchesForParent(playerId) {
   const player = findPlayer(playerId);
   if (!player) return [];
@@ -1442,8 +1951,10 @@ function getVisibleMatchesForParent(playerId) {
     const matchTeamNumber = getTeamNumber(m.team);
     if (matchTeamNumber === null) return false;
     
+    // Gleiches Team immer anzeigen
     if (matchTeamNumber === playerTeamNumber) return true;
     
+    // Höheres Team nur anzeigen wenn canVoteInHigher = true
     if (matchTeamNumber > playerTeamNumber) {
       return player.canVoteInHigher === true;
     }
@@ -1528,17 +2039,21 @@ function formatDate(dateStr) {
   return { day: String(d.getDate()).padStart(2,"0"), mon: months[d.getMonth()] };
 }
 
+// 🔥 Zählung: Nur Spieler MIT Spielerpass (canVote = true)
 function countAttendance(match) {
   const allPossiblePlayers = getEligiblePlayersForMatch(match);
   
+  // Nur Spieler MIT Spielerpass (canVote = true) zählen
   const countedPlayers = allPossiblePlayers.filter(player => {
     if (player.canVote === false) return false;
     
     const playerTeamNumber = getTeamNumber(player.team);
     const matchTeamNumber = getTeamNumber(match.team);
     
+    // Gleiches Team = immer zählen
     if (matchTeamNumber === playerTeamNumber) return true;
     
+    // Höheres Team = nur zählen wenn canVoteInHigher = true
     if (matchTeamNumber > playerTeamNumber) {
       return player.canVoteInHigher === true;
     }
@@ -1719,6 +2234,7 @@ function deleteMatchReport(matchId) {
   showToast("✅ Spielbericht gelöscht!", "success");
 }
 
+// 🔥 GEÄNDERT: In saveMatchReport() wird bereits korrekt gefiltert
 function saveMatchReport(matchId) {
   const match = state.matches.find(m => m.id === matchId);
   if (!match) return;
@@ -1904,12 +2420,13 @@ function requestAttendanceChange(matchId, newStatus) {
   const match = state.matches?.find(m => m.id === matchId);
   if (!match || !player) return false;
   
+  // Prüfen ob Spieler in diesem Match abstimmen darf
   const playerTeamNumber = getTeamNumber(player.team);
   const matchTeamNumber = getTeamNumber(match.team);
   
   const canVoteInThisMatch = 
-    player.team === match.team || 
-    (player.canVoteInHigher && matchTeamNumber > playerTeamNumber);
+    player.team === match.team || // Gleiches Team
+    (player.canVoteInHigher && matchTeamNumber > playerTeamNumber); // Höheres Team erlaubt
   
   if (!canVoteInThisMatch) {
     showToast("Du darfst in diesem Spiel nicht abstimmen!", "warning");
@@ -1981,12 +2498,13 @@ function updateMatchAttendance(matchId, status) {
   const match = state.matches?.find(m => m.id === matchId);
   if (!match) return;
   
+  // Prüfen ob Spieler in diesem Match abstimmen darf
   const playerTeamNumber = getTeamNumber(player.team);
   const matchTeamNumber = getTeamNumber(match.team);
   
   const canVoteInThisMatch = 
-    player.team === match.team || 
-    (player.canVoteInHigher && matchTeamNumber > playerTeamNumber);
+    player.team === match.team || // Gleiches Team
+    (player.canVoteInHigher && matchTeamNumber > playerTeamNumber); // Höheres Team erlaubt
   
   if (!canVoteInThisMatch) {
     showToast("Du darfst in diesem Spiel nicht abstimmen!", "warning");
@@ -2039,6 +2557,7 @@ function toggleVoteRight(playerId) {
   render();
 }
 
+// Höhere Teams Toggle
 function toggleVoteHigher(playerId) {
   const player = findPlayer(playerId);
   if (!player) return;
@@ -2797,6 +3316,7 @@ function saveSplashEvent(eventType, field, value) {
   showToast(`✅ ${eventType} Einstellung gespeichert`, 'success');
 }
 
+// 🔥 Splash-Bilder in Konfiguration auf 60x60
 async function handleSplashImageUpload(event, eventType) {
   const file = event.target.files[0];
   if (!file) return;
@@ -2852,6 +3372,7 @@ function addCustomEvent() {
   state.splashConfig.customEvents.push(newEvent);
   save();
   showToast('✅ Neues Event erstellt', 'success');
+  renderSplashConfig();
 }
 
 function deleteCustomEvent(eventId) {
@@ -2859,6 +3380,7 @@ function deleteCustomEvent(eventId) {
   state.splashConfig.customEvents = state.splashConfig.customEvents.filter(e => e.id !== eventId);
   save();
   showToast('✅ Event gelöscht', 'success');
+  renderSplashConfig();
 }
 
 function updateCustomEvent(eventId, field, value) {
@@ -2869,6 +3391,7 @@ function updateCustomEvent(eventId, field, value) {
   }
 }
 
+// 🔥 Custom Event Bilder in Konfiguration auf 60x60
 async function handleCustomEventImageUpload(event, eventId) {
   const file = event.target.files[0];
   if (!file) return;
@@ -2909,6 +3432,7 @@ async function handleCustomEventImageUpload(event, eventId) {
 
 // ==================== NEUE DATENSCHUTZ FUNKTIONEN ====================
 
+// 🔥 Vollbild-Datenschutz anzeigen (nach Login)
 function showDatenschutzFullscreen() {
   if (!session || session.role !== 'parent') return false;
   
@@ -2978,6 +3502,7 @@ function closeDatenschutzFullscreen() {
   if (dialog) dialog.remove();
 }
 
+// PRO Version (Zustimmen)
 function datenschutzAccept() {
   if (!session || session.role !== 'parent') return;
   
@@ -3001,6 +3526,7 @@ function datenschutzAccept() {
   }
 }
 
+// LIGHT Version (Ablehnen)
 function datenschutzReject() {
   if (!session || session.role !== 'parent') return;
   
@@ -3019,6 +3545,7 @@ function datenschutzReject() {
   render();
 }
 
+// 🔥 Reset-Antrag stellen (Eltern wollen neu abstimmen)
 function requestDatenschutzReset() {
   if (!session || session.role !== 'parent') return;
   
@@ -3057,6 +3584,7 @@ function requestDatenschutzReset() {
   render();
 }
 
+// 🔥 Reset-Antrag genehmigen/ablehnen (Trainer)
 function approveDatenschutzReset(requestId, approved) {
   if (session?.role !== 'admin') return;
   
@@ -3091,6 +3619,7 @@ function approveDatenschutzReset(requestId, approved) {
   render();
 }
 
+// 🔥 Manueller Reset durch Trainer (in der Konfig)
 function manualResetDatenschutz(playerId) {
   if (session?.role !== 'admin') return;
   
@@ -3114,6 +3643,7 @@ function manualResetDatenschutz(playerId) {
   render();
 }
 
+// 🔥 Prüfen ob User PRO oder LIGHT hat
 function isProUser() {
   if (!session || session.role !== 'parent') return true;
   
@@ -3124,6 +3654,7 @@ function isProUser() {
   return consent.status === 'accepted';
 }
 
+// 🔥 LIGHT Version Parent View
 function renderParentLightView() {
   const player = findPlayer(session.playerId);
   if (!player) return `<div class="section">Fehler: Kein Spieler gefunden</div>`;
@@ -3173,75 +3704,166 @@ function setParentLightView(view) {
   render();
 }
 
-function renderDatenschutzConfig() {
-  if (session?.role !== 'admin') return '';
+// 🔥 NEUE: Datenschutz-Zentrale mit Detailansicht
+function renderDatenschutzZentrale() {
+  if (session?.role !== 'admin') {
+    return `<div class="section"><div class="card"><h3>⛔ Kein Zugriff</h3><p class="small">Nur der Haupttrainer hat Zugriff auf die Datenschutz-Zentrale.</p></div></div>`;
+  }
   
   const players = state.players || [];
   const resetRequests = state.datenschutz?.resetRequests?.filter(r => r.status === 'pending') || [];
   
+  // Wenn ein Spieler ausgewählt wurde, Detailansicht zeigen
+  if (datenschutzDetailView) {
+    const player = findPlayer(datenschutzDetailView);
+    if (!player) {
+      datenschutzDetailView = null;
+      return renderDatenschutzZentrale();
+    }
+    
+    const userId = 'u-' + player.id;
+    const ds = state.datenschutz?.zustimmungen?.[userId];
+    
+    return `
+      <div class="section">
+        <button class="back-button" onclick="closeDatenschutzDetail()">
+          <span style="font-size: 24px;">←</span> Zurück zur Übersicht
+        </button>
+        
+        <div class="card">
+          <h3>🔐 Datenschutz-Details: ${player.name}</h3>
+          
+          <div style="background: #f5f9f6; padding: 20px; border-radius: 16px; margin: 20px 0;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+              <div>
+                <div class="small" style="color: var(--muted);">Team</div>
+                <div style="font-size: 18px; font-weight: 600;">${player.team}</div>
+              </div>
+              <div>
+                <div class="small" style="color: var(--muted);">Geburtstag</div>
+                <div style="font-size: 18px; font-weight: 600;">${player.birthday || '-'}</div>
+              </div>
+            </div>
+          </div>
+          
+          <div style="background: ${ds?.status === 'accepted' ? 'var(--datenschutz-accepted)' : ds?.status === 'rejected' ? 'var(--datenschutz-rejected)' : '#f0f0f0'}; color: white; padding: 20px; border-radius: 16px; margin: 20px 0;">
+            <div style="font-size: 24px; margin-bottom: 10px;">
+              ${ds?.status === 'accepted' ? '✅' : ds?.status === 'rejected' ? '📱' : '⏳'}
+            </div>
+            <div style="font-size: 20px; font-weight: 600; margin-bottom: 5px;">
+              ${ds?.status === 'accepted' ? 'PRO Version' : ds?.status === 'rejected' ? 'LIGHT Version' : 'Keine Entscheidung'}
+            </div>
+            ${ds ? `
+              <div style="margin-top: 10px; opacity: 0.9;">
+                Entscheidung vom: ${new Date(ds.date).toLocaleString('de-DE', {
+                  day: '2-digit',
+                  month: '2-digit',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
+              </div>
+            ` : ''}
+          </div>
+          
+          <div style="display: flex; gap: 12px; margin-top: 20px;">
+            <button class="btn warn" style="flex: 1;" onclick="manualResetDatenschutz('${player.id}')">🔄 Zurücksetzen</button>
+            <button class="btn secondary" style="flex: 1;" onclick="closeDatenschutzDetail()">Schließen</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  
+  // Übersicht aller Spieler
   return `
-    <div class="card">
-      <h3>🔐 Datenschutz-Zentrale</h3>
+    <div class="section">
+      <button class="back-button" onclick="setAdminView('config')">
+        <span style="font-size: 24px;">←</span> Zurück zur Konfiguration
+      </button>
       
-      <h4 style="margin: 20px 0 10px;">📊 Aktuelle Zustimmungen</h4>
-      <table class="statistics-table">
-        <thead>
-          <tr>
-            <th>Spieler</th>
-            <th>Team</th>
-            <th>Version</th>
-            <th>Seit</th>
-            <th>Aktion</th>
-          </tr>
-        </thead>
-        <tbody>
+      <div class="card">
+        <h3>🔐 Datenschutz-Zentrale</h3>
+        <p class="small" style="margin-bottom: 20px;">Klicke auf einen Spieler für detaillierte Informationen</p>
+        
+        ${resetRequests.length > 0 ? `
+          <div style="background: #fff3cd; border-left: 8px solid #ffc107; padding: 16px; border-radius: 12px; margin-bottom: 24px;">
+            <h4 style="margin: 0 0 10px 0; color: #856404;">🔄 Offene Reset-Anträge (${resetRequests.length})</h4>
+            ${resetRequests.map(r => `
+              <div style="background: white; padding: 12px; border-radius: 8px; margin-bottom: 8px;">
+                <div style="font-weight: 600;">${r.playerName}</div>
+                <div class="small">Antrag vom ${new Date(r.requestedAt).toLocaleString('de-DE')}</div>
+                <div style="margin: 8px 0;">Möchte neu abstimmen (aktuell: ${r.currentStatus === 'accepted' ? 'PRO' : r.currentStatus === 'rejected' ? 'LIGHT' : 'keine'})</div>
+                <div style="display: flex; gap: 8px;">
+                  <button class="btn approve small" style="flex:1;" onclick="approveDatenschutzReset('${r.id}', true)">✓ Genehmigen</button>
+                  <button class="btn reject small" style="flex:1;" onclick="approveDatenschutzReset('${r.id}', false)">✗ Ablehnen</button>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        ` : ''}
+        
+        <h4 style="margin: 0 0 15px 0;">📊 Alle Spieler</h4>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
           ${players.map(p => {
             const userId = 'u-' + p.id;
             const ds = state.datenschutz?.zustimmungen?.[userId];
-            let version = '⏳ Keine';
-            let date = '-';
+            let statusIcon = '⏳';
+            let statusText = 'Keine Entscheidung';
+            let statusColor = '#f0f0f0';
+            
             if (ds) {
-              version = ds.status === 'accepted' ? '✅ PRO' : '📱 LIGHT';
-              date = new Date(ds.date).toLocaleDateString('de-DE');
+              if (ds.status === 'accepted') {
+                statusIcon = '✅';
+                statusText = 'PRO';
+                statusColor = 'var(--datenschutz-accepted)';
+              } else {
+                statusIcon = '📱';
+                statusText = 'LIGHT';
+                statusColor = 'var(--datenschutz-rejected)';
+              }
             }
+            
+            const dateStr = ds ? new Date(ds.date).toLocaleDateString('de-DE') : '-';
+            
             return `
-              <tr>
-                <td><strong>${p.name}</strong></td>
-                <td>${p.team}</td>
-                <td style="text-align: center; font-weight: 600;">${version}</td>
-                <td>${date}</td>
-                <td>
-                  <button class="btn warn small" onclick="manualResetDatenschutz('${p.id}')">🔄 Reset</button>
-                </td>
-              </tr>
+              <div onclick="showDatenschutzDetail('${p.id}')" style="cursor: pointer; background: white; border: 2px solid var(--line); border-radius: 16px; padding: 16px; display: flex; align-items: center; gap: 16px; transition: 0.2s;">
+                <div style="width: 50px; height: 50px; border-radius: 25px; background: ${statusColor}; display: flex; align-items: center; justify-content: center; font-size: 24px; color: white;">
+                  ${statusIcon}
+                </div>
+                <div style="flex: 1;">
+                  <div style="font-weight: 600; font-size: 16px;">${p.name}</div>
+                  <div style="display: flex; gap: 16px; margin-top: 4px;">
+                    <span class="small">${p.team}</span>
+                    <span class="small">Entscheidung: ${dateStr}</span>
+                  </div>
+                </div>
+                <div style="color: var(--blue); font-size: 20px;">›</div>
+              </div>
             `;
           }).join('')}
-        </tbody>
-      </table>
-      
-      ${resetRequests.length > 0 ? `
-        <h4 style="margin: 30px 0 10px;">🔄 Offene Reset-Anträge</h4>
-        ${resetRequests.map(r => `
-          <div class="notification-item" style="margin-bottom: 10px;">
-            <div style="font-weight: 600;">${r.playerName}</div>
-            <div class="small">Antrag vom ${new Date(r.requestedAt).toLocaleString('de-DE')}</div>
-            <div style="margin: 8px 0;">Möchte neu abstimmen (aktuell: ${r.currentStatus === 'accepted' ? 'PRO' : r.currentStatus === 'rejected' ? 'LIGHT' : 'keine'})</div>
-            <div style="display: flex; gap: 8px;">
-              <button class="btn approve small" style="flex:1;" onclick="approveDatenschutzReset('${r.id}', true)">✓ Genehmigen</button>
-              <button class="btn reject small" style="flex:1;" onclick="approveDatenschutzReset('${r.id}', false)">✗ Ablehnen</button>
-            </div>
-          </div>
-        `).join('')}
-      ` : ''}
-      
-      <div style="margin-top: 20px; padding: 12px; background: #f5f9f6; border-radius: 8px;">
-        <p class="small">✅ PRO = Vollversion • 📱 LIGHT = Nur Kalender + Benachrichtigungen + Passwort</p>
-        <p class="small">🔄 Reset = Setzt die Entscheidung zurück - Eltern müssen neu wählen</p>
+        </div>
+        
+        <div style="margin-top: 24px; padding: 12px; background: #f5f9f6; border-radius: 8px;">
+          <p class="small">✅ PRO = Vollversion • 📱 LIGHT = Nur Kalender + Benachrichtigungen + Passwort</p>
+          <p class="small">⏳ Keine = Noch keine Entscheidung getroffen</p>
+        </div>
       </div>
     </div>
   `;
 }
 
+function showDatenschutzDetail(playerId) {
+  datenschutzDetailView = playerId;
+  render();
+}
+
+function closeDatenschutzDetail() {
+  datenschutzDetailView = null;
+  render();
+}
+
+// 🔥 Geburtstagsdialog
 function showBirthdayDialog(playerId) {
   const player = findPlayer(playerId);
   if (!player) return;
@@ -3291,7 +3913,7 @@ function saveFirstBirthday() {
   }
 }
 
-// ==================== RENDER FUNKTIONEN ====================
+// ==================== VIEW RENDERING ====================
 function renderHeader() {
   const roleLabels = { admin: "Haupttrainer", coach: "Co-Trainer", parent: "Eltern" };
   const roleName = session.role === "parent" ? 
@@ -3689,6 +4311,7 @@ function renderStatistics() {
   `;
 }
 
+// 🔥 GEÄNDERT: In der erweiterten Trainer-Ansicht nur Spieler anzeigen, die abstimmen dürfen
 function renderCalendar() {
   let matches;
   let playerId;
@@ -3747,6 +4370,7 @@ function renderCalendar() {
           
           let detailedHtml = '';
           if (isTrainerOrCoach && !isParentMode && isExpanded) {
+            // 🔥 NUR Spieler anzeigen, die abstimmen dürfen (gleiche Logik wie bei countAttendance)
             const eligiblePlayers = getEligiblePlayersForMatch(m)
               .filter(player => {
                 if (player.canVote === false) return false;
@@ -3995,6 +4619,7 @@ function renderTrainingHistory() {
   `;
 }
 
+// 🔥 GEÄNDERT: Im Spielbericht nur Spieler anzeigen, die mit "Kommen" oder "Vielleicht" abgestimmt haben
 function renderMatchReport() {
   if (session.role !== "admin") {
     return `
@@ -4290,6 +4915,7 @@ function renderPlayers() {
             </div>
           </div>
           
+          <!-- 🔥 Abstimmrecht (Spielerpass) -->
           <div style="margin-top: 16px; padding: 12px; background: #f5f9f6; border-radius: 12px;">
             <label style="display: flex; align-items: center; gap: 12px; cursor: pointer;">
               <span style="font-weight: 600; flex: 1;">⚽ Abstimmrecht (Spielerpass):</span>
@@ -4305,6 +4931,7 @@ function renderPlayers() {
             </p>
           </div>
           
+          <!-- 🔥 NEU: Höhere Teams -->
           <div style="margin-top: 16px; padding: 12px; background: #f5f9f6; border-radius: 12px;">
             <label style="display: flex; align-items: center; gap: 12px; cursor: pointer;">
               <span style="font-weight: 600; flex: 1;">⚽ Höhere Teams:</span>
@@ -4396,6 +5023,7 @@ function renderSplashConfig() {
     customEvents: []
   };
   
+  // Vorschaubilder in Konfiguration auf 60x60
   function getPreviewHtml(eventType) {
     const img = config[eventType]?.image;
     if (img) {
@@ -4554,7 +5182,7 @@ function renderSplashConfig() {
         </div>
         
         <h4 style="margin-top: 30px;">📅 EIGENE EVENTS</h4>
-        <p class="small">Erstelle eigene Splash-Screens für besondere Anlässe</p>
+        <p class="small">Erstelle eigene Splash-Screens für besondere Anlässe (Meisterschaft, Turniere, etc.)</p>
         
         <button class="btn primary" style="margin-bottom: 20px;" onclick="addCustomEvent()">
           ➕ NEUES EVENT
@@ -4669,6 +5297,7 @@ function renderConfig() {
           <p class="small" style="margin-top: 10px;">Das Sponsor-Logo erscheint rechts im Header.</p>
         </div>
         
+        <!-- 🔥 NEU: Standard-Spielerfoto -->
         <div class="default-photo-upload">
           <h4 style="margin: 0 0 16px 0; color: var(--blue);">📸 STANDARD-SPIELERFOTO</h4>
           <p class="small" style="margin-bottom: 16px;">Dieses Foto wird automatisch bei jedem neuen Spieler gesetzt.</p>
@@ -4890,7 +5519,14 @@ function renderConfig() {
           <button class="btn primary" style="width: 100%;" onclick="repairPushTokens()">🔧 Jetzt reparieren</button>
         </div>
         
-        ${renderDatenschutzConfig()}
+        <!-- 🔥 NEU: Button zur Datenschutz-Zentrale -->
+        <div style="background: #e8f5e9; padding: 20px; border-radius: 16px; margin: 24px 0; border-left: 8px solid var(--primary);">
+          <h4 style="margin: 0 0 10px 0; color: var(--primary);">🔐 DATENSCHUTZ-ZENTRALE</h4>
+          <p class="small" style="margin-bottom: 16px;">Hier siehst du alle Zustimmungen der Eltern, kannst Details einsehen und Anträge bearbeiten.</p>
+          <button class="btn primary" style="width: 100%;" onclick="setAdminView('datenschutz')">
+            🔐 ZUR DATENSCHUTZ-ZENTRALE
+          </button>
+        </div>
         
         <h4 style="margin-top: 30px; color: var(--red);">⚠️ GEFAHRENZONE</h4>
         
@@ -4914,17 +5550,27 @@ function renderConfig() {
         
         <h4 style="margin-top: 24px;">📊 Statistiken</h4>
         <div style="background: #f5f9f6; padding: 12px; border-radius: 12px;">
-          <div>👥 Spieler: ${state.players?.length || 0}</div>
-          <div>⚽ Spiele: ${state.matches?.length || 0}</div>
-          <div>🏋️ Trainings: ${state.trainings?.length || 0}</div>
-          <div>👤 Eltern-Zugänge: ${state.users?.filter(u => u.role === "parent").length || 0}</div>
-          <div>👥 Co-Trainer: ${coaches.length}</div>
-          <div>📊 Gespeicherte Tests: ${state.players?.reduce((sum, p) => sum + (p.tests?.length || 0), 0) || 0}</div>
-          <div>📅 Aktuelle Saison: ${state.currentSeason}</div>
+          <div class="listline">👥 Spieler: ${state.players?.length || 0}</div>
+          <div class="listline">⚽ Spiele: ${state.matches?.length || 0}</div>
+          <div class="listline">🏋️ Trainings: ${state.trainings?.length || 0}</div>
+          <div class="listline">👤 Eltern-Zugänge: ${state.users?.filter(u => u.role === "parent").length || 0}</div>
+          <div class="listline">👥 Co-Trainer: ${coaches.length}</div>
+          <div class="listline">📊 Gespeicherte Tests: ${state.players?.reduce((sum, p) => sum + (p.tests?.length || 0), 0) || 0}</div>
+          <div class="listline">📅 Aktuelle Saison: ${state.currentSeason}</div>
         </div>
       </div>
     </div>
   `;
+  
+  setTimeout(() => {
+    const teamSelect = document.getElementById('match-team');
+    const opponentsField = document.getElementById('opponents-field');
+    if (teamSelect && opponentsField) {
+      teamSelect.addEventListener('change', function() {
+        opponentsField.style.display = 'block';
+      });
+    }
+  }, 100);
 }
 
 function saveTeamConfig() {
@@ -5018,16 +5664,20 @@ function renderMilestones(player) {
 }
 
 function renderParentView() {
+  // Prüfen ob User schon entschieden hat
   const isPro = isProUser();
   
+  // Wenn noch keine Entscheidung, nur leeren Container (der Vollbild-Dialog wird separat angezeigt)
   if (isPro === null) {
     return '<div class="section"></div>';
   }
   
+  // LIGHT Version
   if (!isPro) {
     return renderParentLightView();
   }
   
+  // PRO Version (Original)
   const player = findPlayer(session.playerId);
   if (!player) return `<div class="section">Fehler: Kein Spieler gefunden</div>`;
   
@@ -5486,6 +6136,7 @@ function render() {
     else if (adminView === "statistics") content += renderStatistics();
     else if (adminView === "config") content += renderConfig();
     else if (adminView === "splash") content += renderSplashConfig();
+    else if (adminView === "datenschutz") content += renderDatenschutzZentrale();
     else if (adminView === "password") content += `
       <div class="section">
         <div class="card">
@@ -5521,25 +6172,13 @@ async function startApp() {
   listenState();
   render();
   
-  // Splash kurz anzeigen
   setTimeout(() => {
     showSplashScreen();
   }, 100);
   
-  // Nach 2 Sekunden ausblenden
+  // Sicherheitshalber nach 3 Sekunden Splash ausblenden
   setTimeout(() => {
     hideSplash();
-  }, 2000);
-  
-  // ABSOLUTE NOTFALL-SICHERUNG nach 3 Sekunden
-  setTimeout(() => {
-    const splash = document.getElementById('splash-screen');
-    const app = document.getElementById('app');
-    if (splash && !splash.classList.contains('hidden')) {
-      console.log('⚠️ NOTFALL: Splash erzwungen ausgeblendet');
-      splash.classList.add('hidden');
-      if (app) app.style.opacity = '1';
-    }
   }, 3000);
   
   const now = new Date();
@@ -5615,6 +6254,7 @@ window.confirmDeleteAllPlayers = confirmDeleteAllPlayers;
 window.setAdminView = setAdminView;
 window.setCoachView = setCoachView;
 window.setParentView = setParentView;
+window.setParentLightView = setParentLightView;
 window.setTrainerKindView = setTrainerKindView;
 window.setCoachKindView = setCoachKindView;
 window.saveTeamConfig = saveTeamConfig;
@@ -5638,10 +6278,8 @@ window.datenschutzReject = datenschutzReject;
 window.requestDatenschutzReset = requestDatenschutzReset;
 window.approveDatenschutzReset = approveDatenschutzReset;
 window.manualResetDatenschutz = manualResetDatenschutz;
-window.setParentLightView = setParentLightView;
-window.showBirthdayDialog = showBirthdayDialog;
-window.closeBirthdayDialog = closeBirthdayDialog;
-window.saveFirstBirthday = saveFirstBirthday;
+window.showDatenschutzDetail = showDatenschutzDetail;
+window.closeDatenschutzDetail = closeDatenschutzDetail;
 
 startApp();
 </script>
