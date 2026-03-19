@@ -145,7 +145,6 @@ html, body {
   visibility: hidden;
 }
 
-/* Haupt-Splash auf 150x150 */
 .splash-screen img {
   width: 150px;
   height: 150px;
@@ -1701,7 +1700,8 @@ const seed = {
   
   clubLogo: defaultLogo,
   attendanceRequests: [],
-  currentSeason: 2026,
+  // 🔥 Saison auf 2025/2026 geändert
+  currentSeason: "2025/2026",
   pushTokens: {},
   reminderDays: 0,
   
@@ -1748,9 +1748,9 @@ const seed = {
       tests: [], 
       matchReports: [], 
       seasonHistory: {
-        2025: { goals: 12, assists: 8, trainings: 24, percentage: 95 },
-        2024: { goals: 5, assists: 3, trainings: 18, percentage: 82 },
-        2023: { goals: 2, assists: 1, trainings: 12, percentage: 75 }
+        2024: { goals: 12, assists: 8, trainings: 24, percentage: 95 },
+        2023: { goals: 5, assists: 3, trainings: 18, percentage: 82 },
+        2022: { goals: 2, assists: 1, trainings: 12, percentage: 75 }
       },
       canVote: true,
       canVoteInHigher: false
@@ -1819,10 +1819,10 @@ let session = JSON.parse(sessionStorage.getItem("usv-staw-session") || "null");
 let adminView = "dashboard";
 let coachView = "dashboard";
 let parentView = "kind";
-let parentLightView = "calendar";
 let trainerKindView = "kind";
 let coachKindView = "kind";
-let datenschutzDetailView = null; // Für Detailansicht in Datenschutz-Zentrale
+let parentLightView = "calendar";
+let datenschutzDetailView = null;
 
 // ==================== FIREBASE FUNKTIONEN ====================
 async function save() {
@@ -3171,7 +3171,7 @@ function resetSeason() {
     };
   });
   
-  state.currentSeason++;
+  state.currentSeason = "2026/2027";
   
   state.matches = [];
   state.trainings = [];
@@ -3579,6 +3579,7 @@ function requestDatenschutzReset() {
   save();
   showToast('✅ Antrag auf Neubewertung gesendet!', 'success');
   
+  // 🔥 Push an Trainer
   sendPushNotification('u1', '🔄 Datenschutz Reset', `${player.name} möchte neu abstimmen`);
   
   render();
@@ -3594,6 +3595,7 @@ function approveDatenschutzReset(requestId, approved) {
   const userId = 'u-' + request.playerId;
   
   if (approved) {
+    // 🔥 Zustimmung löschen - Eltern müssen neu abstimmen
     if (state.datenschutz.zustimmungen[userId]) {
       delete state.datenschutz.zustimmungen[userId];
     }
@@ -3601,6 +3603,7 @@ function approveDatenschutzReset(requestId, approved) {
     request.status = 'approved';
     showToast(`✅ Reset für ${request.playerName} genehmigt`, 'success');
     
+    // Push an Eltern
     const parentUser = findUserForPlayer(request.playerId);
     if (parentUser) {
       sendPushNotification(parentUser.id, '✅ Reset genehmigt', 'Du kannst jetzt neu abstimmen');
@@ -3654,7 +3657,7 @@ function isProUser() {
   return consent.status === 'accepted';
 }
 
-// 🔥 LIGHT Version Parent View
+// 🔥 LIGHT Version Parent View (gleiches Design wie PRO)
 function renderParentLightView() {
   const player = findPlayer(session.playerId);
   if (!player) return `<div class="section">Fehler: Kein Spieler gefunden</div>`;
@@ -3665,12 +3668,11 @@ function renderParentLightView() {
   
   return `
     <div class="section">
-      <div class="card" style="background: var(--light-bg); border: 2px solid var(--light-border);">
+      <div class="card" style="margin-bottom: 16px; background: var(--light-bg); border: 2px solid var(--light-border);">
         <div style="display: flex; justify-content: space-between; align-items: center;">
-          <h3>📱 Team App LIGHT ${lightBadge}</h3>
-          <button class="btn secondary small" onclick="requestDatenschutzReset()">🔄 Neu abstimmen</button>
+          <span>📱 LIGHT Version</span>
+          <button class="btn secondary small" onclick="requestDatenschutzReset()" style="background: white; color: #666;">🔄 Neu abstimmen</button>
         </div>
-        <p class="small" style="margin-top: 8px;">Du nutzt die LIGHT Version mit eingeschränkten Funktionen.</p>
       </div>
       
       <div class="tabs" style="margin-bottom: 16px;">
@@ -3711,7 +3713,6 @@ function renderDatenschutzZentrale() {
   }
   
   const players = state.players || [];
-  const resetRequests = state.datenschutz?.resetRequests?.filter(r => r.status === 'pending') || [];
   
   // Wenn ein Spieler ausgewählt wurde, Detailansicht zeigen
   if (datenschutzDetailView) {
@@ -3785,23 +3786,6 @@ function renderDatenschutzZentrale() {
       <div class="card">
         <h3>🔐 Datenschutz-Zentrale</h3>
         <p class="small" style="margin-bottom: 20px;">Klicke auf einen Spieler für detaillierte Informationen</p>
-        
-        ${resetRequests.length > 0 ? `
-          <div style="background: #fff3cd; border-left: 8px solid #ffc107; padding: 16px; border-radius: 12px; margin-bottom: 24px;">
-            <h4 style="margin: 0 0 10px 0; color: #856404;">🔄 Offene Reset-Anträge (${resetRequests.length})</h4>
-            ${resetRequests.map(r => `
-              <div style="background: white; padding: 12px; border-radius: 8px; margin-bottom: 8px;">
-                <div style="font-weight: 600;">${r.playerName}</div>
-                <div class="small">Antrag vom ${new Date(r.requestedAt).toLocaleString('de-DE')}</div>
-                <div style="margin: 8px 0;">Möchte neu abstimmen (aktuell: ${r.currentStatus === 'accepted' ? 'PRO' : r.currentStatus === 'rejected' ? 'LIGHT' : 'keine'})</div>
-                <div style="display: flex; gap: 8px;">
-                  <button class="btn approve small" style="flex:1;" onclick="approveDatenschutzReset('${r.id}', true)">✓ Genehmigen</button>
-                  <button class="btn reject small" style="flex:1;" onclick="approveDatenschutzReset('${r.id}', false)">✗ Ablehnen</button>
-                </div>
-              </div>
-            `).join('')}
-          </div>
-        ` : ''}
         
         <h4 style="margin: 0 0 15px 0;">📊 Alle Spieler</h4>
         <div style="display: flex; flex-direction: column; gap: 8px;">
@@ -3936,6 +3920,14 @@ function renderHeader() {
     }
   }
   
+  // 🔥 Auch Datenschutz-Anträge im Badge anzeigen
+  if (session.role === "admin" && state.datenschutz?.resetRequests) {
+    const pendingDS = state.datenschutz.resetRequests.filter(r => r.status === 'pending').length;
+    if (pendingDS > 0) {
+      notificationBadge = `<span class="notification-badge">${pendingDS} DS</span>`;
+    }
+  }
+  
   let pushBadge = '';
   if (session.role === 'parent') {
     const unreadCount = countUnconfirmedPushes(session.id);
@@ -4022,29 +4014,51 @@ function renderDashboard() {
   const upcomingBirthdays = getUpcomingBirthdays(3);
   
   let requestsHtml = '';
+  
+  // 🔥 Attendance-Anträge
   if (session.role === "admin" && state.attendanceRequests) {
     const pendingRequests = state.attendanceRequests.filter(r => r.status === 'pending');
     
     if (pendingRequests.length > 0) {
-      requestsHtml = `
-        <div class="card">
-          <h3>🔔 Änderungsanträge</h3>
-          ${pendingRequests.map(r => `
-            <div class="notification-item">
-              <div style="font-weight: 600;">${r.playerName}</div>
-              <div class="small">${r.matchTitle} (${r.matchDate})</div>
-              <div style="margin: 8px 0;">
-                möchte von <strong>${getGermanStatus(r.currentStatus)}</strong> auf <strong>${getGermanStatus(r.requestedStatus)}</strong> ändern
-              </div>
-              <div style="display: flex; gap: 8px;">
-                <button class="btn approve small" style="flex:1;" onclick="approveAttendanceRequest('${r.id}', true)">✓ Genehmigen</button>
-                <button class="btn reject small" style="flex:1;" onclick="approveAttendanceRequest('${r.id}', false)">✗ Ablehnen</button>
-              </div>
-            </div>
-          `).join('')}
+      requestsHtml += pendingRequests.map(r => `
+        <div class="notification-item">
+          <div style="font-weight: 600;">${r.playerName}</div>
+          <div class="small">${r.matchTitle} (${r.matchDate})</div>
+          <div style="margin: 8px 0;">
+            möchte von <strong>${getGermanStatus(r.currentStatus)}</strong> auf <strong>${getGermanStatus(r.requestedStatus)}</strong> ändern
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn approve small" style="flex:1;" onclick="approveAttendanceRequest('${r.id}', true)">✓ Genehmigen</button>
+            <button class="btn reject small" style="flex:1;" onclick="approveAttendanceRequest('${r.id}', false)">✗ Ablehnen</button>
+          </div>
         </div>
-      `;
+      `).join('');
     }
+  }
+  
+  // 🔥 Datenschutz-Reset-Anträge (im Dashboard anzeigen)
+  if (session.role === "admin" && state.datenschutz?.resetRequests) {
+    const pendingDS = state.datenschutz.resetRequests.filter(r => r.status === 'pending');
+    
+    if (pendingDS.length > 0) {
+      requestsHtml += pendingDS.map(r => `
+        <div class="notification-item" style="border-left-color: var(--datenschutz-pending);">
+          <div style="font-weight: 600;">${r.playerName}</div>
+          <div class="small">Datenschutz-Reset</div>
+          <div style="margin: 8px 0;">
+            möchte neu abstimmen (aktuell: ${r.currentStatus === 'accepted' ? 'PRO' : r.currentStatus === 'rejected' ? 'LIGHT' : 'keine'})
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn approve small" style="flex:1;" onclick="approveDatenschutzReset('${r.id}', true)">✓ Genehmigen</button>
+            <button class="btn reject small" style="flex:1;" onclick="approveDatenschutzReset('${r.id}', false)">✗ Ablehnen</button>
+          </div>
+        </div>
+      `).join('');
+    }
+  }
+  
+  if (requestsHtml) {
+    requestsHtml = `<div class="card"><h3>🔔 Offene Anträge</h3>${requestsHtml}</div>`;
   }
   
   const topScorers = [...players].filter(p => p.goals > 0).sort((a,b) => b.goals - a.goals);
@@ -5594,12 +5608,10 @@ function renderMilestones(player) {
   };
   
   function formatSeason(year) {
-    const startYear = parseInt(year);
-    const endYear = startYear + 1;
-    return `${startYear}/${endYear}`;
+    return year;
   }
   
-  const currentSeasonFormatted = formatSeason(state.currentSeason);
+  const currentSeasonFormatted = state.currentSeason;
   
   const sortedSeasons = Object.keys(seasons).sort((a, b) => b - a);
   
@@ -5629,10 +5641,9 @@ function renderMilestones(player) {
         
         ${sortedSeasons.length > 0 ? sortedSeasons.map(year => {
           const data = seasons[year];
-          const seasonFormatted = formatSeason(year);
           return `
             <div class="milestone-card">
-              <div class="milestone-year">📅 Saison ${seasonFormatted}</div>
+              <div class="milestone-year">📅 Saison ${year}</div>
               <div class="milestone-stats">
                 <div class="milestone-stat">
                   <div class="value">${data.goals}</div>
