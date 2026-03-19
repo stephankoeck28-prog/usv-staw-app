@@ -77,6 +77,8 @@
   --permission-border: #5e8fe8;
   --permission-enabled: #2e9b58;
   --permission-disabled: #d45d4a;
+  --sound-bg: #fff0e0;
+  --sound-border: #ffa500;
 }
 
 * { 
@@ -634,6 +636,7 @@ input, select, textarea { width: 100%; padding: 12px; border: 1px solid #dce6de;
 .btn.request { background: var(--notification-border); color: #856404; }
 .btn.reset { background: #6c757d; color: white; }
 .btn.reset:hover { background: #5a6268; }
+.btn.sound { background: var(--sound-bg); color: #b45f06; border: 2px solid var(--sound-border); }
 
 /* Permission Toggle */
 .permission-group {
@@ -940,6 +943,74 @@ input, select, textarea { width: 100%; padding: 12px; border: 1px solid #dce6de;
 }
 .spacer { height: 20px; }
 
+/* Sound Studio */
+.sound-studio {
+  background: var(--sound-bg);
+  border: 3px solid var(--sound-border);
+  border-radius: 20px;
+  padding: 20px;
+  margin: 20px 0;
+}
+.sound-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: white;
+  padding: 12px 16px;
+  border-radius: 12px;
+  margin-bottom: 10px;
+  border-left: 5px solid var(--sound-border);
+}
+.sound-name {
+  font-weight: 600;
+  flex: 1;
+}
+.sound-actions {
+  display: flex;
+  gap: 8px;
+}
+.sound-preview {
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+}
+.sound-preview:hover {
+  background: var(--primary-dark);
+}
+.sound-select {
+  background: var(--sound-bg);
+  border: 2px solid var(--sound-border);
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-weight: 600;
+  color: #b45f06;
+  cursor: pointer;
+}
+.sound-select.active {
+  background: var(--sound-border);
+  color: white;
+}
+.upload-area {
+  background: white;
+  border: 3px dashed var(--sound-border);
+  border-radius: 16px;
+  padding: 20px;
+  text-align: center;
+  margin: 20px 0;
+  cursor: pointer;
+}
+.upload-area:hover {
+  background: #fff9f0;
+}
+
 /* Utils */
 .small { font-size: 12px; color: var(--muted); }
 .hidden { display: none !important; }
@@ -970,6 +1041,118 @@ input, select, textarea { width: 100%; padding: 12px; border: 1px solid #dce6de;
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 
 <script>
+// ==================== DATUMS-FORMATIERUNG ====================
+function formatGermanDate(dateStr) {
+  if (!dateStr) return '-';
+  const [year, month, day] = dateStr.split('-');
+  if (!year || !month || !day) return dateStr;
+  return `${day}.${month}.${year}`;
+}
+
+// Für kurze Anzeige (TT.MM.JJ)
+function formatGermanDateShort(dateStr) {
+  if (!dateStr) return '-';
+  const [year, month, day] = dateStr.split('-');
+  if (!year || !month || !day) return dateStr;
+  return `${day}.${month}.${year.slice(2)}`;
+}
+
+// ==================== SOUND STUDIO FUNKTIONEN ====================
+let audioElements = {};
+
+async function handleSoundUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  if (!file.type.startsWith('audio/')) {
+    showToast("❌ Bitte eine Audiodatei auswählen (MP3, WAV)", "error");
+    return;
+  }
+  
+  if (file.size > 5 * 1024 * 1024) {
+    showToast("❌ Datei zu groß (max 5MB)", "error");
+    return;
+  }
+  
+  showToast("🔄 Lade Sound hoch...", "info", 0);
+  
+  const fileName = `sounds/${Date.now()}-${file.name}`;
+  const downloadUrl = await uploadImageToStorage(file, fileName);
+  
+  if (downloadUrl) {
+    if (!state.customSounds) state.customSounds = [];
+    
+    state.customSounds.push({
+      id: 'sound-' + Date.now(),
+      name: file.name.replace(/\.[^/.]+$/, ""), // Ohne Endung
+      url: downloadUrl,
+      fileName: fileName,
+      uploadedAt: new Date().toISOString()
+    });
+    
+    await save();
+    showToast("✅ Sound erfolgreich hochgeladen!", "success");
+    render();
+  }
+}
+
+function playSound(url) {
+  if (audioElements[url]) {
+    audioElements[url].pause();
+    audioElements[url].currentTime = 0;
+  }
+  
+  const audio = new Audio(url);
+  audioElements[url] = audio;
+  audio.play().catch(e => showToast("❌ Sound konnte nicht abgespielt werden", "error"));
+}
+
+async function deleteSound(soundId) {
+  if (!confirm("Sound wirklich löschen?")) return;
+  
+  const sound = state.customSounds?.find(s => s.id === soundId);
+  if (sound && sound.url.includes('firebasestorage')) {
+    await deleteImageFromStorage(sound.url);
+  }
+  
+  state.customSounds = state.customSounds?.filter(s => s.id !== soundId) || [];
+  
+  if (state.selectedPushSound === soundId) {
+    state.selectedPushSound = 'default';
+  }
+  
+  await save();
+  showToast("✅ Sound gelöscht!", "success");
+  render();
+}
+
+function selectPushSound(soundId) {
+  state.selectedPushSound = soundId;
+  save();
+  showToast("✅ Push-Ton ausgewählt!", "success");
+  render();
+}
+
+function getSoundName(soundId) {
+  if (soundId === 'default') return '🔇 Kein Ton (Standard)';
+  if (soundId === 'whistle') return '⚽ Fußball-Pfeife';
+  
+  const sound = state.customSounds?.find(s => s.id === soundId);
+  return sound ? sound.name : 'Unbekannt';
+}
+
+function getSoundUrl(soundId) {
+  if (soundId === 'whistle') {
+    // Hier müsste die URL zur hochgeladenen Pfeife stehen
+    // Die muss der Trainer einmal hochladen
+    const whistleSound = state.customSounds?.find(s => s.name === 'Fussball Pfeife' || s.id === 'whistle-stored');
+    return whistleSound ? whistleSound.url : null;
+  }
+  
+  const sound = state.customSounds?.find(s => s.id === soundId);
+  return sound ? sound.url : null;
+}
+
 // ==================== SERVICE WORKER REGISTRIERUNG ====================
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then(function(registrations) {
@@ -1104,15 +1287,14 @@ function renderPendingPushes() {
 // ==================== FIREBASE STORAGE FUNKTIONEN ====================
 async function uploadImageToStorage(file, path) {
   try {
-    showToast('🔄 Lade Bild hoch...', 'info', 0);
+    showToast('🔄 Lade hoch...', 'info', 0);
     
     const storageRef = storage.ref();
-    const imageRef = storageRef.child(path);
+    const fileRef = storageRef.child(path);
     
-    await imageRef.put(file);
-    const downloadUrl = await imageRef.getDownloadURL();
+    await fileRef.put(file);
+    const downloadUrl = await fileRef.getDownloadURL();
     
-    showToast('✅ Bild erfolgreich hochgeladen', 'success');
     return downloadUrl;
     
   } catch (error) {
@@ -1126,9 +1308,9 @@ async function deleteImageFromStorage(url) {
   if (!url || !url.includes('firebasestorage')) return;
   
   try {
-    const imageRef = storage.refFromURL(url);
-    await imageRef.delete();
-    console.log('✅ Bild aus Storage gelöscht');
+    const fileRef = storage.refFromURL(url);
+    await fileRef.delete();
+    console.log('✅ Datei aus Storage gelöscht');
   } catch (error) {
     console.log('⚠️ Fehler beim Löschen:', error);
   }
@@ -1570,18 +1752,28 @@ async function sendPushNotification(userId, title, body, type = 'info') {
   await saveIncomingPush(userId, title, body, type);
   
   if (!state.pushTokens) return;
-  
   if (!state.pushTokens[userId]) return;
-  
   if (!Array.isArray(state.pushTokens[userId])) return;
   
   const tokens = state.pushTokens[userId];
-  
   const now = Date.now();
   
   if (lastPush && lastPush.userId === userId && lastPush.body === body && now - lastPush.time < 5000) return;
   
   lastPush = {userId, title, body, time: now};
+  
+  // 🔥 GEWÄHLTEN TON VERWENDEN
+  let soundFile = 'default';
+  if (state.selectedPushSound) {
+    if (state.selectedPushSound === 'whistle') {
+      soundFile = 'whistle';
+    } else {
+      const sound = state.customSounds?.find(s => s.id === state.selectedPushSound);
+      if (sound) {
+        soundFile = sound.url;
+      }
+    }
+  }
   
   for (const token of tokens) {
     try {
@@ -1609,18 +1801,21 @@ async function sendPushNotification(userId, title, body, type = 'info') {
               title: title,
               body: body,
               type: type,
-              click_action: 'OPEN_APP'
+              click_action: 'OPEN_APP',
+              sound: soundFile
             },
             android: {
               priority: 'high',
               notification: {
-                click_action: 'OPEN_APP'
+                click_action: 'OPEN_APP',
+                sound: soundFile,
+                channelId: 'usv_football_channel'
               }
             },
             apns: {
               payload: {
                 aps: {
-                  sound: 'default',
+                  sound: soundFile,
                   'mutable-content': 1
                 }
               }
@@ -1761,7 +1956,7 @@ const seed = {
   
   clubLogo: defaultLogo,
   attendanceRequests: [],
-  // 🔥 SAISON AUF 2025/2026 GESETZT
+  // 🔥 SAISON AUF 2025/2026
   currentSeason: "2025/2026",
   pushTokens: {},
   reminderDays: 0,
@@ -1769,6 +1964,10 @@ const seed = {
   defaultPlayerPhoto: null,
   
   pendingPushes: [],
+  
+  // 🔥 SOUND-EINSTELLUNGEN
+  selectedPushSound: 'default', // 'default', 'whistle', oder sound-id
+  customSounds: [],
   
   splashConfig: {
     duration: 2,
@@ -1781,7 +1980,7 @@ const seed = {
     customEvents: []
   },
   
-  // 🔥 NEU: Berechtigungen für Co-Trainer
+  // 🔥 Berechtigungen für Co-Trainer
   coachPermissions: {},
   
   users: [
@@ -2007,7 +2206,7 @@ async function loadState() {
       }
       
       if (seasonChanged) {
-        await save(); // Sofort in Firebase speichern!
+        await save();
         setTimeout(() => {
           showToast("✅ Saison automatisch auf 2025/2026 korrigiert", "success");
         }, 500);
@@ -3613,7 +3812,7 @@ function deleteSingleTest(playerId, testIndex) {
   showToast("✅ Test wurde gelöscht!", "success");
 }
 
-// 🔥 GEÄNDERT: resetSeason mit automatischer nächster Saison
+// 🔥 resetSeason mit automatischer nächster Saison
 function resetSeason() {
   if (session?.role !== "admin") return;
   
@@ -3638,7 +3837,7 @@ function resetSeason() {
     };
   });
   
-  // 🔥 INTELLIGENTE BERECHNUNG DER NÄCHSTEN SAISON
+  // Intelligente Berechnung der nächsten Saison
   if (state.currentSeason === "2025/2026") {
     state.currentSeason = "2026/2027";
   } else if (state.currentSeason === "2026/2027") {
@@ -3650,7 +3849,6 @@ function resetSeason() {
   } else if (state.currentSeason === "2029/2030") {
     state.currentSeason = "2030/2031";
   } else {
-    // Fallback: Parse und erhöhe
     const parts = state.currentSeason.split('/');
     if (parts.length === 2) {
       const start = parseInt(parts[0]);
@@ -4222,7 +4420,7 @@ function renderDatenschutzZentrale() {
               </div>
               <div>
                 <div class="small" style="color: var(--muted);">Geburtstag</div>
-                <div style="font-size: 18px; font-weight: 600;">${player.birthday || '-'}</div>
+                <div style="font-size: 18px; font-weight: 600;">${formatGermanDate(player.birthday)}</div>
               </div>
             </div>
           </div>
@@ -4298,7 +4496,8 @@ function renderDatenschutzZentrale() {
                   <div style="font-weight: 600; font-size: 16px;">${p.name}</div>
                   <div style="display: flex; gap: 16px; margin-top: 4px;">
                     <span class="small">${p.team}</span>
-                    <span class="small">Entscheidung: ${dateStr}</span>
+                    <span class="small">Geb.: ${formatGermanDateShort(p.birthday)}</span>
+                    <span class="small">Entsch.: ${dateStr}</span>
                   </div>
                 </div>
                 <div style="color: var(--blue); font-size: 20px;">›</div>
@@ -4578,7 +4777,7 @@ function renderDashboard() {
           return `
             <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--line);">
               <span>${b.player.name}</span>
-              <span style="font-weight: 600;">${b.player.birthday} (in ${days} Tagen)</span>
+              <span style="font-weight: 600;">${formatGermanDate(b.player.birthday)} (in ${days} Tagen)</span>
             </div>
           `;
         }).join('')}
@@ -5749,6 +5948,78 @@ function renderSplashConfig() {
   `;
 }
 
+function renderSoundStudio() {
+  return `
+    <div class="section">
+      <button class="back-button" onclick="setAdminView('config')">
+        <span style="font-size: 24px;">←</span> Zurück zur Konfiguration
+      </button>
+      
+      <div class="sound-studio">
+        <h3 style="color: #b45f06; margin-bottom: 20px;">🔊 SOUND-STUDIO</h3>
+        <p class="small" style="margin-bottom: 20px;">Lade hier eigene Sounds hoch und wähle den Push-Ton aus.</p>
+        
+        <h4 style="margin-bottom: 15px;">🎯 Aktueller Push-Ton</h4>
+        <div style="background: white; border-radius: 12px; padding: 16px; margin-bottom: 25px; border-left: 5px solid var(--sound-border);">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <span style="font-weight: 600; font-size: 16px;">${getSoundName(state.selectedPushSound || 'default')}</span>
+              ${state.selectedPushSound !== 'default' && getSoundUrl(state.selectedPushSound) ? `
+                <button class="btn sound small" style="margin-left: 15px;" onclick="playSound('${getSoundUrl(state.selectedPushSound)}')">
+                  ▶️ Testen
+                </button>
+              ` : ''}
+            </div>
+            <span class="badge" style="background: var(--sound-border); color: white;">Aktiv</span>
+          </div>
+        </div>
+        
+        <h4 style="margin-bottom: 15px;">📁 Verfügbare Sounds</h4>
+        
+        <!-- Standard: Kein Ton -->
+        <div class="sound-item">
+          <div class="sound-name">🔇 Kein Ton (Standard)</div>
+          <div class="sound-actions">
+            <button class="sound-select ${state.selectedPushSound === 'default' ? 'active' : ''}" 
+                    onclick="selectPushSound('default')">
+              ${state.selectedPushSound === 'default' ? '✓ Aktiv' : 'Auswählen'}
+            </button>
+          </div>
+        </div>
+        
+        <!-- Benutzerdefinierte Sounds -->
+        ${state.customSounds && state.customSounds.length > 0 ? state.customSounds.map(sound => `
+          <div class="sound-item">
+            <div class="sound-name">🔊 ${sound.name}</div>
+            <div class="sound-actions">
+              <button class="sound-preview" onclick="playSound('${sound.url}')" title="Abspielen">▶️</button>
+              <button class="sound-select ${state.selectedPushSound === sound.id ? 'active' : ''}" 
+                      onclick="selectPushSound('${sound.id}')">
+                ${state.selectedPushSound === sound.id ? '✓ Aktiv' : 'Auswählen'}
+              </button>
+              <button class="btn danger small" onclick="deleteSound('${sound.id}')" title="Löschen">🗑️</button>
+            </div>
+          </div>
+        `).join('') : ''}
+        
+        <!-- Upload Bereich -->
+        <div class="upload-area" onclick="document.getElementById('sound-upload').click()">
+          <input type="file" id="sound-upload" accept="audio/*" style="display: none;" onchange="handleSoundUpload(event)">
+          <div style="font-size: 40px; margin-bottom: 10px;">🎤</div>
+          <div style="font-weight: 600; margin-bottom: 5px;">Sound hochladen</div>
+          <div class="small">MP3 oder WAV (max. 5MB)</div>
+        </div>
+        
+        <div style="margin-top: 20px; padding: 12px; background: #fff9f0; border-radius: 8px;">
+          <p class="small" style="margin: 0;">
+            <strong>⚽ Tipp:</strong> Lade eine Fußball-Pfeife als MP3 hoch und nenne sie "Fussball Pfeife" – dann kannst du sie als Push-Ton auswählen!
+          </p>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 function renderConfig() {
   if (session.role !== "admin" && !hasPermission(session.id, 'canViewConfig')) {
     return `
@@ -5759,6 +6030,11 @@ function renderConfig() {
         </div>
       </div>
     `;
+  }
+  
+  // Wenn Sound-Studio geöffnet
+  if (adminView === 'soundstudio') {
+    return renderSoundStudio();
   }
   
   // Wenn ein Co-Trainer ausgewählt wurde, zeige die Berechtigungsseite
@@ -6014,6 +6290,15 @@ function renderConfig() {
           </button>
         </div>
         
+        <!-- 🔥 NEU: Sound-Studio Button -->
+        <div style="background: var(--sound-bg); padding: 16px; border-radius: 12px; margin-bottom: 24px; border-left: 4px solid var(--sound-border);">
+          <h4 style="margin: 0 0 8px 0; color: #b45f06;">🔊 SOUND-STUDIO</h4>
+          <p class="small" style="margin-bottom: 16px;">Lade eigene Push-Töne hoch (MP3) und wähle den aktiven Ton aus.</p>
+          <button class="btn sound" style="width: 100%;" onclick="setAdminView('soundstudio')">
+            🎵 ZUM SOUND-STUDIO
+          </button>
+        </div>
+        
         <h4 style="margin-top: 30px;">⏰ Erinnerungen</h4>
         <div style="background: #f5f9f6; padding: 16px; border-radius: 12px; margin-bottom: 24px;">
           <label>Tage vor dem Match an Eltern erinnern (die noch nicht abgestimmt haben)</label>
@@ -6036,7 +6321,7 @@ function renderConfig() {
           <button class="btn primary" style="width: 100%;" onclick="repairPushTokens()">🔧 Jetzt reparieren</button>
         </div>
         
-        <!-- 🔥 NEU: Saison-Korrektur Button -->
+        <!-- 🔥 Saison-Korrektur Button -->
         <div style="background: #e8f0fe; padding: 16px; border-radius: 12px; margin-bottom: 24px; border-left: 4px solid var(--blue);">
           <h4 style="margin: 0 0 8px 0; color: var(--blue);">📅 Saison-Korrektur</h4>
           <p class="small">Aktuelle Saison: <strong>${state.currentSeason}</strong></p>
@@ -6082,6 +6367,7 @@ function renderConfig() {
           <div class="listline">👥 Co-Trainer: ${coaches.length}</div>
           <div class="listline">📊 Gespeicherte Tests: ${state.players?.reduce((sum, p) => sum + (p.tests?.length || 0), 0) || 0}</div>
           <div class="listline">📅 Aktuelle Saison: ${state.currentSeason}</div>
+          <div class="listline">🔊 Push-Ton: ${getSoundName(state.selectedPushSound || 'default')}</div>
         </div>
       </div>
     </div>
@@ -6241,7 +6527,7 @@ function renderParentView() {
           <div style="display: flex; gap: 20px; align-items: flex-start;">
             <div style="width: 120px;">${photoHtml}</div>
             <div style="flex: 1;">
-              <div>Geburtstag: ${player.birthday || '-'}</div>
+              <div>Geburtstag: ${formatGermanDate(player.birthday)}</div>
               <div>Position: ${player.position || '-'}</div>
               <div>Trikot: ${player.jersey || '-'}</div>
               <div>Im Verein seit: ${player.since || '-'}</div>
@@ -6389,7 +6675,7 @@ function renderTrainerKindView() {
           <h3>${player.name}</h3>
           <div style="display: flex; gap: 20px; align-items: flex-start;">
             <div style="width: 120px;">${photoHtml}</div>
-            <div style="flex: 1;"><div>Geburtstag: ${player.birthday || '-'}</div><div>Position: ${player.position || '-'}</div><div>Trikot: ${player.jersey || '-'}</div><div>Im Verein seit: ${player.since || '-'}</div></div>
+            <div style="flex: 1;"><div>Geburtstag: ${formatGermanDate(player.birthday)}</div><div>Position: ${player.position || '-'}</div><div>Trikot: ${player.jersey || '-'}</div><div>Im Verein seit: ${player.since || '-'}</div></div>
           </div>
           <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 20px 0;">
             <div class="stat"><strong>${player.goals || 0}</strong><span class="small">Tore</span></div>
@@ -6482,7 +6768,7 @@ function renderCoachKindView() {
           <h3>${player.name}</h3>
           <div style="display: flex; gap: 20px; align-items: flex-start;">
             <div style="width: 120px;">${photoHtml}</div>
-            <div style="flex: 1;"><div>Geburtstag: ${player.birthday || '-'}</div><div>Position: ${player.position || '-'}</div><div>Trikot: ${player.jersey || '-'}</div><div>Im Verein seit: ${player.since || '-'}</div></div>
+            <div style="flex: 1;"><div>Geburtstag: ${formatGermanDate(player.birthday)}</div><div>Position: ${player.position || '-'}</div><div>Trikot: ${player.jersey || '-'}</div><div>Im Verein seit: ${player.since || '-'}</div></div>
           </div>
           <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 20px 0;">
             <div class="stat"><strong>${player.goals || 0}</strong><span class="small">Tore</span></div>
@@ -6658,6 +6944,7 @@ function render() {
     else if (adminView === "statistics") content += renderStatistics();
     else if (adminView === "config") content += renderConfig();
     else if (adminView === "splash") content += renderSplashConfig();
+    else if (adminView === "soundstudio") content += renderSoundStudio();
     else if (adminView === "datenschutz") content += renderDatenschutzZentrale();
     else if (adminView === "password") content += `
       <div class="section">
@@ -6805,6 +7092,11 @@ window.manualResetDatenschutz = manualResetDatenschutz;
 window.showDatenschutzDetail = showDatenschutzDetail;
 window.closeDatenschutzDetail = closeDatenschutzDetail;
 window.forceSeasonCorrection = forceSeasonCorrection;
+window.handleSoundUpload = handleSoundUpload;
+window.playSound = playSound;
+window.deleteSound = deleteSound;
+window.selectPushSound = selectPushSound;
+window.getSoundName = getSoundName;
 
 startApp();
 </script>
